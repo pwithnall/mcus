@@ -1,0 +1,403 @@
+<?xml version="1.0"?>
+<interface>
+	<object class="GtkUIManager" id="dry_ui_manager">
+		<child>
+			<object class="GtkActionGroup" id="actiongroup1">
+				<child>
+					<object class="GtkAction" id="dry_ui_file">
+						<property name="name">file</property>
+						<property name="label">_File</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_print">
+						<property name="stock_id">gtk-print</property>
+						<property name="name">file-print</property>
+						<signal name="activate" handler="mw_print_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_quit">
+						<property name="stock_id">gtk-quit</property>
+						<property name="name">file-quit</property>
+						<signal name="activate" handler="mw_quit_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_edit">
+						<property name="name">edit</property>
+						<property name="label">_Edit</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_cut">
+						<property name="stock_id">gtk-cut</property>
+						<property name="name">edit-cut</property>
+						<signal name="activate" handler="mw_cut_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_copy">
+						<property name="stock_id">gtk-copy</property>
+						<property name="name">edit-copy</property>
+						<signal name="activate" handler="mw_copy_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_paste">
+						<property name="stock_id">gtk-paste</property>
+						<property name="name">edit-paste</property>
+						<signal name="activate" handler="mw_paste_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_delete">
+						<property name="stock_id">gtk-delete</property>
+						<property name="name">edit-delete</property>
+						<signal name="activate" handler="mw_delete_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_help">
+						<property name="name">help</property>
+						<property name="label">_Help</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_about">
+						<property name="stock_id">gtk-about</property>
+						<property name="name">help-about</property>
+						<signal name="activate" handler="mw_about_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_jump_to_today">
+						<property name="stock-id">gtk-jump-to</property>
+						<property name="name">jump-to-today</property>
+						<property name="label" translatable="yes">Go To Today</property>
+						<signal name="activate" handler="mw_jump_to_today_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_add_link">
+						<property name="stock-id">gtk-add</property>
+						<property name="name">add-link</property>
+						<property name="label" translatable="yes">Add Link</property>
+						<signal name="activate" handler="mw_add_link_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="dry_ui_remove_link">
+						<property name="stock-id">gtk-remove</property>
+						<property name="name">remove-link</property>
+						<property name="label" translatable="yes">Remove Link</property>
+						<signal name="activate" handler="mw_remove_link_activate_cb"/>
+					</object>
+				</child>
+			</object>
+		</child>
+		<ui>
+			<menubar name="dry_mw_menu_bar">
+				<menu action="dry_ui_file">
+					<menuitem action="dry_ui_print"/>
+					<menuitem action="dry_ui_quit"/>
+				</menu>
+				<menu action="dry_ui_edit">
+					<menuitem action="dry_ui_cut"/>
+					<menuitem action="dry_ui_copy"/>
+					<menuitem action="dry_ui_paste"/>
+					<menuitem action="dry_ui_delete"/>
+				</menu>
+				<menu action="dry_ui_help">
+					<menuitem action="dry_ui_about"/>
+				</menu>
+			</menubar>
+			<toolbar name="dry_mw_toolbar">
+				<toolitem action="dry_ui_jump_to_today"/>
+				<separator/>
+				<toolitem action="dry_ui_add_link"/>
+				<toolitem action="dry_ui_remove_link"/>
+			</toolbar>
+		</ui>
+	</object>
+	<!-- TODO: Change to dry_mw_link_store -->
+	<object class="GtkListStore" id="dry_mw_links_store">
+		<columns>
+			<column type="gchararray"/><!--Type-->
+			<column type="gchararray"/><!--Value-->
+			<column type="gchararray"/><!--Value 2-->
+			<column type="gchararray"/><!--Icon name-->
+		</columns>
+	</object>
+	<object class="GtkImage" id="dry_mw_view_button_image">
+		<property name="stock">gtk-open</property>
+	</object>
+	<object class="GtkWindow" id="dry_main_window">
+		<property name="title" translatable="yes">Diary</property>
+		<signal name="delete-event" handler="mw_delete_event_cb"/>
+		<child>
+			<object class="GtkVBox" id="vbox1">
+				<child>
+					<object class="GtkMenuBar" constructor="dry_ui_manager" id="dry_mw_menu_bar"/>
+					<packing>
+						<property name="expand">False</property>
+					</packing>
+				</child>
+				<child>
+					<object class="GtkToolbar" constructor="dry_ui_manager" id="dry_mw_toolbar"/>
+					<packing>
+						<property name="expand">False</property>
+						<property name="position">1</property>
+					</packing>
+				</child>
+				<child>
+					<object class="GtkHPaned" id="hpaned1">
+						<property name="can_focus">True</property>
+						<child>
+							<object class="GtkVBox" id="vbox3">
+								<child>
+									<object class="GtkLabel" id="dry_mw_date_label">
+										<property name="label" translatable="yes">&lt;big&gt;&lt;big&gt;&lt;b&gt;Wednesday, March 5, 2007&lt;/b&gt;&lt;/big&gt;&lt;/big&gt;</property>
+										<property name="use-markup">True</property>
+									</object>
+									<packing>
+										<property name="expand">False</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkScrolledWindow" id="scrolledwindow1">
+										<property name="can-focus">True</property>
+										<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+										<property name="vscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+										<property name="shadow-type">GTK_SHADOW_IN</property>
+										<child>
+											<object class="GtkTextView" id="dry_mw_entry_view">
+												<property name="width-request">300</property>
+												<property name="height-request">300</property>
+												<property name="can-focus">True</property>
+												<property name="wrap-mode">GTK_WRAP_WORD</property>
+												<signal name="focus-out-event" handler="mw_entry_view_focus_out_event_cb"/>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="position">1</property>
+									</packing>
+								</child>
+							</object>
+							<packing>
+								<property name="resize">True</property>
+								<property name="shrink">False</property>
+							</packing>
+						</child>
+						<child>
+							<object class="GtkVBox" id="vbox2">
+								<child>
+									<object class="GtkLabel" id="label1">
+										<property name="label" translatable="yes">&lt;b&gt;Calendar&lt;/b&gt;</property>
+										<property name="use-markup">True</property>
+									</object>
+									<packing>
+										<property name="expand">False</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkCalendar" id="dry_mw_calendar">
+										<property name="width-request">200</property>
+										<property name="can-focus">True</property>
+										<signal name="day-selected" handler="mw_calendar_day_selected_cb"/>
+										<signal name="month-changed" handler="mw_calendar_month_changed_cb"/>
+									</object>
+									<packing>
+										<property name="position">1</property>
+										<property name="expand">False</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkLabel" id="label2">
+										<property name="label" translatable="yes">&lt;b&gt;Attached Links&lt;/b&gt;</property>
+										<property name="use-markup">True</property>
+									</object>
+									<packing>
+										<property name="expand">False</property>
+										<property name="position">2</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkScrolledWindow" id="scrolledwindow2">
+										<property name="can-focus">True</property>
+										<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+										<property name="vscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+										<property name="shadow-type">GTK_SHADOW_IN</property>
+										<child>
+											<object class="GtkTreeView" id="dry_mw_links_tree_view">
+												<property name="model">dry_mw_links_store</property>
+												<property name="can-focus">True</property>
+												<property name="headers-visible">False</property>
+												<signal name="row-activated" handler="mw_links_tree_view_row_activated_cb"/>
+												<child>
+													<object class="GtkTreeViewColumn" id="column3">
+														<child>
+															<object class="GtkCellRendererPixbuf" id="renderer3"/>
+															<attributes>
+																<attribute name="icon-name">3</attribute>
+															</attributes>
+														</child>
+													</object>
+												</child>
+												<child>
+													<object class="GtkTreeViewColumn" id="dry_mw_link_value_column">
+														<child>
+															<object class="GtkCellRendererText" id="dry_mw_link_value_renderer"/>
+														</child>
+													</object>
+												</child>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="position">3</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkHButtonBox" id="buttonbox1">
+										<child>
+											<object class="GtkButton" id="dry_mw_add_button">
+												<property name="use-stock">True</property>
+												<property name="label">gtk-add</property>
+												<signal name="clicked" handler="mw_add_button_clicked_cb"/>
+											</object>
+										</child>
+										<child>
+											<object class="GtkButton" id="dry_mw_remove_button">
+												<property name="use-stock">True</property>
+												<property name="label">gtk-remove</property>
+												<signal name="clicked" handler="mw_remove_button_clicked_cb"/>
+											</object>
+										</child>
+										<child>
+											<object class="GtkButton" id="dry_mw_view_button">
+												<!--<property name="use-stock">True</property>-->
+												<property name="image">dry_mw_view_button_image</property>
+												<property name="label" translatable="yes">View</property>
+												<signal name="clicked" handler="mw_view_button_clicked_cb"/>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="position">4</property>
+										<property name="expand">False</property>
+									</packing>
+								</child>
+							</object>
+							<packing>
+								<property name="resize">False</property>
+								<property name="shrink">False</property>
+							</packing>
+						</child>
+					</object>
+					<packing>
+						<property name="position">2</property>
+					</packing>
+				</child>
+				<child>
+					<object class="GtkStatusbar" id="dry_mw_statusbar">
+						<property name="spacing">2</property>
+					</object>
+					<packing>
+						<property name="expand">False</property>
+						<property name="position">3</property>
+					</packing>
+				</child>
+			</object>
+		</child>
+	</object>
+	<object class="GtkListStore" id="dry_ald_type_store">
+		<columns>
+			<column type="gchararray"/><!--Name-->
+			<column type="gchararray"/><!--Type-->
+			<column type="gchararray"/><!--Icon name-->
+		</columns>
+	</object>
+	<!-- TODO: Use the description of link types somewhere -->
+	<object class="GtkDialog" id="dry_add_link_dialog">
+		<property name="title" translatable="yes">Add Link</property>
+		<property name="has-separator">False</property>
+		<property name="allow-grow">False</property>
+		<signal name="destroy" handler="ald_destroy_cb"/>
+		<child internal-child="vbox">
+			<object class="GtkVBox" id="vbox1">
+				<child>
+					<object class="GtkTable" id="dry_ald_table">
+						<property name="n-rows">1</property>
+						<property name="n-columns">2</property>
+						<property name="column-spacing">5</property>
+						<property name="row-spacing">5</property>
+						<property name="border-width">5</property>
+						<child>
+							<object class="GtkLabel" id="dry_ald_type_label">
+								<property name="xalign">0</property>
+								<property name="label" translatable="yes">Link Type</property>
+							</object>
+							<packing>
+								<property name="left-attach">1</property>
+								<property name="right-attach">2</property>
+								<property name="top-attach">1</property>
+								<property name="bottom-attach">2</property>
+								<property name="y-options">GTK_FILL</property>
+							</packing>
+						</child>
+						<child>
+							<object class="GtkComboBox" id="dry_ald_type_combo_box">
+								<property name="model">dry_ald_type_store</property>
+								<signal name="changed" handler="ald_type_combo_box_changed_cb"/>
+								<child>
+									<object class="GtkCellRendererPixbuf" id="renderer5"/>
+									<attributes>
+										<attribute name="icon-name">2</attribute>
+									</attributes>
+								</child>
+								<child>
+									<object class="GtkCellRendererText" id="renderer4"/>
+									<attributes>
+										<attribute name="text">0</attribute>
+									</attributes>
+								</child>
+							</object>
+							<packing>
+								<property name="left-attach">2</property>
+								<property name="right-attach">3</property>
+								<property name="top-attach">1</property>
+								<property name="bottom-attach">2</property>
+								<property name="y-options">GTK_FILL</property>
+							</packing>
+						</child>
+						<!-- Placeholder -->
+					</object>
+				</child>
+				<child internal-child="action_area">
+					<object class="GtkHButtonBox" id="hbuttonbox1">
+						<child>
+							<object class="GtkButton" id="dry_ald_cancel_button">
+								<property name="use-stock">True</property>
+								<property name="label">gtk-cancel</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="dry_ald_add_button">
+								<property name="use-stock">True</property>
+								<property name="label">gtk-add</property>
+								<property name="can-default">True</property>
+								<property name="has-default">True</property>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+		<action-widgets>
+			<action-widget response="-6">dry_ald_cancel_button</action-widget>
+			<action-widget response="-5">dry_ald_add_button</action-widget>
+		</action-widgets>
+	</object>
+</interface>

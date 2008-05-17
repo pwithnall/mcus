@@ -1,0 +1,36 @@
+MCUS
+====
+
+MCUS (Microcontroller Simulator) is a small cross-platform GTK+ application to simulate the microcontroller
+specification in the 2008 OCR electronics AS-/A-level specifiction.
+
+News
+====
+
+See NEWS file.
+
+Dependencies
+============
+
+GNOME 2.22 development platform
+	http://www.gnome.org
+
+Copyright
+=========
+
+Philip Withnall <philip@tecnocode.co.uk>
+
+BUGS
+====
+
+Bugs should be sent to me:
+http://tecnocode.co.uk/contact
+
+To get a better debug output, run:
+# mcus --debug
+
+Contact
+=======
+
+Philip Withnall <philip@tecnocode.co.uk>
+http://tecnocode.co.uk/projects/mcus
