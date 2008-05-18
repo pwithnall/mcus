@@ -52,31 +52,40 @@ typedef enum {
 	INSTRUCTION_SHR		/* SHR Sd	Shift the byte in Sd one bit right putting a 0 into the msb */
 } MCUSInstructionType;
 
+typedef enum {
+	OPERAND_CONSTANT,
+	OPERAND_LABEL,
+	OPERAND_REGISTER,
+	OPERAND_INPUT,
+	OPERAND_OUTPUT
+} MCUSOperandType;
+
 typedef struct {
 	MCUSInstructionType opcode;
 	gchar *instruction_name;
 	guint operand_count;
+	MCUSOperandType operand_types[MAX_OPERAND_COUNT];
 } MCUSInstructionData;
 
 const MCUSInstructionData mcus_instruction_data[] = {
-	/* Instruction type,	name,		operand count */
-	{ INSTRUCTION_MOVI,	"MOVI",		2 },
-	{ INSTRUCTION_MOV,	"MOV",		2 },
-	{ INSTRUCTION_ADD,	"ADD",		2 },
-	{ INSTRUCTION_SUB,	"SUB",		2 },
-	{ INSTRUCTION_AND,	"AND",		2 },
-	{ INSTRUCTION_EOR,	"EOR",		2 },
-	{ INSTRUCTION_INC,	"INC",		1 },
-	{ INSTRUCTION_DEC,	"DEC",		1 },
-	{ INSTRUCTION_IN,	"IN",		2 },
-	{ INSTRUCTION_OUT,	"OUT",		2 },
-	{ INSTRUCTION_JP,	"JP",		1 },
-	{ INSTRUCTION_JZ,	"JZ",		1 },
-	{ INSTRUCTION_JNZ,	"JNZ",		1 },
-	{ INSTRUCTION_RCALL,	"RCALL",	1 },
-	{ INSTRUCTION_RET,	"RET",		0 },
-	{ INSTRUCTION_SHL,	"SHL",		1 },
-	{ INSTRUCTION_SHR,	"SHR",		1 }
+	/* Instruction type,	name,		operand count,	operand types */
+	{ INSTRUCTION_MOVI,	"MOVI",		2,		{ OPERAND_REGISTER,	OPERAND_CONSTANT } },
+	{ INSTRUCTION_MOV,	"MOV",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_ADD,	"ADD",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_SUB,	"SUB",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_AND,	"AND",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_EOR,	"EOR",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_INC,	"INC",		1,		{ OPERAND_REGISTER, } },
+	{ INSTRUCTION_DEC,	"DEC",		1,		{ OPERAND_REGISTER, } },
+	{ INSTRUCTION_IN,	"IN",		2,		{ OPERAND_REGISTER,	OPERAND_INPUT } },
+	{ INSTRUCTION_OUT,	"OUT",		2,		{ OPERAND_OUTPUT,	OPERAND_REGISTER } },
+	{ INSTRUCTION_JP,	"JP",		1,		{ OPERAND_LABEL, } },
+	{ INSTRUCTION_JZ,	"JZ",		1,		{ OPERAND_LABEL, } },
+	{ INSTRUCTION_JNZ,	"JNZ",		1,		{ OPERAND_LABEL, } },
+	{ INSTRUCTION_RCALL,	"RCALL",	1,		{ OPERAND_LABEL, } },
+	{ INSTRUCTION_RET,	"RET",		0,		{  } },
+	{ INSTRUCTION_SHL,	"SHL",		1,		{ OPERAND_REGISTER, } },
+	{ INSTRUCTION_SHR,	"SHR",		1,		{ OPERAND_REGISTER, } }
 }
 
 G_END_DECLS

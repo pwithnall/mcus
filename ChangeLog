@@ -1,5 +1,13 @@
 2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/instructions.h:
+	* src/main.h:
+	* src/parser.c:
+	* src/parser.h: Compilation of the parse tree to the microcontroller
+	memory is now supported.
+
+2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/parser.c:
 	* src/parser.h: Converted the parser to use GErrors appropriately.
 

@@ -24,16 +24,8 @@
 
 typedef struct {
 	gchar *label;
-	gchar location;
+	gchar address;
 } MCUSLabel;
-
-typedef enum {
-	OPERAND_CONSTANT,
-	OPERAND_LABEL,
-	OPERAND_REGISTER,
-	OPERAND_INPUT,
-	OPERAND_OUTPUT
-} MCUSOperandType;
 
 typedef struct {
 	MCUSOperandType type;
@@ -180,6 +172,25 @@ mcus_parser_error_quark (void)
 	return q;
 }
 
+static const gchar *
+operand_type_to_string (MCUSOperandType operand_type)
+{
+	switch (operand_type) {
+	case OPERAND_CONSTANT:
+		return _("constant");
+	case OPERAND_LABEL:
+		return _("label");
+	case OPERAND_REGISTER:
+		return _("register");
+	case OPERAND_INPUT:
+		return _("input");
+	case OPERAND_OUTPUT:
+		return _("output");
+	default:
+		return _("unknown");
+	}
+}
+
 static void
 store_label (MCUSParser *self, const MCUSLabel *label)
 {
@@ -193,6 +204,22 @@ store_label (MCUSParser *self, const MCUSLabel *label)
 	g_memmove (self->priv->labels[self->priv->label_count-1], label, sizeof (MCUSLabel));
 }
 
+static gchar
+resolve_label (MCUSParser *self, guint instruction_number, const gchar *label_string, GError **error)
+{
+	guint i;
+
+	for (i = 0; i < self->priv->label_count; i++) {
+		if (strcmp (label_string, self->priv->labels[i].label) == 0)
+			return self->priv->labels[i].address;
+	}
+
+	g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_UNRESOLVABLE_LABEL,
+		     _("A label (\"%s\") could not be resolved to an address for instruction %u.",
+		     instruction_number + 1);
+	return 0;
+}
+
 static void
 store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 {
@@ -204,10 +231,6 @@ store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 
 	/* Copy the new instruction into the array */
 	g_memmove (self->priv->instructions[self->priv->instruction_count-1], instruction, sizeof (MCUSInstruction));
-
-	/* Increase the compiled size of the program accordingly */
-	self->priv->compiled_size += mcus_instruction_data[instruction->type].operand_count + 1;
-	/* TODO: Error if this is too big */
 }
 
 /* TODO: For the moment, I'm ignoring comments, but support for them will have to be included eventually */
@@ -240,7 +263,7 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 	/* Check we actually have a label to parse */
 	if (length == 0 || *(self->priv->i + length - 1) != ':') {
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_LABEL,
-			     _("A label had no length, or was not delimited by a colon (\":\") around line %u.",
+			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u.",
 			     self->priv->line_number);
 		return FALSE;
 	}
@@ -251,7 +274,7 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 
 	/* Store it */
 	label->label = label_string;
-	label->location = self->priv->compiled->size;
+	label->address = self->priv->compiled->size;
 
 	return TRUE;
 }
@@ -279,7 +302,7 @@ extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type)
 	    *(self->priv->i + length) != '\0') {
 		instruction_type = NULL;
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
-			     _("An instruction had no length, or was not delimited by whitespace around line %u.",
+			     _("An expected instruction had no length, or was not delimited by whitespace around line %u.",
 			     self->priv->line_number);
 		return FALSE;
 	}
@@ -319,7 +342,7 @@ extract_operand (MCUSParser *self, MCUSOperand *operand)
 	/* Check we actually have an operand to parse */
 	if (length == 0) {
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND,
-			     _("An operand had no length around line %u.",
+			     _("A required operand had no length around line %u.",
 			     self->priv->line_number);
 		return FALSE;
 	}
@@ -333,7 +356,7 @@ extract_operand (MCUSParser *self, MCUSOperand *operand)
 	 *  - Register: "S" followed by 0..7 (e.g. "S0" or "S5")
 	 *  - Input: "I" (there's only one)
 	 *  - Output: "Q" (there's only one)
-	 * All operands are case-insensitive, just to make things harder.
+	 * All operands except labels are case-insensitive, just to make things harder.
 	 */
 	if (length == 1) {
 		/* Could be anything, but hopefully it's an input or output */
@@ -400,15 +423,31 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 	while (self->priv->i != NULL) {
 		MCUSInstruction instruction;
 		MCUSLabel label;
-		GError *child_error;
+		GError *child_error = NULL;
 
 		if (extract_instruction (self, &(instruction.type), NULL) == TRUE) {
 			/* Instruction */
 			guint i;
+			MCUSInstructionData *instruction_data = &(mcus_instruction_data[instruction.type]);
 
-			for (i = 0; i < mcus_instruction_data[instruction.type].operand_count; i++) {
+			for (i = 0; i < instruction_data.operand_count; i++) {
 				MCUSOperand operand;
 				if (extract_operand (self, &operand, &child_error) == TRUE) {
+					/* Check the operand's type is valid */
+					if (instruction_data->operand_types[f] == OPERAND_LABEL &&
+					    (operand.type != OPERAND_CONSTANT ||
+					    operand.type != OPERAND_LABEL) ||
+					    instruction_data->operand_types[f] != OPERAND_LABEL &&
+					    operand.type != instruction_data.operand_types[f]) {
+						g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND_TYPE,
+							     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u.",
+							     operand_type_to_string (operand.type),
+							     operand_type_to_string (instruction_data->operand_types[f]),
+							     self->priv->line_number);
+						return FALSE;
+					}
+
+					/* Store the operand */
 					instruction.operands[i] = operand;
 					skip_whitespace (self, FALSE);
 				} else {
@@ -439,8 +478,78 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 	return TRUE;
 }
 
+/* TODO: Line numbers */
+
 gboolean
 mcus_parser_compile (MCUSParser *self, GError **error)
 {
-	/* TODO */
+	guint i;
+	self->priv->compiled_size = PROGRAM_START_ADDRESS;
+
+	for (i = 0; i < self->priv->instruction_count; i++) {
+		guint f;
+		gchar projected_size;
+		MCUSInstructionData *instruction_data;
+		MCUSInstruction *instruction;
+
+		instruction = self->priv->instructions[i];
+		instruction_data = &(mcus_instruction_data[instruction->type]);
+
+		/* Check we're not overflowing memory */
+		projected_size = self->priv->compiled_size + 1 + instruction_data->operand_count;
+		if (instruction->type == INSTRUCTION_IN || instruction->type == INSTRUCTION_OUT)
+			projected_size--;
+
+		if (projected_size >= MEMORY_SIZE) {
+			g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_MEMORY_OVERFLOW,
+				     _("Instruction %u overflows the microcontroller memory.",
+				     i);
+			return FALSE;
+		}
+
+		/* Store the opcode first, as that's easy */
+		mcus->memory[self->priv->compiled_size++] = instruction->type;
+
+		/* Store the operands, although we have to special-case IN and OUT instructions */
+		switch (instruction->type) {
+		case INSTRUCTION_IN:
+			mcus->memory[self->priv->compiled_size++] = instruction->operands[0].number;
+			break;
+		case INSTRUCTION_OUT:
+			mcus->memory[self->priv->compiled_size++] = instruction->operands[1].number;
+			break;
+		default:
+			for (f = 0; f < instruction_data->operand_count; f++) {
+				if (instruction_data->operand_types[f] == OPERAND_LABEL) {
+					GError *child_error = NULL;
+
+					/* We need to resolve the label first */
+					mcus->memory[self->priv->compiled_size++] = resolve_label (self, i, instruction->operands[f].label, &child_error);
+					g_free (instruction->operands[f].label);
+
+					if (child_error != NULL) {
+						g_propagate_error (error, child_error);
+						return FALSE;
+					}
+				} else {
+					/* Just store the operand */
+					mcus->memory[self->priv->compiled_size++] = instruction->operands[f].number;
+				}
+			}
+		}
+	}
+
+	/* Free labels and instructions and reset state */
+	for (i = 0; i < self->priv->label_count; i++)
+		g_free (self->priv->labels[i].label);
+
+	g_free (self->priv->labels);
+	g_free (self->priv->instructions);
+
+	self->priv->label_count = 0;
+	self->priv->instruction_count = 0;
+	self->priv->compiled_size = 0;
+
+	self->priv->code = NULL;
+	self->priv->i = NULL;
 }

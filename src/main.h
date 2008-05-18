@@ -27,6 +27,7 @@ G_BEGIN_DECLS
 
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
+#define PROGRAM_START_ADDRESS 0
 
 typedef struct {
 	GtkWidget *main_window;
