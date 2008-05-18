@@ -1,3 +1,16 @@
+2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* .bzrignore: Ignored a load of files.
+	* src/instruction.c:
+	* src/instruction.h:
+	* src/instructions.h: Removed MCUSInstruction as a GObject and
+	replaced it with a simple struct, private to the parser. Instructions
+	will now canonically be represented as opcodes in memory.
+	* src/parser.c:
+	* src/parser.h: Work on the parser, which now theoretically supports
+	instructions, operands and labels, although doesn't yet support
+	subroutines or comments.
+
 2008-05-17  Philip Withnall  <philip@tecnocode.co.uk>
 
 	Initial commit.

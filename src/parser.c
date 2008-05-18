@@ -20,29 +20,53 @@
 #include <glib.h>
 
 #include "parser.h"
+#include "instructions.h"
 
 typedef struct {
 	gchar *label;
 	gchar location;
 } MCUSLabel;
 
+typedef enum {
+	OPERAND_CONSTANT,
+	OPERAND_LABEL,
+	OPERAND_REGISTER,
+	OPERAND_INPUT,
+	OPERAND_OUTPUT
+} MCUSOperandType;
+
 typedef struct {
-	gboolean is_label;
+	MCUSOperandType type;
 	union {
-		gchar number;
-		gchar *label;
+		gchar number; /* for constants, registers, inputs and output */
+		gchar *label; /* for labels only */
 	};
 } MCUSOperand;
+
+typedef struct {
+	MCUSInstructionType instruction_type;
+	MCUSOperand operands[MAX_OPERAND_COUNT];
+} MCUSInstruction;
 
 static void mcus_parser_init (MCUSParser *self);
 static void mcus_parser_dispose (GObject *object);
 static void mcus_parser_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_parser_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 
+#define LABEL_BLOCK_SIZE 5
+#define INSTRUCTION_BLOCK_SIZE 10
+
 struct _MCUSParserPrivate {
 	MCUSLabel *labels;
+	guint label_count;
+
+	MCUSInstruction *instructions;
+	guint instruction_count;
+
 	gchar *code;
 	gchar *i;
+
+	gchar compiled_size;
 };
 
 /*
@@ -145,7 +169,38 @@ mcus_parser_set_property (GObject *object, guint property_id, const GValue *valu
 	}
 }
 
+static void
+store_label (MCUSParser *self, const MCUSLabel *label)
+{
+	/* If our label array is full, extend it */
+	if (self->priv->label_count % LABEL_BLOCK_SIZE == 0) {
+		self->priv->labels = g_realloc (self->priv->labels,
+						sizeof (MCUSLabel) * ceil (++(self->priv->label_count) / LABEL_BLOCK_SIZE) * LABEL_BLOCK_SIZE);
+	}
+
+	/* Copy the new label into the array */
+	g_memmove (self->priv->labels[self->priv->label_count-1], label, sizeof (MCUSLabel));
+}
+
+static void
+store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
+{
+	/* If our instruction array is full, extend it */
+	if (self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE == 0) {
+		self->priv->instructions = g_realloc (self->priv->instructions,
+						      sizeof (MCUSInstruction) * ceil (++(self->priv->instruction_count) / INSTRUCTION_BLOCK_SIZE) * INSTRUCTION_BLOCK_SIZE);
+	}
+
+	/* Copy the new instruction into the array */
+	g_memmove (self->priv->instructions[self->priv->instruction_count-1], instruction, sizeof (MCUSInstruction));
+
+	/* Increase the compiled size of the program accordingly */
+	self->priv->compiled_size += mcus_instruction_data[instruction->type].operand_count + 1;
+	/* TODO: Error if this is too big */
+}
+
 /* TODO: For the moment, I'm ignoring comments, but support for them will have to be included eventually */
+/* TODO: Subroutine support */
 
 static void
 skip_whitespace (MCUSParser *self, gboolean skip_newlines)
@@ -158,26 +213,59 @@ skip_whitespace (MCUSParser *self, gboolean skip_newlines)
 }
 
 static gboolean
+extract_label (MCUSParser *self, MCUSLabel *label)
+{
+	guint length = 0;
+	gchar *label_string;
+
+	/* Find where the label ends and copy it to a string that length */
+	while (*(self->priv->i + length) != ' ' &&
+	       *(self->priv->i + length) != '\t' &&
+	       *(self->priv->i + length) != '\n' &&
+	       *(self->priv->i + length) != '\0') {
+		length++;
+	}
+
+	/* Check we actually have a label to parse */
+	if (length == 0 || *(self->priv->i + length - 1) != ':')
+		return FALSE;
+
+	/* Make a copy of the label, excluding the colon and delimiter after it */
+	label_string = g_memdup (self->priv->i, sizeof (gchar) * (length - 2));
+	self->priv->i += length;
+
+	/* Store it */
+	label->label = label_string;
+	label->location = self->priv->compiled->size;
+	return TRUE;
+}
+
+static gboolean
 extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type)
 {
 	gchar instruction[MAX_INSTRUCTION_LENGTH];
 	guint i = 0;
 
-	while (g_ascii_isalpha (*(self->priv->i)) == TRUE && i < MAX_INSTRUCTION_LENGTH)
-		instruction[i++] = self->priv->i++;
+	while (g_ascii_isalpha (*(self->priv->i + i)) == TRUE &&
+	       i < MAX_INSTRUCTION_LENGTH) {
+		instruction[i++] = self->priv->i + i++;
+	}
 
 	/* If the instruction was zero-length or delimited by length, rather than a non-alphabetic
 	 * character, check that the next character is acceptable whitespace; if it isn't, this
-	 * instruction is invalid. */
-	/* TODO: I'm sure this could be improved */
+	 * instruction is invalid. This catches things like labels, which will either:
+	 *  - not have whitespace after them if they're shorter than the maximum instruction length, or
+	 *  - be longer than the maximum instruction length. */
 	if (i == 0 ||
-	    (i == MAX_INSTRUCTION_LENGTH &&
-	    *(self->priv->i + 1) != ' ' &&
-	    *(self->priv->i + 1) != '\t')) {
+	    *(self->priv->i + i) != ' ' &&
+	    *(self->priv->i + i) != '\t' &&
+	    *(self->priv->i + i) != '\n' &&
+	    *(self->priv->i + i) != '\0') {
 		instruction_type = NULL;
 		return FALSE;
-		/* TODO: Return a GError? */
 	}
+
+	self->priv->i += i;
 
 	/* Convert the instruction string to a MCUSInstructionType */
 	for (i = 0; i < G_N_ELEMENTS (mcus_instruction_data); i++) {
@@ -194,51 +282,116 @@ extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type)
 static gboolean
 extract_operand (MCUSParser *self, MCUSOperand *operand)
 {
-	guint i = 0;
+	guint length = 0;
 	gchar *operand_string;
 
 	/* Find where the operand ends and copy it to a string that length */
-	while (*(self->priv->i + i) != ' ' &&
-	       *(self->priv->i + i) != '\t' &&
-	       *(self->priv->i + i) != '\n' &&
-	       *(self->priv->i + i) != '\0') {
-		i++;
+	while (*(self->priv->i + length) != ' ' &&
+	       *(self->priv->i + length) != '\t' &&
+	       *(self->priv->i + length) != '\n' &&
+	       *(self->priv->i + length) != '\0') {
+		length++;
 	}
 
-	operand_string = g_memdup (self->priv->i, sizeof (gchar) * i);
-
 	/* Check we actually have an operand to parse */
-	if (operand_string == NULL)
+	if (length == 0)
 		return FALSE;
 
-	/* TODO: How do we differentiate between labels and hexadecimal values? e.g. Between the label "dad", and the value #dad? */
+	operand_string = g_memdup (self->priv->i, sizeof (gchar) * length);
+	self->priv->i += length;
+
+	/* There are several different types of operands we can parse:
+	 *  - Constant: in hexadecimal from 00..FF (e.g. "F7", "05" or "AB")
+	 *  - Label: alphanumeric with underscores (e.g. "foobar", "shizzle05", "DAD" or "test_label")
+	 *  - Register: "S" followed by 0..7 (e.g. "S0" or "S5")
+	 *  - Input: "I" (there's only one)
+	 *  - Output: "Q" (there's only one)
+	 * All operands are case-insensitive, just to make things harder.
+	 */
+	if (length == 1) {
+		/* Could be anything, but hopefully it's an input or output */
+		if (operand_string[0] == 'I' || operand_string[0] == 'i') {
+			/* Input */
+			operand->type = OPERAND_INPUT;
+			operand->number = 0;
+			g_free (operand_string);
+
+			return TRUE;
+		} else if (operand_string[0] == 'Q' || operand_string[0] == 'q') {
+			/* Output */
+			operand->type = OPERAND_OUTPUT;
+			operand->number = 0;
+			g_free (operand_string);
+
+			return TRUE;
+		}
+	} else if (length == 2) {
+		/* Could be anything, but hopefully it's a constant or register */
+		if (operand_string[0] == 'S' || operand_string[0] == 's' &&
+		    g_ascii_isdigit (operand_string[1])) {
+			/* Register? */
+			operand->type = OPERAND_REGISTER;
+			operand->number = g_ascii_digit_value (operand_string[1]);
+
+			/* Check to see if it's valid */
+			if (operand->number >= 0 && operand->number < REGISTER_COUNT) {
+				g_free (operand_string);
+				return TRUE;
+			}
+		}
+
+		if (g_ascii_isxdigit (operand_string[0]) &&
+		    g_ascii_isxdigit (operand_string[1])) {
+			/* Constant */
+			operand->type = OPERAND_CONSTANT;
+			operand->number = g_ascii_xdigit_value (operand_string[0]) * 16 + g_ascii_xdigit_value (operand_string[1]);
+			g_free (operand_string);
+
+			return TRUE;
+		}
+	}
+
+	/* If we're still here, it has to be a label. Resolution of the label
+	 * can happen later, when we compile. */
+	operand->type = OPERAND_LABEL;
+	operand->label = operand_string;
+
+	return TRUE;
 }
 
 gboolean
 mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 {
 	/* Set up parser variables */
+	self->priv->label_count = 0;
+	self->priv->instruction_count = 0;
+	self->priv->labels = NULL;
+	self->priv->instructions = NULL;
 	self->priv->code = code;
 	self->priv->i = code;
 
 	while (self->priv->i != NULL) {
-		MCUSInstructionType instruction_type;
+		MCUSInstruction instruction;
+		MCUSLabel label;
 
-		if (extract_instruction (self, &instruction_type)) {
-			MCUSInstruction *instruction;
+		if (extract_instruction (self, &(instruction.type)) == TRUE) {
+			/* Instruction */
 			guint i;
 
-			instruction = mcus_instruction_new (instruction_type);
-			for (i = 0; i < mcus_instruction_data[instruction_type].operand_count; i++) {
+			for (i = 0; i < mcus_instruction_data[instruction.type].operand_count; i++) {
 				MCUSOperand operand;
-				if (extract_operand (self, &operand)) {
-					mcus_instruction_set_operand (instruction, i, &operand);
+				if (extract_operand (self, &operand) == TRUE) {
+					instruction.operands[i] = operand;
 					skip_whitespace (self, FALSE);
 				}
 				/*else
 					TODO: throw error */
 			}
-
+			store_instruction (self, &instruction);
+			skip_whitespace (self, TRUE);
+		} else if (extract_label (self, &label) == TRUE) {
+			/* Label */
+			store_label (self, &label);
 			skip_whitespace (self, TRUE);
 		}
 		/*else
@@ -246,4 +399,10 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 	}
 
 	return TRUE;
+}
+
+gboolean
+mcus_parser_compile (MCUSParser *self, GError **error)
+{
+	/* TODO */
 }

@@ -45,6 +45,8 @@ typedef struct {
 } MCUSParserClass;
 
 GType mcus_parser_get_type (void);
+gboolean mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error);
+gboolean mcus_parser_compile (MCUSParser *self, GError **error);
 
 G_END_DECLS
 
