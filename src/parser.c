@@ -18,32 +18,35 @@
  */
 
 #include <glib.h>
+#include <glib/gi18n.h>
+#include <math.h>
+#include <string.h>
 
 #include "parser.h"
 #include "instructions.h"
+#include "main.h"
 
 typedef struct {
 	gchar *label;
-	gchar address;
+	guchar address;
 } MCUSLabel;
 
 typedef struct {
 	MCUSOperandType type;
 	union {
-		gchar number; /* for constants, registers, inputs and output */
+		guchar number; /* for constants, registers, inputs and output */
 		gchar *label; /* for labels only */
 	};
 } MCUSOperand;
 
 typedef struct {
-	MCUSInstructionType instruction_type;
+	MCUSInstructionType type;
 	MCUSOperand operands[MAX_OPERAND_COUNT];
 } MCUSInstruction;
 
 static void mcus_parser_init (MCUSParser *self);
-static void mcus_parser_dispose (GObject *object);
-static void mcus_parser_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void mcus_parser_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void mcus_parser_finalize (GObject *object);
+static void reset_state (MCUSParser *self);
 
 #define LABEL_BLOCK_SIZE 5
 #define INSTRUCTION_BLOCK_SIZE 10
@@ -58,15 +61,9 @@ struct _MCUSParserPrivate {
 	gchar *code;
 	gchar *i;
 
-	gchar compiled_size;
+	guchar compiled_size;
+	guint line_number;
 };
-
-/*
-TODO
-enum {
-	PROP_DEV_PATH = 1
-};
-*/
 
 G_DEFINE_TYPE (MCUSParser, mcus_parser, G_TYPE_OBJECT)
 #define MCUS_PARSER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MCUS_TYPE_PARSER, MCUSParserPrivate))
@@ -75,90 +72,23 @@ static void
 mcus_parser_class_init (MCUSParserClass *klass)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
 	g_type_class_add_private (klass, sizeof (MCUSParserPrivate));
-
-	gobject_class->set_property = mcus_parser_set_property;
-	gobject_class->get_property = mcus_parser_get_property;
-	gobject_class->dispose = mcus_parser_dispose;
-
-	/*
-	TODO
-	g_object_class_install_property (gobject_class, PROP_DEV_PATH,
-				g_param_spec_string ("dev-path",
-					"Device path", "The path to this connection's device node.",
-					NULL,
-					G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-	*/
+	gobject_class->finalize = mcus_parser_finalize;
 }
 
 static void
 mcus_parser_init (MCUSParser *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MCUS_TYPE_PARSER, MCUSParserPrivate);
-	self->priv->dispose_has_run = FALSE;
-	/*
-	TODO
-	self->priv->dev_path = NULL;
-	*/
 }
 
 static void
-mcus_parser_dispose (GObject *object)
+mcus_parser_finalize (GObject *object)
 {
-	MCUSParserPrivate *priv = MCUS_PARSER_GET_PRIVATE (object);
-
-	/* Make sure we only run once */
-	if (priv->dispose_has_run)
-		return;
-	priv->dispose_has_run = TRUE;
-
-	/*
-	TODO
-	g_free (priv->dev_path);
-	*/
+	reset_state (MCUS_PARSER (object));
 
 	/* Chain up to the parent class */
-	G_OBJECT_CLASS (mcus_parser_parent_class)->dispose (object);
-}
-
-static void
-mcus_parser_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
-{
-	MCUSParserPrivate *priv = MCUS_PARSER_GET_PRIVATE (object);
-
-	switch (property_id) {
-		/*
-		TODO
-		case PROP_DEV_PATH:
-			g_value_set_string (value, g_strdup (priv->dev_path));
-			break;
-		*/
-		default:
-			/* We don't have any other property... */
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-			break;
-	}
-}
-
-static void
-mcus_parser_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
-{
-	MCUSParserPrivate *priv = MCUS_PARSER_GET_PRIVATE (object);
-
-	switch (property_id) {
-		/*
-		TODO
-		case PROP_DEV_PATH:
-			g_free (priv->dev_path);
-			priv->dev_path = g_strdup (g_value_get_string (value));
-			break;
-		*/
-		default:
-			/* We don't have any other property... */
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-			break;
-	}
+	G_OBJECT_CLASS (mcus_parser_parent_class)->finalize (object);
 }
 
 GQuark
@@ -192,6 +122,26 @@ operand_type_to_string (MCUSOperandType operand_type)
 }
 
 static void
+reset_state (MCUSParser *self)
+{
+	guint i;
+
+	/* Free labels and instructions and reset state */
+	for (i = 0; i < self->priv->label_count; i++)
+		g_free (self->priv->labels[i].label);
+
+	g_free (self->priv->labels);
+	g_free (self->priv->instructions);
+
+	self->priv->label_count = 0;
+	self->priv->instruction_count = 0;
+	self->priv->compiled_size = 0;
+	self->priv->line_number = 0;
+
+	self->priv->i = NULL;
+}
+
+static void
 store_label (MCUSParser *self, const MCUSLabel *label)
 {
 	/* If our label array is full, extend it */
@@ -201,10 +151,10 @@ store_label (MCUSParser *self, const MCUSLabel *label)
 	}
 
 	/* Copy the new label into the array */
-	g_memmove (self->priv->labels[self->priv->label_count-1], label, sizeof (MCUSLabel));
+	g_memmove (&(self->priv->labels[self->priv->label_count-1]), label, sizeof (MCUSLabel));
 }
 
-static gchar
+static guchar
 resolve_label (MCUSParser *self, guint instruction_number, const gchar *label_string, GError **error)
 {
 	guint i;
@@ -215,7 +165,8 @@ resolve_label (MCUSParser *self, guint instruction_number, const gchar *label_st
 	}
 
 	g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_UNRESOLVABLE_LABEL,
-		     _("A label (\"%s\") could not be resolved to an address for instruction %u.",
+		     _("A label (\"%s\") could not be resolved to an address for instruction %u."),
+		     label_string,
 		     instruction_number + 1);
 	return 0;
 }
@@ -230,7 +181,7 @@ store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 	}
 
 	/* Copy the new instruction into the array */
-	g_memmove (self->priv->instructions[self->priv->instruction_count-1], instruction, sizeof (MCUSInstruction));
+	g_memmove (&(self->priv->instructions[self->priv->instruction_count-1]), instruction, sizeof (MCUSInstruction));
 }
 
 /* TODO: For the moment, I'm ignoring comments, but support for them will have to be included eventually */
@@ -241,7 +192,7 @@ skip_whitespace (MCUSParser *self, gboolean skip_newlines)
 {
 	while (*(self->priv->i) == ' ' ||
 	       *(self->priv->i) == '\t' ||
-	       *(self->priv->i) == '\n' && skip_newlines == TRUE) {
+	       (*(self->priv->i) == '\n' && skip_newlines == TRUE && self->priv->line_number++)) {
 		self->priv->i++;
 	}
 }
@@ -263,7 +214,7 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 	/* Check we actually have a label to parse */
 	if (length == 0 || *(self->priv->i + length - 1) != ':') {
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_LABEL,
-			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u.",
+			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u."),
 			     self->priv->line_number);
 		return FALSE;
 	}
@@ -274,20 +225,21 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 
 	/* Store it */
 	label->label = label_string;
-	label->address = self->priv->compiled->size;
+	label->address = self->priv->compiled_size;
 
 	return TRUE;
 }
 
 static gboolean
-extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type)
+extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type, GError **error)
 {
 	gchar instruction[MAX_INSTRUCTION_LENGTH];
 	guint i, length = 0;
 
 	while (g_ascii_isalpha (*(self->priv->i + length)) == TRUE &&
 	       length < MAX_INSTRUCTION_LENGTH) {
-		instruction[length] = self->priv->i + length++;
+		instruction[length] = *(self->priv->i + length);
+		length++;
 	}
 
 	/* If the instruction was zero-length or delimited by length, rather than a non-alphabetic
@@ -295,30 +247,31 @@ extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type)
 	 * instruction is invalid. This catches things like labels, which will either:
 	 *  - not have whitespace after them if they're shorter than the maximum instruction length, or
 	 *  - be longer than the maximum instruction length. */
-	if (i == 0 ||
-	    *(self->priv->i + length) != ' ' &&
+	if (length == 0 ||
+	    (*(self->priv->i + length) != ' ' &&
 	    *(self->priv->i + length) != '\t' &&
 	    *(self->priv->i + length) != '\n' &&
-	    *(self->priv->i + length) != '\0') {
+	    *(self->priv->i + length) != '\0')) {
 		instruction_type = NULL;
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
-			     _("An expected instruction had no length, or was not delimited by whitespace around line %u.",
+			     _("An expected instruction had no length, or was not delimited by whitespace around line %u."),
 			     self->priv->line_number);
 		return FALSE;
 	}
 
 	/* Convert the instruction string to a MCUSInstructionType */
 	for (i = 0; i < G_N_ELEMENTS (mcus_instruction_data); i++) {
-		if (stricmp (instruction, mcus_instruction_data[i].instruction_name) == 0) {
-			*instruction_type = mcus_instruction_data[i].type;
+		if (strcasecmp (instruction, mcus_instruction_data[i].instruction_name) == 0) {
+			*instruction_type = mcus_instruction_data[i].opcode;
 			self->priv->i += length;
 			return TRUE;
+		}
 	}
 
 	/* Invalid instruction! */
-	instruction_type == NULL;
+	instruction_type = NULL;
 	g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
-		     _("An instruction (\"%.*s\") did not exist around line %u.",
+		     _("An instruction (\"%.*s\") did not exist around line %u."),
 		     length, instruction,
 		     self->priv->line_number);
 
@@ -326,7 +279,7 @@ extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type)
 }
 
 static gboolean
-extract_operand (MCUSParser *self, MCUSOperand *operand)
+extract_operand (MCUSParser *self, MCUSOperand *operand, GError **error)
 {
 	guint length = 0;
 	gchar *operand_string;
@@ -342,7 +295,7 @@ extract_operand (MCUSParser *self, MCUSOperand *operand)
 	/* Check we actually have an operand to parse */
 	if (length == 0) {
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND,
-			     _("A required operand had no length around line %u.",
+			     _("A required operand had no length around line %u."),
 			     self->priv->line_number);
 		return FALSE;
 	}
@@ -377,14 +330,14 @@ extract_operand (MCUSParser *self, MCUSOperand *operand)
 		}
 	} else if (length == 2) {
 		/* Could be anything, but hopefully it's a constant or register */
-		if (operand_string[0] == 'S' || operand_string[0] == 's' &&
+		if ((operand_string[0] == 'S' || operand_string[0] == 's') &&
 		    g_ascii_isdigit (operand_string[1])) {
 			/* Register? */
 			operand->type = OPERAND_REGISTER;
 			operand->number = g_ascii_digit_value (operand_string[1]);
 
 			/* Check to see if it's valid */
-			if (operand->number >= 0 && operand->number < REGISTER_COUNT) {
+			if (operand->number < REGISTER_COUNT) {
 				g_free (operand_string);
 				return TRUE;
 			}
@@ -413,12 +366,8 @@ gboolean
 mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 {
 	/* Set up parser variables */
-	self->priv->label_count = 0;
-	self->priv->instruction_count = 0;
-	self->priv->labels = NULL;
-	self->priv->instructions = NULL;
-	self->priv->code = code;
-	self->priv->i = code;
+	reset_state (self);
+	self->priv->i = (gchar*)code;
 
 	while (self->priv->i != NULL) {
 		MCUSInstruction instruction;
@@ -428,21 +377,22 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 		if (extract_instruction (self, &(instruction.type), NULL) == TRUE) {
 			/* Instruction */
 			guint i;
-			MCUSInstructionData *instruction_data = &(mcus_instruction_data[instruction.type]);
+			const MCUSInstructionData *instruction_data = &(mcus_instruction_data[instruction.type]);
 
-			for (i = 0; i < instruction_data.operand_count; i++) {
+			for (i = 0; i < instruction_data->operand_count; i++) {
 				MCUSOperand operand;
+
 				if (extract_operand (self, &operand, &child_error) == TRUE) {
 					/* Check the operand's type is valid */
-					if (instruction_data->operand_types[f] == OPERAND_LABEL &&
+					if ((instruction_data->operand_types[i] == OPERAND_LABEL &&
 					    (operand.type != OPERAND_CONSTANT ||
-					    operand.type != OPERAND_LABEL) ||
-					    instruction_data->operand_types[f] != OPERAND_LABEL &&
-					    operand.type != instruction_data.operand_types[f]) {
+					    operand.type != OPERAND_LABEL)) ||
+					    (instruction_data->operand_types[i] != OPERAND_LABEL &&
+					    operand.type != instruction_data->operand_types[i])) {
 						g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND_TYPE,
-							     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u.",
+							     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u."),
 							     operand_type_to_string (operand.type),
-							     operand_type_to_string (instruction_data->operand_types[f]),
+							     operand_type_to_string (instruction_data->operand_types[i]),
 							     self->priv->line_number);
 						return FALSE;
 					}
@@ -457,12 +407,7 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 				}
 			}
 
-			if (store_instruction (self, &instruction, &child_error) == FALSE) {
-				/* Throw the error */
-				g_propagate_error (error, child_error);
-				return FALSE;
-			}
-
+			store_instruction (self, &instruction);
 			skip_whitespace (self, TRUE);
 		} else if (extract_label (self, &label, &child_error) == TRUE) {
 			/* Label */
@@ -487,12 +432,11 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 	self->priv->compiled_size = PROGRAM_START_ADDRESS;
 
 	for (i = 0; i < self->priv->instruction_count; i++) {
-		guint f;
-		gchar projected_size;
-		MCUSInstructionData *instruction_data;
+		guint f, projected_size;
+		const MCUSInstructionData *instruction_data;
 		MCUSInstruction *instruction;
 
-		instruction = self->priv->instructions[i];
+		instruction = &(self->priv->instructions[i]);
 		instruction_data = &(mcus_instruction_data[instruction->type]);
 
 		/* Check we're not overflowing memory */
@@ -502,7 +446,7 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 
 		if (projected_size >= MEMORY_SIZE) {
 			g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_MEMORY_OVERFLOW,
-				     _("Instruction %u overflows the microcontroller memory.",
+				     _("Instruction %u overflows the microcontroller memory."),
 				     i);
 			return FALSE;
 		}
@@ -539,17 +483,8 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 		}
 	}
 
-	/* Free labels and instructions and reset state */
-	for (i = 0; i < self->priv->label_count; i++)
-		g_free (self->priv->labels[i].label);
+	reset_state (self);
 
-	g_free (self->priv->labels);
-	g_free (self->priv->instructions);
-
-	self->priv->label_count = 0;
-	self->priv->instruction_count = 0;
-	self->priv->compiled_size = 0;
-
-	self->priv->code = NULL;
-	self->priv->i = NULL;
+	return TRUE;
 }
+

@@ -86,7 +86,7 @@ const MCUSInstructionData mcus_instruction_data[] = {
 	{ INSTRUCTION_RET,	"RET",		0,		{  } },
 	{ INSTRUCTION_SHL,	"SHL",		1,		{ OPERAND_REGISTER, } },
 	{ INSTRUCTION_SHR,	"SHR",		1,		{ OPERAND_REGISTER, } }
-}
+};
 
 G_END_DECLS
 

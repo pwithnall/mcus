@@ -48,7 +48,6 @@ typedef struct _MCUSParserPrivate	MCUSParserPrivate;
 typedef struct {
 	GObject parent;
 	MCUSParserPrivate *priv;
-	/* TODO */
 } MCUSParser;
 
 typedef struct {

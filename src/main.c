@@ -43,7 +43,6 @@ main (int argc, char *argv[])
 	GOptionContext *context;
 	GError *error = NULL;
 	gboolean debug = FALSE;
-	gchar *db_filename;
 
 	const GOptionEntry options[] = {
 		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, N_("Enable debug mode"), NULL },
@@ -87,8 +86,8 @@ main (int argc, char *argv[])
 	mcus->debug = debug;
 
 	/* Create and show the interface */
-	mcus_create_interface ();
-	gtk_widget_show_all (mcus->main_window);
+	/*mcus_create_interface ();
+	gtk_widget_show_all (mcus->main_window);*/
 
 	gtk_main ();
 	return 0;

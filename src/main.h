@@ -32,13 +32,13 @@ G_BEGIN_DECLS
 typedef struct {
 	GtkWidget *main_window;
 
-	gchar program_counter;
-	gchar stack_pointer;
-	gchar registers[REGISTER_COUNT];
-	gchar input_port;
-	gchar output_port;
-	gchar memory[MEMORY_SIZE];
-	glong clock_speed;
+	guchar program_counter;
+	guchar stack_pointer;
+	guchar registers[REGISTER_COUNT];
+	guchar input_port;
+	guchar output_port;
+	guchar memory[MEMORY_SIZE];
+	gulong clock_speed;
 
 	/* TODO: Analogue input */
 

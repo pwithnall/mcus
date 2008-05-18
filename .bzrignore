@@ -23,3 +23,5 @@ aclocal.m4
 autom4te.cache
 config.guess
 config.h
+.libs
+src/mcus

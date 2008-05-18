@@ -20,7 +20,10 @@ mcus_SOURCES = \
 	main.c			\
 	main.h			\
 	interface.c		\
-	interface.h
+	interface.h		\
+	parser.c		\
+	parser.h		\
+	instructions.h
 
 mcus_LDFLAGS = 
 mcus_LDADD = $(STANDARD_LIBS)

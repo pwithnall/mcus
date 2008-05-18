@@ -1,3 +1,7 @@
+2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* LINGUAS: Removed non-existent translation.
+
 2008-05-17  Philip Withnall  <philip@tecnocode.co.uk>
 
 	Initial commit.

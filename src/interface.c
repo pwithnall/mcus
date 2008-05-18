@@ -22,7 +22,6 @@
 
 #include "config.h"
 #include "main.h"
-#include "main-window.h"
 #include "interface.h"
 
 GtkWidget *
@@ -57,7 +56,7 @@ mcus_create_interface (void)
 	/* Set up the main window */
 	/* TODO: This is horrible */
 	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (builder, "mcus_main_window"));
-	mcus_main_window_setup (builder);
+	/*mcus_main_window_setup (builder);*/
 
 	g_object_unref (builder);
 
