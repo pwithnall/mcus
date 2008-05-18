@@ -1,5 +1,10 @@
 2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/parser.c:
+	* src/parser.h: Converted the parser to use GErrors appropriately.
+
+2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* .bzrignore: Ignored a load of files.
 	* src/instruction.c:
 	* src/instruction.h:

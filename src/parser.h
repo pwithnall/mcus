@@ -32,6 +32,14 @@ G_BEGIN_DECLS
 #define MCUS_IS_PARSER_CLASS(k)		(G_TYPE_CHECK_CLASS_TYPE ((k), MCUS_TYPE_PARSER))
 #define MCUS_PARSER_GET_CLASS(o)	(G_TYPE_INSTANCE_GET_CLASS ((o), MCUS_TYPE_PARSER, MCUSParserClass))
 
+#define MCUS_PARSER_ERROR		(mcus_parser_error_quark ())
+
+enum {
+	MCUS_PARSER_ERROR_INVALID_LABEL,
+	MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
+	MCUS_PARSER_ERROR_INVALID_OPERAND
+};
+
 typedef struct _MCUSParserPrivate	MCUSParserPrivate;
 
 typedef struct {
@@ -45,6 +53,7 @@ typedef struct {
 } MCUSParserClass;
 
 GType mcus_parser_get_type (void);
+GQuark mcus_parser_error_quark (void);
 gboolean mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error);
 gboolean mcus_parser_compile (MCUSParser *self, GError **error);
 
