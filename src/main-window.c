@@ -33,14 +33,14 @@ mw_about_activate_cb (GtkAction *self, gpointer user_data)
 
 	parser = mcus_parser_new ();
 	mcus_parser_parse (parser, "\n\
-MOVI S1, 05\n\
-MOVI S0, 00\n\
-loop:\n\
+MOVI S1, 05 ; foobar comment\n\
+MOVI S0, 00	; asd9;asd09ua9dj\n\
+loop:;asdoijasi\n\
 INC S0\n\
 OUT Q, S0\n\
 MOV S0, S2\n\
 EOR S2, S1\n\
-JNZ loop", &error);
+JNZ loop;asd809u", &error);
 	if (error != NULL)
 		g_error (error->message);
 

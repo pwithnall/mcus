@@ -241,17 +241,44 @@ store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 		self->priv->compiled_size += mcus_instruction_data[instruction->type].operand_count;
 }
 
-/* TODO: For the moment, I'm ignoring comments, but support for them will have to be included eventually */
 /* TODO: Subroutine support */
 
 static void
 skip_whitespace (MCUSParser *self, gboolean skip_newlines, gboolean skip_commas)
 {
-	while (*(self->priv->i) == ' ' ||
-	       *(self->priv->i) == '\t' ||
-	       (*(self->priv->i) == '\n' && skip_newlines == TRUE && self->priv->line_number++) ||
-	       (*(self->priv->i) == ',' && skip_commas == TRUE)) {
-		self->priv->i++;
+	gboolean in_comment = FALSE;
+
+	while (*(self->priv->i) != '\0') {
+		gchar current = *(self->priv->i);
+
+		switch (current) {
+		case ';':
+			in_comment = TRUE;
+		case ' ':
+		case '\t':
+			self->priv->i++;
+			break;
+		case '\n':
+			in_comment = FALSE;
+			if (skip_newlines == TRUE) {
+				self->priv->i++;
+				self->priv->line_number++;
+				break;
+			}
+			return;
+		case ',':
+			if (skip_commas == TRUE) {
+				self->priv->i++;
+				break;
+			}
+			return;
+		default:
+			if (in_comment == TRUE) {
+				self->priv->i++;
+				break;
+			}
+			return;
+		}
 	}
 }
 
@@ -265,6 +292,7 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 	while (*(self->priv->i + length) != ' ' &&
 	       *(self->priv->i + length) != '\t' &&
 	       *(self->priv->i + length) != '\n' &&
+	       *(self->priv->i + length) != ';' &&
 	       *(self->priv->i + length) != '\0') {
 		length++;
 	}
@@ -314,6 +342,7 @@ extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type, GE
 	    (*(self->priv->i + length) != ' ' &&
 	    *(self->priv->i + length) != '\t' &&
 	    *(self->priv->i + length) != '\n' &&
+	    *(self->priv->i + length) != ';' &&
 	    *(self->priv->i + length) != '\0')) {
 		instruction_type = NULL;
 		g_memmove (following_section, self->priv->i + length, 4);
@@ -361,6 +390,7 @@ extract_operand (MCUSParser *self, MCUSOperand *operand, GError **error)
 	       *(self->priv->i + length) != ' ' &&
 	       *(self->priv->i + length) != '\t' &&
 	       *(self->priv->i + length) != '\n' &&
+	       *(self->priv->i + length) != ';' &&
 	       *(self->priv->i + length) != '\0') {
 		length++;
 	}
@@ -452,7 +482,7 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 
 	skip_whitespace (self, TRUE, FALSE);
 
-	while (self->priv->i != NULL) {
+	while (*(self->priv->i) != '\0') {
 		MCUSInstruction instruction;
 		MCUSLabel label;
 		GError *child_error = NULL;
@@ -515,8 +545,6 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 
 	return TRUE;
 }
-
-/* TODO: Line numbers */
 
 gboolean
 mcus_parser_compile (MCUSParser *self, GError **error)

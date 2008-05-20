@@ -1,6 +1,12 @@
 2008-05-20  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/main-window.c:
+	* src/parser.c: Added support for parsing (and ignoring) comments,
+	and updated the test program accordingly.
+
+2008-05-20  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/main-window.c:
 	* src/main-window.h:
 	* src/Makefile.am:
 	* data/mcus.ui: Some initial work on a basic UI, as well as a small
