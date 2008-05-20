@@ -17,41 +17,13 @@
  * along with MCUS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtk/gtk.h>
 #include <glib.h>
 
-#ifndef MCUS_MAIN_H
-#define MCUS_MAIN_H
+#ifndef MCUS_MAIN_WINDOW_H
+#define MCUS_MAIN_WINDOW_H
 
 G_BEGIN_DECLS
 
-#define REGISTER_COUNT 8
-#define MEMORY_SIZE 256
-#define PROGRAM_START_ADDRESS 0
-
-typedef struct {
-	GtkWidget *main_window;
-
-	guchar program_counter;
-	guchar stack_pointer;
-	gboolean zero_flag;
-	guchar registers[REGISTER_COUNT];
-	guchar input_port;
-	guchar output_port;
-	guchar memory[MEMORY_SIZE];
-	gulong clock_speed;
-
-	/* TODO: Analogue input */
-
-	gboolean debug;
-} MCUS;
-
-MCUS *mcus;
-
-gboolean mcus_iterate_simulation (void);
-void mcus_print_debug_data (void);
-void mcus_quit (void);
-
 G_END_DECLS
 
-#endif /* MCUS_MAIN_H */
+#endif /* !MCUS_MAIN_WINDOW_H */

@@ -56,6 +56,8 @@ typedef struct {
 
 GType mcus_parser_get_type (void);
 GQuark mcus_parser_error_quark (void);
+
+MCUSParser *mcus_parser_new (void);
 gboolean mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error);
 gboolean mcus_parser_compile (MCUSParser *self, GError **error);
 

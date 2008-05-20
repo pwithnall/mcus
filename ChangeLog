@@ -1,4 +1,19 @@
-2088-05-18  Philip Withnall  <philip@tecnocode.co.uk>
+2008-05-20  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/main-window.c:
+	* src/main-window.h:
+	* src/Makefile.am:
+	* data/mcus.ui: Some initial work on a basic UI, as well as a small
+	test program.
+	* src/instructions.h:
+	* src/main.c:
+	* src/main.h:
+	* src/parser.c:
+	* src/parser.h: Fixes for small parser bugs and the introduction of
+	simulation iteration. The system has now been tested with a few
+	small programs, and so far seems to work through them properly.
+
+2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* .bzrignore: Ignored some more files.
 	* src/Makefile.am:

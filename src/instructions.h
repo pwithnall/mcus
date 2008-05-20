@@ -62,31 +62,12 @@ typedef enum {
 
 typedef struct {
 	MCUSInstructionType opcode;
-	gchar *instruction_name;
+	gchar *name;
 	guint operand_count;
 	MCUSOperandType operand_types[MAX_OPERAND_COUNT];
 } MCUSInstructionData;
 
-const MCUSInstructionData mcus_instruction_data[] = {
-	/* Instruction type,	name,		operand count,	operand types */
-	{ INSTRUCTION_MOVI,	"MOVI",		2,		{ OPERAND_REGISTER,	OPERAND_CONSTANT } },
-	{ INSTRUCTION_MOV,	"MOV",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_ADD,	"ADD",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_SUB,	"SUB",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_AND,	"AND",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_EOR,	"EOR",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_INC,	"INC",		1,		{ OPERAND_REGISTER, } },
-	{ INSTRUCTION_DEC,	"DEC",		1,		{ OPERAND_REGISTER, } },
-	{ INSTRUCTION_IN,	"IN",		2,		{ OPERAND_REGISTER,	OPERAND_INPUT } },
-	{ INSTRUCTION_OUT,	"OUT",		2,		{ OPERAND_OUTPUT,	OPERAND_REGISTER } },
-	{ INSTRUCTION_JP,	"JP",		1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_JZ,	"JZ",		1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_JNZ,	"JNZ",		1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_RCALL,	"RCALL",	1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_RET,	"RET",		0,		{  } },
-	{ INSTRUCTION_SHL,	"SHL",		1,		{ OPERAND_REGISTER, } },
-	{ INSTRUCTION_SHR,	"SHR",		1,		{ OPERAND_REGISTER, } }
-};
+extern const MCUSInstructionData mcus_instruction_data[];
 
 G_END_DECLS
 

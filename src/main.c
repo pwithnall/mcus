@@ -21,9 +21,151 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
+#include <glib/gprintf.h>
 
 #include "main.h"
 #include "interface.h"
+#include "instructions.h"
+
+gboolean
+mcus_iterate_simulation (void)
+{
+	guchar instruction, operand1, operand2;
+
+	/* Can't check it with >= as it does a check against guchar, which
+	 * is always true due to the datatype's range. */
+	if (mcus->program_counter + 1 > MEMORY_SIZE)
+		return FALSE;
+
+	instruction = mcus->memory[mcus->program_counter];
+	operand1 = (mcus->program_counter + 1 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+1] : 0;
+	operand2 = (mcus->program_counter + 2 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+2] : 0;
+
+	switch (instruction) {
+	case INSTRUCTION_MOVI:
+		mcus->registers[operand1] = operand2;
+		break;
+	case INSTRUCTION_MOV:
+		mcus->registers[operand1] = mcus->registers[operand2];
+		break;
+	case INSTRUCTION_ADD:
+		mcus->registers[operand1] += mcus->registers[operand2];
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_SUB:
+		mcus->registers[operand1] -= mcus->registers[operand2];
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_AND:/*?*/
+		mcus->registers[operand1] &= mcus->registers[operand2];
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_EOR:/*?*/
+		mcus->registers[operand1] ^= mcus->registers[operand2];
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_INC:
+		mcus->registers[operand1] += 1;
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_DEC:
+		mcus->registers[operand1] -= 1;
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_IN:
+		mcus->registers[operand1] = mcus->input_port; /* only one operand is stored */
+		break;
+	case INSTRUCTION_OUT:
+		mcus->output_port = mcus->registers[operand1]; /* only one operand is stored */
+		break;
+	case INSTRUCTION_JP:
+		mcus->program_counter = operand1;
+		return TRUE;
+	case INSTRUCTION_JZ:
+		if (mcus->zero_flag == TRUE) {
+			mcus->program_counter = operand1;
+			return TRUE;
+		}
+		break;
+	case INSTRUCTION_JNZ:
+		if (mcus->zero_flag == FALSE) {
+			mcus->program_counter = operand1;
+			return TRUE;
+		}
+		break;
+	case INSTRUCTION_RCALL:
+		/* TODO: Check for overflows */
+		mcus->memory[++mcus->stack_pointer] = mcus->program_counter;
+		mcus->program_counter = operand1;
+		return TRUE;
+	case INSTRUCTION_RET:
+		/* TODO: Check for underflows */
+		mcus->program_counter = mcus->memory[mcus->stack_pointer--];
+		return TRUE;
+	case INSTRUCTION_SHL:
+		mcus->registers[operand1] <<= 1;
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	case INSTRUCTION_SHR:
+		mcus->registers[operand1] >>= 1;
+		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
+		break;
+	default:
+		/* We've encountered some data? */
+		/* TODO: Error */
+		return FALSE;
+	}
+
+	/* Don't forget to increment the PC */
+	mcus->program_counter++;
+	if (instruction == INSTRUCTION_IN || instruction == INSTRUCTION_OUT)
+		mcus->program_counter++;
+	else
+		mcus->program_counter += mcus_instruction_data[instruction].operand_count;
+
+	return TRUE;
+}
+
+void
+mcus_print_debug_data (void)
+{
+	guint i;
+
+	if (mcus->debug == FALSE)
+		return;
+
+	/* General data */
+	g_printf ("Program counter: %02X\nStack pointer: %02X\nZero flag: %u\nClock speed: %lu\n",
+		 (guint)mcus->program_counter,
+		 (guint)mcus->stack_pointer,
+		 (mcus->zero_flag == TRUE) ? 1 : 0,
+		 mcus->clock_speed);
+
+	/* Registers */
+	g_printf ("Registers:");
+	for (i = 0; i < REGISTER_COUNT; i++)
+		g_printf (" %02X", (guint)mcus->registers[i]);
+	g_printf ("\n");
+
+	/* Ports */
+	g_printf ("Input port: %02X\nOutput port: %02X\nADC: %u\n",
+		 (guint)mcus->input_port,
+		 (guint)mcus->output_port,
+		 0 /* TODO */);
+
+	/* Memory */
+	g_printf ("Memory:\n");
+	for (i = 0; i < MEMORY_SIZE; i++) {
+		if (i == mcus->program_counter)
+			g_printf ("\033[1m%02X\033[0m ", (guint)mcus->memory[i]);
+		else
+			g_printf ("%02X ", (guint)mcus->memory[i]);
+
+		if (i % 16 == 15)
+			g_printf ("\n");
+	}
+	g_printf ("\n");
+}
 
 void
 mcus_quit (void)
@@ -86,8 +228,8 @@ main (int argc, char *argv[])
 	mcus->debug = debug;
 
 	/* Create and show the interface */
-	/*mcus_create_interface ();
-	gtk_widget_show_all (mcus->main_window);*/
+	mcus_create_interface ();
+	gtk_widget_show_all (mcus->main_window);
 
 	gtk_main ();
 	return 0;

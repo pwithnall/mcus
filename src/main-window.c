@@ -17,41 +17,41 @@
  * along with MCUS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtk/gtk.h>
 #include <glib.h>
+#include <gtk/gtk.h>
 
-#ifndef MCUS_MAIN_H
-#define MCUS_MAIN_H
+#include "parser.h"
+#include "main.h"
 
-G_BEGIN_DECLS
+void
+mw_about_activate_cb (GtkAction *self, gpointer user_data)
+{
+	MCUSParser *parser;
+	GError *error = NULL;
 
-#define REGISTER_COUNT 8
-#define MEMORY_SIZE 256
-#define PROGRAM_START_ADDRESS 0
+	mcus_print_debug_data ();
 
-typedef struct {
-	GtkWidget *main_window;
+	parser = mcus_parser_new ();
+	mcus_parser_parse (parser, "\n\
+MOVI S1, 05\n\
+MOVI S0, 00\n\
+loop:\n\
+INC S0\n\
+OUT Q, S0\n\
+MOV S0, S2\n\
+EOR S2, S1\n\
+JNZ loop", &error);
+	if (error != NULL)
+		g_error (error->message);
 
-	guchar program_counter;
-	guchar stack_pointer;
-	gboolean zero_flag;
-	guchar registers[REGISTER_COUNT];
-	guchar input_port;
-	guchar output_port;
-	guchar memory[MEMORY_SIZE];
-	gulong clock_speed;
+	mcus_parser_compile (parser, &error);
+	if (error != NULL)
+		g_error (error->message);
 
-	/* TODO: Analogue input */
+	mcus_print_debug_data ();
 
-	gboolean debug;
-} MCUS;
-
-MCUS *mcus;
-
-gboolean mcus_iterate_simulation (void);
-void mcus_print_debug_data (void);
-void mcus_quit (void);
-
-G_END_DECLS
-
-#endif /* MCUS_MAIN_H */
+	while (mcus->zero_flag == FALSE) {
+		mcus_iterate_simulation ();
+		mcus_print_debug_data ();
+	}
+}
