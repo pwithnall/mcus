@@ -25,8 +25,18 @@
 
 G_BEGIN_DECLS
 
+#define MCUS_SIMULATION_ERROR		(mcus_simulation_error_quark ())
+
+enum {
+	MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
+	MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
+	MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
+	MCUS_SIMULATION_ERROR_INVALID_INSTRUCTION
+};
+
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
+#define STACK_SIZE 50
 #define PROGRAM_START_ADDRESS 0
 
 typedef struct {
@@ -38,17 +48,20 @@ typedef struct {
 	guchar registers[REGISTER_COUNT];
 	guchar input_port;
 	guchar output_port;
+	gfloat analogue_input;
 	guchar memory[MEMORY_SIZE];
+	guchar stack[STACK_SIZE];
 	gulong clock_speed;
 
-	/* TODO: Analogue input */
-
 	gboolean debug;
+	guint iteration;
 } MCUS;
 
 MCUS *mcus;
 
-gboolean mcus_iterate_simulation (void);
+GQuark mcus_simulation_error_quark (void);
+void mcus_initialise_simulation (gulong clock_speed);
+gboolean mcus_iterate_simulation (GError **error);
 void mcus_print_debug_data (void);
 void mcus_quit (void);
 

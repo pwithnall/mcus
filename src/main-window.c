@@ -50,8 +50,7 @@ JNZ loop;asd809u", &error);
 
 	mcus_print_debug_data ();
 
-	while (mcus->zero_flag == FALSE) {
-		mcus_iterate_simulation ();
+	while (mcus->zero_flag == FALSE && mcus_iterate_simulation (NULL) == TRUE) {
 		mcus_print_debug_data ();
 	}
 }

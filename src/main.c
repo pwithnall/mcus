@@ -27,15 +27,52 @@
 #include "interface.h"
 #include "instructions.h"
 
+GQuark
+mcus_simulation_error_quark (void)
+{
+	static GQuark q = 0;
+
+	if (q == 0)
+		q = g_quark_from_static_string ("mcus-simulation-error-quark");
+
+	return q;
+}
+
+void
+mcus_initialise_simulation (gulong clock_speed)
+{
+	guint i;
+
+	mcus->iteration = 0;
+	mcus->program_counter = PROGRAM_START_ADDRESS;
+	mcus->stack_pointer = 0;
+	mcus->zero_flag = 0;
+	mcus->input_port = 0;
+	mcus->output_port = 0;
+	mcus->analogue_input = 0.0;
+	mcus->clock_speed = clock_speed;
+
+	for (i = 0; i < REGISTER_COUNT; i++)
+		mcus->registers[i] = 0;
+	for (i = 0; i < STACK_SIZE; i++)
+		mcus->stack[i] = 0;
+}
+
 gboolean
-mcus_iterate_simulation (void)
+mcus_iterate_simulation (GError **error)
 {
 	guchar instruction, operand1, operand2;
 
+	mcus->iteration++;
+
 	/* Can't check it with >= as it does a check against guchar, which
 	 * is always true due to the datatype's range. */
-	if (mcus->program_counter + 1 > MEMORY_SIZE)
+	if (mcus->program_counter + 1 > MEMORY_SIZE) {
+		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
+			     _("The program counter overflowed available memory in simulation iteration %u."),
+			     mcus->iteration);
 		return FALSE;
+	}
 
 	instruction = mcus->memory[mcus->program_counter];
 	operand1 = (mcus->program_counter + 1 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+1] : 0;
@@ -56,11 +93,11 @@ mcus_iterate_simulation (void)
 		mcus->registers[operand1] -= mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_AND:/*?*/
+	case INSTRUCTION_AND:
 		mcus->registers[operand1] &= mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_EOR:/*?*/
+	case INSTRUCTION_EOR:
 		mcus->registers[operand1] ^= mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
@@ -94,13 +131,27 @@ mcus_iterate_simulation (void)
 		}
 		break;
 	case INSTRUCTION_RCALL:
-		/* TODO: Check for overflows */
-		mcus->memory[++mcus->stack_pointer] = mcus->program_counter;
+		/* Check for overflows */
+		if (mcus->stack_pointer == STACK_SIZE) {
+			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
+				     _("The stack pointer overflowed available stack space in simulation iteration %u."),
+				     mcus->iteration);
+			return FALSE;
+		}
+
+		mcus->stack[mcus->stack_pointer++] = mcus->program_counter;
 		mcus->program_counter = operand1;
 		return TRUE;
 	case INSTRUCTION_RET:
-		/* TODO: Check for underflows */
-		mcus->program_counter = mcus->memory[mcus->stack_pointer--];
+		/* Check for underflows */
+		if (mcus->stack_pointer == 0) {
+			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
+				     _("The stack pointer underflowed available stack space in simulation iteration %u."),
+				     mcus->iteration);
+			return FALSE;
+		}
+
+		mcus->program_counter = mcus->memory[--mcus->stack_pointer];
 		return TRUE;
 	case INSTRUCTION_SHL:
 		mcus->registers[operand1] <<= 1;
@@ -112,16 +163,15 @@ mcus_iterate_simulation (void)
 		break;
 	default:
 		/* We've encountered some data? */
-		/* TODO: Error */
+		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_INVALID_INSTRUCTION,
+			     _("An invalid instruction was encountered at address %02X in simulation iteration %u."),
+			     (guint)mcus->program_counter,
+			     mcus->iteration);
 		return FALSE;
 	}
 
 	/* Don't forget to increment the PC */
-	mcus->program_counter++;
-	if (instruction == INSTRUCTION_IN || instruction == INSTRUCTION_OUT)
-		mcus->program_counter++;
-	else
-		mcus->program_counter += mcus_instruction_data[instruction].operand_count;
+	mcus->program_counter += mcus_instruction_data[instruction].size;
 
 	return TRUE;
 }
@@ -147,11 +197,17 @@ mcus_print_debug_data (void)
 		g_printf (" %02X", (guint)mcus->registers[i]);
 	g_printf ("\n");
 
+	/* Stack */
+	g_printf ("Stack:");
+	for (i = 0; i < STACK_SIZE; i++)
+		g_printf (" %02X", (guint)mcus->stack[i]);
+	g_printf ("\n");
+
 	/* Ports */
-	g_printf ("Input port: %02X\nOutput port: %02X\nADC: %u\n",
+	g_printf ("Input port: %02X\nOutput port: %02X\nADC: %f\n",
 		 (guint)mcus->input_port,
 		 (guint)mcus->output_port,
-		 0 /* TODO */);
+		 mcus->analogue_input);
 
 	/* Memory */
 	g_printf ("Memory:\n");

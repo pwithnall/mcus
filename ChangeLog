@@ -1,3 +1,12 @@
+2008-05-21  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/instructions.h:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h:
+	* src/parser.c: Add support for subroutines and clean up code which
+	determines instruction size a little.
+
 2008-05-20  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/main-window.c:

@@ -45,24 +45,29 @@ typedef struct {
 } MCUSInstruction;
 
 const MCUSInstructionData mcus_instruction_data[] = {
-	/* Instruction type,	name,		operand count,	operand types */
-	{ INSTRUCTION_MOVI,	"MOVI",		2,		{ OPERAND_REGISTER,	OPERAND_CONSTANT } },
-	{ INSTRUCTION_MOV,	"MOV",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_ADD,	"ADD",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_SUB,	"SUB",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_AND,	"AND",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_EOR,	"EOR",		2,		{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ INSTRUCTION_INC,	"INC",		1,		{ OPERAND_REGISTER, } },
-	{ INSTRUCTION_DEC,	"DEC",		1,		{ OPERAND_REGISTER, } },
-	{ INSTRUCTION_IN,	"IN",		2,		{ OPERAND_REGISTER,	OPERAND_INPUT } },
-	{ INSTRUCTION_OUT,	"OUT",		2,		{ OPERAND_OUTPUT,	OPERAND_REGISTER } },
-	{ INSTRUCTION_JP,	"JP",		1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_JZ,	"JZ",		1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_JNZ,	"JNZ",		1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_RCALL,	"RCALL",	1,		{ OPERAND_LABEL, } },
-	{ INSTRUCTION_RET,	"RET",		0,		{  } },
-	{ INSTRUCTION_SHL,	"SHL",		1,		{ OPERAND_REGISTER, } },
-	{ INSTRUCTION_SHR,	"SHR",		1,		{ OPERAND_REGISTER, } }
+	/* Instruction type,	name,		operand count,	size (bytes),		operand types */
+	{ INSTRUCTION_MOVI,	"MOVI",		2,		3,			{ OPERAND_REGISTER,	OPERAND_CONSTANT } },
+	{ INSTRUCTION_MOV,	"MOV",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_ADD,	"ADD",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_SUB,	"SUB",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_AND,	"AND",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_EOR,	"EOR",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
+	{ INSTRUCTION_INC,	"INC",		1,		2,			{ OPERAND_REGISTER, } },
+	{ INSTRUCTION_DEC,	"DEC",		1,		2,			{ OPERAND_REGISTER, } },
+	{ INSTRUCTION_IN,	"IN",		2,		2, /* <-- special */	{ OPERAND_REGISTER,	OPERAND_INPUT } },
+	{ INSTRUCTION_OUT,	"OUT",		2,		2, /* <-- special */	{ OPERAND_OUTPUT,	OPERAND_REGISTER } },
+	{ INSTRUCTION_JP,	"JP",		1,		2,			{ OPERAND_LABEL, } },
+	{ INSTRUCTION_JZ,	"JZ",		1,		2,			{ OPERAND_LABEL, } },
+	{ INSTRUCTION_JNZ,	"JNZ",		1,		2,			{ OPERAND_LABEL, } },
+	{ INSTRUCTION_RCALL,	"RCALL",	1,		2,			{ OPERAND_LABEL, } },
+	{ INSTRUCTION_RET,	"RET",		0,		1,			{  } },
+	{ INSTRUCTION_SHL,	"SHL",		1,		2,			{ OPERAND_REGISTER, } },
+	{ INSTRUCTION_SHR,	"SHR",		1,		2,			{ OPERAND_REGISTER, } },
+
+	/* Subroutines */
+	{ SUBROUTINE_READTABLE,	"readtable",	0,		1,			{  } },
+	{ SUBROUTINE_WAIT1MS,	"wait1ms",	0,		1,			{  } },
+	{ SUBROUTINE_READADC,	"readadc",	0,		1,			{  } }
 };
 
 static void mcus_parser_init (MCUSParser *self);
@@ -234,11 +239,7 @@ store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 	g_memmove (&(self->priv->instructions[self->priv->instruction_count-1]), instruction, sizeof (MCUSInstruction));
 
 	/* Increase the compiled size */
-	self->priv->compiled_size++;
-	if (instruction->type == INSTRUCTION_IN || instruction->type == INSTRUCTION_OUT)
-		self->priv->compiled_size++;
-	else
-		self->priv->compiled_size += mcus_instruction_data[instruction->type].operand_count;
+	self->priv->compiled_size += mcus_instruction_data[instruction->type].size;
 }
 
 /* TODO: Subroutine support */
@@ -327,7 +328,7 @@ extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type, GE
 	guint i, length = 0;
 	gchar following_section[5] = { '\0', };
 
-	while (g_ascii_isalpha (*(self->priv->i + length)) == TRUE &&
+	while (g_ascii_isalnum (*(self->priv->i + length)) == TRUE &&
 	       length < MAX_INSTRUCTION_LENGTH) {
 		instruction[length] = *(self->priv->i + length);
 		length++;
@@ -561,9 +562,7 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 		instruction_data = &(mcus_instruction_data[instruction->type]);
 
 		/* Check we're not overflowing memory */
-		projected_size = self->priv->compiled_size + 1 + instruction_data->operand_count;
-		if (instruction->type == INSTRUCTION_IN || instruction->type == INSTRUCTION_OUT)
-			projected_size--;
+		projected_size = self->priv->compiled_size + instruction_data->size;
 
 		if (projected_size >= MEMORY_SIZE) {
 			g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_MEMORY_OVERFLOW,

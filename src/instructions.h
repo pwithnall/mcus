@@ -25,7 +25,7 @@
 G_BEGIN_DECLS
 
 /* Maximum instruction opcode length in characters */
-#define MAX_INSTRUCTION_LENGTH 5
+#define MAX_INSTRUCTION_LENGTH 9
 
 /* Maximum number of operands for an instruction */
 #define MAX_OPERAND_COUNT 2
@@ -49,7 +49,12 @@ typedef enum {
 	INSTRUCTION_RCALL,	/* RCALL s	Push the program counter onto the stack to store the return address and then jump to label s */
 	INSTRUCTION_RET,	/* RET		Pop the program counter from the stack to return to the place the subroutine was called from */
 	INSTRUCTION_SHL,	/* SHL Sd	Shift the byte in Sd one bit left putting a 0 into the lsb */
-	INSTRUCTION_SHR		/* SHR Sd	Shift the byte in Sd one bit right putting a 0 into the msb */
+	INSTRUCTION_SHR,	/* SHR Sd	Shift the byte in Sd one bit right putting a 0 into the msb */
+
+	SUBROUTINE_READTABLE,	/* Copies the byte in the lookup table pointed at by S7 into S0. The lookup table is
+				 * labelled table: when S7=0 the first byte from the table is returned in S0. */
+	SUBROUTINE_WAIT1MS,	/* Waits 1 ms before returning. */
+	SUBROUTINE_READADC	/* Returns a byte in S0 proportional to the voltage at ADC. */
 } MCUSInstructionType;
 
 typedef enum {
@@ -64,6 +69,7 @@ typedef struct {
 	MCUSInstructionType opcode;
 	gchar *name;
 	guint operand_count;
+	guint size;
 	MCUSOperandType operand_types[MAX_OPERAND_COUNT];
 } MCUSInstructionData;
 
