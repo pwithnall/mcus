@@ -18,6 +18,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <glib.h>
 
 #ifndef MCUS_INTERFACE_H
 #define MCUS_INTERFACE_H
@@ -30,6 +31,8 @@ void mcus_print_debug_data (void);
 void mcus_update_ui (void);
 void mcus_read_input_port (void);
 void mcus_read_analogue_input (void);
+void mcus_remove_tag (GtkTextTag *tag);
+void mcus_tag_range (GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
 
 G_END_DECLS
 

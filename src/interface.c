@@ -32,6 +32,7 @@
 GtkWidget *
 mcus_create_interface (void)
 {
+	GtkTextBuffer *text_buffer;
 	GError *error = NULL;
 
 	mcus->builder = gtk_builder_new ();
@@ -61,11 +62,16 @@ mcus_create_interface (void)
 	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mcus_main_window"));
 	mcus_update_ui ();
 
-	/* Create the current line source mark */
-	mcus->current_instruction_tag = gtk_text_buffer_create_tag (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")),
+	/* Create the highlighting tags */
+	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+	mcus->current_instruction_tag = gtk_text_buffer_create_tag (text_buffer,
 								    "current-instruction",
 								    "weight", PANGO_WEIGHT_BOLD,
 								    NULL);
+	mcus->error_tag = gtk_text_buffer_create_tag (text_buffer,
+						      "error",
+						      "background", "red",
+						      NULL);
 
 	return mcus->main_window;
 }
@@ -165,7 +171,6 @@ mcus_update_ui (void)
 	SET_SENSITIVITY ("mcus_copy_action")
 	SET_SENSITIVITY ("mcus_paste_action")
 	SET_SENSITIVITY ("mcus_delete_action")
-	SET_SENSITIVITY ("mcus_compile_action")
 
 	SET_SENSITIVITY2 ("mcus_run_action", mcus->simulation_state != SIMULATION_RUNNING)
 	SET_SENSITIVITY2 ("mcus_pause_action", mcus->simulation_state == SIMULATION_RUNNING)
@@ -207,3 +212,35 @@ mcus_read_analogue_input (void)
 	mcus->analogue_input = gtk_spin_button_get_value (GTK_SPIN_BUTTON (gtk_builder_get_object (mcus->builder, "mw_analogue_input_spin_button")));
 }
 
+void
+mcus_remove_tag (GtkTextTag *tag)
+{
+	GtkTextIter start_iter, end_iter;
+	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
+	gtk_text_buffer_remove_tag (text_buffer, tag, &start_iter, &end_iter);
+}
+
+void
+mcus_tag_range (GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences)
+{
+	GtkTextIter start_iter, end_iter;
+	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	/* Remove previous occurrences */
+	if (remove_previous_occurrences == TRUE) {
+		gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
+		gtk_text_buffer_remove_tag (text_buffer, tag, &start_iter, &end_iter);
+	}
+
+	/* Apply the new tag */
+	gtk_text_buffer_get_iter_at_offset (text_buffer,
+					    &start_iter,
+					    start_offset);
+	gtk_text_buffer_get_iter_at_offset (text_buffer,
+					    &end_iter,
+					    end_offset);
+
+	gtk_text_buffer_apply_tag (text_buffer, tag, &start_iter, &end_iter);
+}

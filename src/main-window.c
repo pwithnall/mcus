@@ -65,67 +65,6 @@ mw_delete_activate_cb (GtkAction *self, gpointer user_data)
 	gtk_text_buffer_delete_selection (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")), TRUE, TRUE);
 }
 
-void
-mw_compile_activate_cb (GtkAction *self, gpointer user_data)
-{
-	MCUSParser *parser;
-	GtkTextBuffer *code_buffer;
-	GtkTextIter start_iter, end_iter;
-	gchar *code;
-	GError *error = NULL;
-
-	/* Get the assembly code */
-	code_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-	gtk_text_buffer_get_bounds (code_buffer, &start_iter, &end_iter);
-	code = gtk_text_buffer_get_text (code_buffer, &start_iter, &end_iter, FALSE);
-
-	mcus_print_debug_data ();
-
-	/* Parse it */
-	parser = mcus_parser_new ();
-	mcus_parser_parse (parser, code, &error);
-
-	if (error != NULL) {
-		GtkWidget *error_dialog;
-		error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
-						       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-						       error->message);
-		gtk_dialog_run (GTK_DIALOG (error_dialog));
-
-		/* TODO: line highlighting, etc.? */
-
-		gtk_widget_destroy (error_dialog);
-		g_error_free (error);
-		g_object_unref (parser);
-		return;
-	}
-
-	g_free (code);
-	mcus_print_debug_data ();
-
-	/* Compile it */
-	mcus_parser_compile (parser, &error);
-
-	if (error != NULL) {
-		GtkWidget *error_dialog;
-		error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
-						       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-						       error->message);
-		gtk_dialog_run (GTK_DIALOG (error_dialog));
-
-		/* TODO: line highlighting, etc.? */
-
-		gtk_widget_destroy (error_dialog);
-		g_error_free (error);
-		g_object_unref (parser);
-
-		return;
-	}
-	g_object_unref (parser);
-
-	mcus_simulation_update_ui ();
-}
-
 static gboolean
 simulation_iterate_cb (gpointer user_data)
 {
@@ -145,15 +84,24 @@ simulation_iterate_cb (gpointer user_data)
 
 		if (error != NULL) {
 			GtkWidget *error_dialog;
+
+			/* Highlight the offending line */
+			mcus_tag_range (mcus->error_tag,
+					mcus->offset_map[mcus->program_counter].offset,
+					mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length,
+					FALSE);
+
+			/* Display an error message */
 			error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
 							       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
 							       error->message);
 			gtk_dialog_run (GTK_DIALOG (error_dialog));
 
-			/* TODO: Highlight the offending line */
-
 			gtk_widget_destroy (error_dialog);
 			g_error_free (error);
+		} else {
+			/* If we're finished, remove the current instruction tag */
+			mcus_remove_tag (mcus->current_instruction_tag);
 		}
 
 		return FALSE;
@@ -167,7 +115,40 @@ simulation_iterate_cb (gpointer user_data)
 void
 mw_run_activate_cb (GtkAction *self, gpointer user_data)
 {
-	/* Initialise */
+	MCUSParser *parser;
+	GtkTextBuffer *code_buffer;
+	GtkTextIter start_iter, end_iter;
+	gchar *code;
+	GtkWidget *error_dialog;
+	GError *error = NULL;
+
+	/* Remove previous errors */
+	mcus_remove_tag (mcus->error_tag);
+
+	/* Get the assembly code */
+	code_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+	gtk_text_buffer_get_bounds (code_buffer, &start_iter, &end_iter);
+	code = gtk_text_buffer_get_text (code_buffer, &start_iter, &end_iter, FALSE);
+
+	mcus_print_debug_data ();
+
+	/* Parse it */
+	parser = mcus_parser_new ();
+	mcus_parser_parse (parser, code, &error);
+
+	if (error != NULL)
+		goto parser_error;
+	g_free (code);
+	mcus_print_debug_data ();
+
+	/* Compile it */
+	mcus_parser_compile (parser, &error);
+
+	if (error != NULL)
+		goto parser_error;
+	g_object_unref (parser);
+
+	/* Initialise the simulator */
 	if (mcus->simulation_state == SIMULATION_STOPPED)
 		mcus_simulation_init ();
 	mcus_simulation_update_ui ();
@@ -178,6 +159,25 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 
 	/* Add the timeout for the simulation iterations */
 	g_timeout_add (mcus->clock_speed, (GSourceFunc)simulation_iterate_cb, NULL);
+
+	return;
+
+parser_error:
+	/* Highlight the offending line */
+	mcus_tag_range (mcus->error_tag,
+			mcus_parser_get_offset (parser),
+			mcus_parser_get_offset (parser) + PARSER_ERROR_CONTEXT_LENGTH,
+			FALSE);
+
+	/* Display an error message */
+	error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
+					       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+					       error->message);
+	gtk_dialog_run (GTK_DIALOG (error_dialog));
+
+	gtk_widget_destroy (error_dialog);
+	g_error_free (error);
+	g_object_unref (parser);
 }
 
 void

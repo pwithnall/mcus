@@ -65,6 +65,7 @@ typedef struct {
 	MCUSSimulationState simulation_state;
 	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
 	GtkTextTag *current_instruction_tag;
+	GtkTextTag *error_tag;
 } MCUS;
 
 MCUS *mcus;

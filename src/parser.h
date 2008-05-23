@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 #define MCUS_PARSER_GET_CLASS(o)	(G_TYPE_INSTANCE_GET_CLASS ((o), MCUS_TYPE_PARSER, MCUSParserClass))
 
 #define MCUS_PARSER_ERROR		(mcus_parser_error_quark ())
+#define PARSER_ERROR_CONTEXT_LENGTH	4
 
 enum {
 	MCUS_PARSER_ERROR_INVALID_LABEL,
@@ -60,6 +61,7 @@ GQuark mcus_parser_error_quark (void);
 MCUSParser *mcus_parser_new (void);
 gboolean mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error);
 gboolean mcus_parser_compile (MCUSParser *self, GError **error);
+guint mcus_parser_get_offset (MCUSParser *self);
 
 G_END_DECLS
 

@@ -87,7 +87,7 @@ struct _MCUSParserPrivate {
 	MCUSInstruction *instructions;
 	guint instruction_count;
 
-	gchar *code;
+	const gchar *code;
 	gchar *i;
 
 	guchar compiled_size;
@@ -308,8 +308,8 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 
 	/* Check we actually have a label to parse */
 	if (length == 0 || *(self->priv->i + length - 1) != ':') {
-		gchar following_section[5] = { '\0', };
-		g_memmove (following_section, self->priv->i, 4);
+		gchar following_section[PARSER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+		g_memmove (following_section, self->priv->i, PARSER_ERROR_CONTEXT_LENGTH);
 
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_LABEL,
 			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u before \"%s\"."),
@@ -327,66 +327,6 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 	label->address = self->priv->compiled_size;
 
 	return TRUE;
-}
-
-/* TODO: Take an MCUSInstruction as a parameter instead? */
-static gboolean
-extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type, GError **error)
-{
-	gchar instruction[MAX_INSTRUCTION_LENGTH+1] = { '\0', };
-	guint i, length = 0;
-	gchar following_section[5] = { '\0', };
-
-	while (g_ascii_isalnum (*(self->priv->i + length)) == TRUE &&
-	       length < MAX_INSTRUCTION_LENGTH) {
-		instruction[length] = *(self->priv->i + length);
-		length++;
-	}
-
-	/* If the instruction was zero-length or delimited by length, rather than a non-alphabetic
-	 * character, check that the next character is acceptable whitespace; if it isn't, this
-	 * instruction is invalid. This catches things like labels, which will either:
-	 *  - not have whitespace after them if they're shorter than the maximum instruction length, or
-	 *  - be longer than the maximum instruction length. */
-	if (length == 0 ||
-	    (*(self->priv->i + length) != ' ' &&
-	    *(self->priv->i + length) != '\t' &&
-	    *(self->priv->i + length) != '\n' &&
-	    *(self->priv->i + length) != ';' &&
-	    *(self->priv->i + length) != '\0')) {
-		instruction_type = NULL;
-		g_memmove (following_section, self->priv->i + length, 4);
-
-		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
-			     _("An expected instruction had no length, or was not delimited by whitespace around line %u before \"%s\"."),
-			     self->priv->line_number,
-			     following_section);
-		return FALSE;
-	}
-
-	if (mcus->debug == TRUE)
-		g_debug ("Parsing suspected instruction \"%s\".", instruction);
-
-	/* Convert the instruction string to a MCUSInstructionType */
-	for (i = 0; i < G_N_ELEMENTS (mcus_instruction_data); i++) {
-		if (strcasecmp (instruction, mcus_instruction_data[i].name) == 0) {
-			*instruction_type = mcus_instruction_data[i].opcode;
-			self->priv->i += length;
-			return TRUE;
-		}
-	}
-
-	/* Invalid instruction! */
-	instruction_type = NULL;
-	g_memmove (following_section, self->priv->i + length, 4);
-
-	g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
-		     _("An instruction (\"%s\") did not exist around line %u before \"%s\"."),
-		     instruction,
-		     self->priv->line_number,
-		     following_section);
-
-	return FALSE;
 }
 
 static gboolean
@@ -407,8 +347,8 @@ extract_operand (MCUSParser *self, MCUSOperand *operand, GError **error)
 
 	/* Check we actually have an operand to parse */
 	if (length == 0) {
-		gchar following_section[5] = { '\0', };
-		g_memmove (following_section, self->priv->i, 4);
+		gchar following_section[PARSER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+		g_memmove (following_section, self->priv->i, PARSER_ERROR_CONTEXT_LENGTH);
 
 		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND,
 			     _("A required operand had no length around line %u before \"%s\"."),
@@ -483,11 +423,120 @@ extract_operand (MCUSParser *self, MCUSOperand *operand, GError **error)
 	return TRUE;
 }
 
+static gboolean
+extract_instruction (MCUSParser *self, MCUSInstruction *instruction, GError **error)
+{
+	gchar instruction_string[MAX_INSTRUCTION_LENGTH+1] = { '\0', };
+	guint i, length = 0;
+	gchar following_section[PARSER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+	const MCUSInstructionData *instruction_data = NULL;
+
+	while (g_ascii_isalnum (*(self->priv->i + length)) == TRUE &&
+	       length < MAX_INSTRUCTION_LENGTH) {
+		instruction_string[length] = *(self->priv->i + length);
+		length++;
+	}
+
+	/* If the instruction was zero-length or delimited by length, rather than a non-alphabetic
+	 * character, check that the next character is acceptable whitespace; if it isn't, this
+	 * instruction is invalid. This catches things like labels, which will either:
+	 *  - not have whitespace after them if they're shorter than the maximum instruction length, or
+	 *  - be longer than the maximum instruction length. */
+	if (length == 0 ||
+	    (*(self->priv->i + length) != ' ' &&
+	    *(self->priv->i + length) != '\t' &&
+	    *(self->priv->i + length) != '\n' &&
+	    *(self->priv->i + length) != ';' &&
+	    *(self->priv->i + length) != '\0')) {
+		g_memmove (following_section, self->priv->i + length, PARSER_ERROR_CONTEXT_LENGTH);
+
+		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
+			     _("An expected instruction had no length, or was not delimited by whitespace around line %u before \"%s\"."),
+			     self->priv->line_number,
+			     following_section);
+		return FALSE;
+	}
+
+	if (mcus->debug == TRUE)
+		g_debug ("Parsing suspected instruction \"%s\".", instruction_string);
+
+	/* Convert the instruction string to a MCUSInstructionType */
+	for (i = 0; i < G_N_ELEMENTS (mcus_instruction_data); i++) {
+		if (strcasecmp (instruction_string, mcus_instruction_data[i].name) == 0) {
+			instruction->type = mcus_instruction_data[i].opcode;
+			instruction->offset = self->priv->i - self->priv->code;
+			self->priv->i += length;
+			instruction_data = &(mcus_instruction_data[i]);
+			break;
+		}
+	}
+
+	if (instruction_data == NULL) {
+		/* Invalid instruction! */
+		g_memmove (following_section, self->priv->i + length, PARSER_ERROR_CONTEXT_LENGTH);
+
+		g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_INSTRUCTION,
+			     _("An instruction (\"%s\") did not exist around line %u before \"%s\"."),
+			     instruction_string,
+			     self->priv->line_number,
+			     following_section);
+
+		return FALSE;
+	}
+
+	skip_whitespace (self, FALSE, FALSE);
+
+	/* Parse the operands */
+	for (i = 0; i < instruction_data->operand_count; i++) {
+		MCUSOperand operand;
+		gchar *old_i = self->priv->i;
+		GError *child_error = NULL;
+
+		if (extract_operand (self, &operand, &child_error) == TRUE) {
+			/* Check the operand's type is valid */
+			if ((instruction_data->operand_types[i] == OPERAND_LABEL &&
+			    operand.type != OPERAND_CONSTANT &&
+			    operand.type != OPERAND_LABEL) ||
+			    (instruction_data->operand_types[i] != OPERAND_LABEL &&
+			    operand.type != instruction_data->operand_types[i])) {
+				gchar following_section[PARSER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+				g_memmove (following_section, self->priv->i, PARSER_ERROR_CONTEXT_LENGTH);
+
+				g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND_TYPE,
+					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\"."),
+					     operand_type_to_string (operand.type),
+					     operand_type_to_string (instruction_data->operand_types[i]),
+					     self->priv->line_number,
+					     following_section);
+
+				/* Restore i to before the operand so that error highlighting works correctly */
+				self->priv->i = old_i;
+
+				return FALSE;
+			}
+
+			/* Store the operand */
+			instruction->operands[i] = operand;
+			skip_whitespace (self, FALSE, TRUE);
+		} else {
+			/* Throw the error */
+			g_propagate_error (error, child_error);
+			return FALSE;
+		}
+	}
+
+	/* Work out the instruction's length for future use */
+	instruction->length = self->priv->i - self->priv->code - instruction->offset;
+
+	return TRUE;
+}
+
 gboolean
 mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 {
 	/* Set up parser variables */
 	reset_state (self);
+	self->priv->code = code;
 	self->priv->i = (gchar*)code;
 	self->priv->dirty = TRUE;
 
@@ -502,52 +551,13 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 		if (*(self->priv->i) == '\0')
 			break;
 
-		instruction.offset = self->priv->i - code;
-		if (extract_instruction (self, &(instruction.type), NULL) == TRUE) {
-			/* Instruction */
-			guint i;
-			const MCUSInstructionData *instruction_data = &(mcus_instruction_data[instruction.type]);
-
-			skip_whitespace (self, FALSE, FALSE);
-
-			for (i = 0; i < instruction_data->operand_count; i++) {
-				MCUSOperand operand;
-
-				if (extract_operand (self, &operand, &child_error) == TRUE) {
-					/* Check the operand's type is valid */
-					if ((instruction_data->operand_types[i] == OPERAND_LABEL &&
-					    operand.type != OPERAND_CONSTANT &&
-					    operand.type != OPERAND_LABEL) ||
-					    (instruction_data->operand_types[i] != OPERAND_LABEL &&
-					    operand.type != instruction_data->operand_types[i])) {
-						gchar following_section[5] = { '\0', };
-						g_memmove (following_section, self->priv->i, 4);
-
-						g_set_error (error, MCUS_PARSER_ERROR, MCUS_PARSER_ERROR_INVALID_OPERAND_TYPE,
-							     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\"."),
-							     operand_type_to_string (operand.type),
-							     operand_type_to_string (instruction_data->operand_types[i]),
-							     self->priv->line_number,
-							     following_section);
-						return FALSE;
-					}
-
-					/* Store the operand */
-					instruction.operands[i] = operand;
-					skip_whitespace (self, FALSE, TRUE);
-				} else {
-					/* Throw the error */
-					g_propagate_error (error, child_error);
-					return FALSE;
-				}
-			}
-
-			instruction.length = self->priv->i - code - instruction.offset;
-			store_instruction (self, &instruction);
-			skip_whitespace (self, TRUE, FALSE);
-		} else if (extract_label (self, &label, &child_error) == TRUE) {
+		if (extract_label (self, &label, NULL) == TRUE) {
 			/* Label */
 			store_label (self, &label);
+			skip_whitespace (self, TRUE, FALSE);
+		} else if (extract_instruction (self, &instruction, &child_error) == TRUE) {
+			/* Instruction */
+			store_instruction (self, &instruction);
 			skip_whitespace (self, TRUE, FALSE);
 		} else {
 			/* Throw the error */
@@ -636,5 +646,11 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 	reset_state (self);
 
 	return TRUE;
+}
+
+guint
+mcus_parser_get_offset (MCUSParser *self)
+{
+	return self->priv->i - self->priv->code;
 }
 

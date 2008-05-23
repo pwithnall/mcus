@@ -64,13 +64,6 @@
 					</object>
 				</child>
 				<child>
-					<object class="GtkAction" id="mcus_compile_action">
-						<property name="label">_Compile</property>
-						<property name="name">program-compile</property>
-						<signal name="activate" handler="mw_compile_activate_cb"/>
-					</object>
-				</child>
-				<child>
 					<object class="GtkAction" id="mcus_run_action">
 						<property name="label">_Run</property>
 						<property name="name">program-run</property>
@@ -119,7 +112,6 @@
 					<menuitem action="mcus_delete_action"/>
 				</menu>
 				<menu action="mcus_program_action">
-					<menuitem action="mcus_compile_action"/>
 					<menuitem action="mcus_run_action"/>
 					<menuitem action="mcus_pause_action"/>
 					<menuitem action="mcus_stop_action"/>
@@ -133,7 +125,6 @@
 				<toolitem action="mcus_copy_action"/>
 				<toolitem action="mcus_paste_action"/>
 				<separator/>
-				<toolitem action="mcus_compile_action"/>
 				<toolitem action="mcus_run_action"/>
 				<toolitem action="mcus_pause_action"/>
 				<toolitem action="mcus_stop_action"/>

@@ -21,12 +21,11 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
-#include <gtksourceview/gtksourceview.h>
-#include <string.h>
 
 #include "main.h"
 #include "instructions.h"
 #include "simulation.h"
+#include "interface.h"
 
 GQuark
 mcus_simulation_error_quark (void)
@@ -53,6 +52,9 @@ mcus_simulation_init (void)
 		mcus->registers[i] = 0;
 	for (i = 0; i < STACK_SIZE; i++)
 		mcus->stack[i] = 0;
+
+	/* Remove previous errors */
+	mcus_remove_tag (mcus->error_tag);
 }
 
 /* Returns FALSE on error or if the simulation's ended */
@@ -200,8 +202,6 @@ mcus_simulation_update_ui (void)
 	gchar stack_text[3 * STACK_SIZE];
 	/* 3 characters for one byte as above */
 	gchar byte_text[3];
-	GtkTextIter current_instruction_iter, current_instruction_end_iter, start_iter, end_iter;
-	GtkTextBuffer *text_buffer;
 	gchar *f = memory_markup;
 
 	/* Update the memory label */
@@ -254,18 +254,10 @@ mcus_simulation_update_ui (void)
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
 
 	/* Move the current line mark */
-	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
-	gtk_text_buffer_remove_tag (text_buffer, mcus->current_instruction_tag, &start_iter, &end_iter);
-
-	gtk_text_buffer_get_iter_at_offset (text_buffer,
-					    &current_instruction_iter,
-					    mcus->offset_map[mcus->program_counter].offset);
-	gtk_text_buffer_get_iter_at_offset (text_buffer,
-					    &current_instruction_end_iter,
-					    mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length);
-	gtk_text_buffer_apply_tag (text_buffer, mcus->current_instruction_tag, &current_instruction_iter, &current_instruction_end_iter);
+	mcus_tag_range (mcus->current_instruction_tag,
+			mcus->offset_map[mcus->program_counter].offset,
+			mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length,
+			TRUE);
 
 	mcus_print_debug_data ();
 }

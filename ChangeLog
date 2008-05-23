@@ -1,3 +1,19 @@
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/mcus.ui: Merged the "Compile" operation into the "Run"
+	operation.
+	* src/instructions.h:
+	* src/interface.c:
+	* src/interface.h:
+	* src/main-window.c:
+	* src/main.h:
+	* src/parser.c:
+	* src/parser.h:
+	* src/simulation.c: Various code cleanups, including a rearrangement
+	of some of the parser code to make it more logical. Lots of polish
+	applied to the error reporting, and added tagging of the relevant code
+	in the editor when an error is encountered.
+
 2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.ui:

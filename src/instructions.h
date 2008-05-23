@@ -70,11 +70,11 @@ typedef enum {
 } MCUSOperandType;
 
 typedef struct {
-	MCUSInstructionType opcode;
-	gchar *name;
-	guint operand_count;
-	guint size;
-	MCUSOperandType operand_types[MAX_OPERAND_COUNT];
+	const MCUSInstructionType opcode;
+	const gchar *name;
+	const guint operand_count;
+	const guint size;
+	const MCUSOperandType operand_types[MAX_OPERAND_COUNT];
 } MCUSInstructionData;
 
 extern const MCUSInstructionData mcus_instruction_data[];
