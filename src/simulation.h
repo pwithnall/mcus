@@ -17,19 +17,28 @@
  * along with MCUS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtk/gtk.h>
+#include <glib.h>
 
-#ifndef MCUS_INTERFACE_H
-#define MCUS_INTERFACE_H
+#ifndef MCUS_SIMULATION_H
+#define MCUS_SIMULATION_H
 
 G_BEGIN_DECLS
 
-GtkWidget *mcus_create_interface (void);
-void mcus_interface_error (const gchar *message, GtkWidget *parent_window);
-void mcus_print_debug_data (void);
-void mcus_update_ui (void);
-void mcus_read_input_port (void);
+#define MCUS_SIMULATION_ERROR		(mcus_simulation_error_quark ())
+
+enum {
+	MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
+	MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
+	MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
+	MCUS_SIMULATION_ERROR_INVALID_INSTRUCTION
+};
+
+GQuark mcus_simulation_error_quark (void);
+
+void mcus_simulation_init (void);
+gboolean mcus_simulation_iterate (GError **error);
+void mcus_simulation_update_ui (void);
 
 G_END_DECLS
 
-#endif /* MCUS_INTERFACE_H */
+#endif /* !MCUS_SIMULATION_H */

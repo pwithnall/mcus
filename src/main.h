@@ -25,22 +25,20 @@
 
 G_BEGIN_DECLS
 
-#define MCUS_SIMULATION_ERROR		(mcus_simulation_error_quark ())
-
-enum {
-	MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
-	MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
-	MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
-	MCUS_SIMULATION_ERROR_INVALID_INSTRUCTION
-};
+typedef enum {
+	SIMULATION_STOPPED,
+	SIMULATION_PAUSED,
+	SIMULATION_RUNNING
+} MCUSSimulationState;
 
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
-#define STACK_SIZE 50
+#define STACK_SIZE 64
 #define PROGRAM_START_ADDRESS 0
 
 typedef struct {
 	GtkWidget *main_window;
+	GtkBuilder *builder;
 
 	guchar program_counter;
 	guchar stack_pointer;
@@ -51,17 +49,15 @@ typedef struct {
 	gfloat analogue_input;
 	guchar memory[MEMORY_SIZE];
 	guchar stack[STACK_SIZE];
-	gulong clock_speed;
 
+	gulong clock_speed;
 	gboolean debug;
 	guint iteration;
+	MCUSSimulationState simulation_state;
 } MCUS;
 
 MCUS *mcus;
 
-GQuark mcus_simulation_error_quark (void);
-void mcus_initialise_simulation (gulong clock_speed);
-gboolean mcus_iterate_simulation (GError **error);
 void mcus_print_debug_data (void);
 void mcus_quit (void);
 

@@ -18,7 +18,10 @@
  */
 
 #include <gtk/gtk.h>
+#include <glib.h>
 #include <glib/gi18n.h>
+#include <glib/gprintf.h>
+#include <string.h>
 
 #include "config.h"
 #include "main.h"
@@ -28,12 +31,11 @@ GtkWidget *
 mcus_create_interface (void)
 {
 	GError *error = NULL;
-	GtkBuilder *builder;
 
-	builder = gtk_builder_new ();
+	mcus->builder = gtk_builder_new ();
 
-	if (gtk_builder_add_from_file (builder, PACKAGE_DATA_DIR"/mcus/mcus.ui", &error) == FALSE &&
-	    gtk_builder_add_from_file (builder, "./data/mcus.ui", NULL) == FALSE) {
+	if (gtk_builder_add_from_file (mcus->builder, PACKAGE_DATA_DIR"/mcus/mcus.ui", &error) == FALSE &&
+	    gtk_builder_add_from_file (mcus->builder, "./data/mcus.ui", NULL) == FALSE) {
 		/* Show an error */
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
 				GTK_DIALOG_MODAL,
@@ -44,21 +46,18 @@ mcus_create_interface (void)
 		gtk_widget_destroy (dialog);
 
 		g_error_free (error);
-		g_object_unref (builder);
 		mcus_quit ();
 
 		return NULL;
 	}
 
-	gtk_builder_set_translation_domain (builder, GETTEXT_PACKAGE);
-	gtk_builder_connect_signals (builder, NULL);
+	gtk_builder_set_translation_domain (mcus->builder, GETTEXT_PACKAGE);
+	gtk_builder_connect_signals (mcus->builder, NULL);
 
 	/* Set up the main window */
 	/* TODO: This is horrible */
-	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (builder, "mcus_main_window"));
-	/*mcus_main_window_setup (builder);*/
-
-	g_object_unref (builder);
+	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mcus_main_window"));
+	/*mcus_main_window_setup (mcus->builder);*/
 
 	return mcus->main_window;
 }
@@ -85,5 +84,111 @@ mcus_interface_error (const gchar *message, GtkWidget *parent_window)
 				message);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
+}
+
+void
+mcus_print_debug_data (void)
+{
+	guint i;
+
+	if (mcus->debug == FALSE)
+		return;
+
+	/* General data */
+	g_printf ("Program counter: %02X\nStack pointer: %02X\nZero flag: %u\nClock speed: %lu\n",
+		 (guint)mcus->program_counter,
+		 (guint)mcus->stack_pointer,
+		 (mcus->zero_flag == TRUE) ? 1 : 0,
+		 mcus->clock_speed);
+
+	/* Registers */
+	g_printf ("Registers:");
+	for (i = 0; i < REGISTER_COUNT; i++)
+		g_printf (" %02X", (guint)mcus->registers[i]);
+	g_printf ("\n");
+
+	/* Stack */
+	g_printf ("Stack:\n");
+	for (i = 0; i < STACK_SIZE; i++) {
+		g_printf (" %02X", (guint)mcus->stack[i]);
+
+		if (i % 16 == 15)
+			g_printf ("\n");
+	}
+	g_printf ("\n");
+
+	/* Ports */
+	g_printf ("Input port: %02X\nOutput port: %02X\nADC: %f\n",
+		 (guint)mcus->input_port,
+		 (guint)mcus->output_port,
+		 mcus->analogue_input);
+
+	/* Memory */
+	g_printf ("Memory:\n");
+	for (i = 0; i < MEMORY_SIZE; i++) {
+		if (i == mcus->program_counter)
+			g_printf ("\033[1m%02X\033[0m ", (guint)mcus->memory[i]);
+		else
+			g_printf ("%02X ", (guint)mcus->memory[i]);
+
+		if (i % 16 == 15)
+			g_printf ("\n");
+	}
+	g_printf ("\n");
+}
+
+void
+mcus_update_ui (void)
+{
+	gboolean sensitive = mcus->simulation_state == SIMULATION_STOPPED ? TRUE : FALSE;
+
+#define SET_SENSITIVITY2(W,S) \
+	g_object_set (gtk_builder_get_object (mcus->builder, (W)), "sensitive", (S), NULL);
+#define SET_SENSITIVITY(W) \
+	SET_SENSITIVITY2(W, sensitive)
+
+	SET_SENSITIVITY ("mw_code_view")
+	SET_SENSITIVITY2 ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_adc_entry", mcus->simulation_state != SIMULATION_RUNNING)
+
+	SET_SENSITIVITY ("mcus_print_action")
+	SET_SENSITIVITY ("mcus_cut_action")
+	SET_SENSITIVITY ("mcus_copy_action")
+	SET_SENSITIVITY ("mcus_paste_action")
+	SET_SENSITIVITY ("mcus_delete_action")
+	SET_SENSITIVITY ("mcus_compile_action")
+
+	SET_SENSITIVITY2 ("mcus_run_action", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mcus_pause_action", mcus->simulation_state == SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mcus_stop_action", mcus->simulation_state != SIMULATION_STOPPED)
+}
+
+void
+mcus_read_input_port (void)
+{
+	gint digit_value;
+	const gchar *entry_text;
+
+	entry_text = gtk_entry_get_text (GTK_ENTRY (gtk_builder_get_object (mcus->builder, "mw_input_port_entry")));
+	if (strlen (entry_text) != 2) {
+		g_error ("TODO: bad input port length");
+		return;
+	}
+
+	/* Deal with the first digit */
+	digit_value = g_ascii_xdigit_value (entry_text[0]);
+	if (digit_value == -1) {
+		g_error ("TODO: bad input port value");
+		return;
+	}
+	mcus->input_port = digit_value * 16;
+
+	/* Deal with the second digit */
+	digit_value = g_ascii_xdigit_value (entry_text[1]);
+	if (digit_value == -1) {
+		g_error ("TODO: bad input port value");
+		return;
+	}
+	mcus->input_port += digit_value;
 }
 

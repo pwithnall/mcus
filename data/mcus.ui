@@ -11,14 +11,14 @@
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_print_action">
-						<property name="stock_id">gtk-print</property>
+						<property name="stock-id">gtk-print</property>
 						<property name="name">file-print</property>
 						<signal name="activate" handler="mw_print_activate_cb"/>
 					</object>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_quit_action">
-						<property name="stock_id">gtk-quit</property>
+						<property name="stock-id">gtk-quit</property>
 						<property name="name">file-quit</property>
 						<signal name="activate" handler="mw_quit_activate_cb"/>
 					</object>
@@ -31,30 +31,64 @@
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_cut_action">
-						<property name="stock_id">gtk-cut</property>
+						<property name="stock-id">gtk-cut</property>
 						<property name="name">edit-cut</property>
 						<signal name="activate" handler="mw_cut_activate_cb"/>
 					</object>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_copy_action">
-						<property name="stock_id">gtk-copy</property>
+						<property name="stock-id">gtk-copy</property>
 						<property name="name">edit-copy</property>
 						<signal name="activate" handler="mw_copy_activate_cb"/>
 					</object>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_paste_action">
-						<property name="stock_id">gtk-paste</property>
+						<property name="stock-id">gtk-paste</property>
 						<property name="name">edit-paste</property>
 						<signal name="activate" handler="mw_paste_activate_cb"/>
 					</object>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_delete_action">
-						<property name="stock_id">gtk-delete</property>
+						<property name="stock-id">gtk-delete</property>
 						<property name="name">edit-delete</property>
 						<signal name="activate" handler="mw_delete_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_program_action">
+						<property name="name">program</property>
+						<property name="label">_Program</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_compile_action">
+						<property name="label">_Compile</property>
+						<property name="name">program-compile</property>
+						<signal name="activate" handler="mw_compile_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_run_action">
+						<property name="label">_Run</property>
+						<property name="name">program-run</property>
+						<signal name="activate" handler="mw_run_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_pause_action">
+						<property name="label">_Pause</property>
+						<property name="name">program-pause</property>
+						<signal name="activate" handler="mw_pause_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_stop_action">
+						<property name="label">_Stop</property>
+						<property name="name">program-stop</property>
+						<signal name="activate" handler="mw_stop_activate_cb"/>
 					</object>
 				</child>
 				<child>
@@ -65,7 +99,7 @@
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_about_action">
-						<property name="stock_id">gtk-about</property>
+						<property name="stock-id">gtk-about</property>
 						<property name="name">help-about</property>
 						<signal name="activate" handler="mw_about_activate_cb"/>
 					</object>
@@ -84,14 +118,30 @@
 					<menuitem action="mcus_paste_action"/>
 					<menuitem action="mcus_delete_action"/>
 				</menu>
+				<menu action="mcus_program_action">
+					<menuitem action="mcus_compile_action"/>
+					<menuitem action="mcus_run_action"/>
+					<menuitem action="mcus_pause_action"/>
+					<menuitem action="mcus_stop_action"/>
+				</menu>
 				<menu action="mcus_help_action">
 					<menuitem action="mcus_about_action"/>
 				</menu>
 			</menubar>
+			<toolbar name="mw_toolbar">
+				<toolitem action="mcus_cut_action"/>
+				<toolitem action="mcus_copy_action"/>
+				<toolitem action="mcus_paste_action"/>
+				<separator/>
+				<toolitem action="mcus_compile_action"/>
+				<toolitem action="mcus_run_action"/>
+				<toolitem action="mcus_pause_action"/>
+				<toolitem action="mcus_stop_action"/>
+			</toolbar>
 		</ui>
 	</object>
 
-	<object class="GtkTextBuffer" id="mw_code_buffer"/>
+	<object class="GtkSourceBuffer" id="mw_code_buffer"/>
 
 	<object class="GtkWindow" id="mcus_main_window">
 		<property name="title" translatable="yes">Microcontroller Simulator</property>
@@ -105,6 +155,12 @@
 					</packing>
 				</child>
 				<child>
+					<object class="GtkToolbar" constructor="mcus_ui_manager" id="mw_toolbar"/>
+					<packing>
+						<property name="expand">False</property>
+					</packing>
+				</child>
+				<child>
 					<object class="GtkHBox" id="hbox1">
 						<child>
 							<object class="GtkScrolledWindow" id="scrolledwindow1">
@@ -112,8 +168,10 @@
 								<property name="vscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
 								<property name="shadow-type">GTK_SHADOW_IN</property>
 								<child>
-									<object class="GtkTextView" id="mw_code_view">
+									<object class="GtkSourceView" id="mw_code_view">
 										<property name="buffer">mw_code_buffer</property>
+										<property name="width-request">500</property>
+										<property name="height-request">400</property>
 									</object>
 								</child>
 							</object>
@@ -130,13 +188,20 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkEntry" id="mw_input_port_entry"/>
+									<object class="GtkEntry" id="mw_input_port_entry">
+										<property name="text">00</property>
+										<property name="max-length">2</property>
+									</object>
 								</child>
 								<child>
-									<object class="GtkEntry" id="mw_output_port_entry"/>
+									<object class="GtkLabel" id="mw_output_port_label">
+										<property name="label">00</property>
+									</object>
 								</child>
 								<child>
-									<object class="GtkEntry" id="mw_adc_entry"/>
+									<object class="GtkEntry" id="mw_adc_entry">
+										<property name="text">0.0</property>
+									</object>
 								</child>
 								<child>
 									<object class="GtkLabel" id="label2">
@@ -148,28 +213,13 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkEntry" id="mw_register0_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register1_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register2_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register3_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register4_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register5_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register6_entry"/>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_register7_entry"/>
+									<object class="GtkLabel" id="mw_registers_label">
+										<property name="selectable">True</property>
+										<property name="label">00 00 00 00 00 00 00 00</property>
+									</object>
+									<packing>
+										<property name="expand">False</property>
+									</packing>
 								</child>
 								<child>
 									<object class="GtkLabel" id="label2">
@@ -181,7 +231,29 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkEntry" id="mw_memory_entry"/>
+									<object class="GtkLabel" id="mw_memory_label">
+										<property name="selectable">True</property>
+										<property name="use-markup">True</property>
+										<property name="label">&lt;b&gt;00&lt;/b&gt; 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</property>
+									</object>
+									<packing>
+										<property name="expand">False</property>
+									</packing>
 								</child>
 							</object>
 							<packing>
