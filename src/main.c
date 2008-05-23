@@ -87,7 +87,7 @@ main (int argc, char *argv[])
 	/* Setup */
 	mcus = g_new (MCUS, 1);
 	mcus->debug = debug;
-	mcus->clock_speed = 500; /* time between iterations in ms; TODO */
+	mcus->clock_speed = DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
 
 	/* Create and show the interface */
 	mcus_create_interface ();

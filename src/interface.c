@@ -57,7 +57,7 @@ mcus_create_interface (void)
 	/* Set up the main window */
 	/* TODO: This is horrible */
 	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mcus_main_window"));
-	/*mcus_main_window_setup (mcus->builder);*/
+	mcus_update_ui ();
 
 	return mcus->main_window;
 }
@@ -150,6 +150,7 @@ mcus_update_ui (void)
 	SET_SENSITIVITY ("mw_code_view")
 	SET_SENSITIVITY2 ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
 	SET_SENSITIVITY2 ("mw_analogue_input_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_clock_speed_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
 
 	SET_SENSITIVITY ("mcus_print_action")
 	SET_SENSITIVITY ("mcus_cut_action")

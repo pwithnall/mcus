@@ -189,3 +189,9 @@ mw_stop_activate_cb (GtkAction *self, gpointer user_data)
 	mcus->simulation_state = SIMULATION_STOPPED;
 	mcus_update_ui ();
 }
+
+void
+mw_clock_speed_spin_button_value_changed_cb (GtkSpinButton *self, gpointer user_data)
+{
+	mcus->clock_speed = 1000 / gtk_spin_button_get_value (self);
+}

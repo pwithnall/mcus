@@ -1,5 +1,15 @@
 2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/mcus.ui:
+	* src/interface.c:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h:
+	* src/simulation.c: Added more information to the sidebar, and allowed
+	the clock speed to be changed when the simulation isn't running.
+
+2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/main-window.c: Slightly improved error handling when parsing,
 	compiling or running a program.
 

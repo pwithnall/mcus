@@ -35,7 +35,10 @@ typedef enum {
 #define MEMORY_SIZE 256
 #define STACK_SIZE 64
 #define PROGRAM_START_ADDRESS 0
+/* This is also in the UI file */
 #define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
+/* This is also in the UI file */
+#define DEFAULT_CLOCK_SPEED 1
 
 typedef struct {
 	GtkWidget *main_window;

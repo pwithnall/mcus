@@ -198,8 +198,10 @@ mcus_simulation_update_ui (void)
 	gchar memory_markup[3 * MEMORY_SIZE + 7];
 	/* 3 characters for each register as above */
 	gchar register_text[3 * REGISTER_COUNT];
+	/* 3 characters for each stack byte as above */
+	gchar stack_text[3 * STACK_SIZE];
 	/* 3 characters for one byte as above */
-	gchar output_port_text[3];
+	gchar byte_text[3];
 	gchar *f = memory_markup;
 
 	/* Update the memory label */
@@ -229,9 +231,27 @@ mcus_simulation_update_ui (void)
 
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_registers_label")), register_text);
 
+	/* Update the stack label */
+	f = stack_text;
+	for (i = 0; i < STACK_SIZE; i++) {
+		g_sprintf (f, "%02X ", mcus->stack[i]);
+		f += 3;
+	}
+	*(f - 1) = '\0';
+
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_label")), stack_text);
+
 	/* Update the output port label */
-	g_sprintf (output_port_text, "%02X", mcus->output_port);
-	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_output_port_label")), output_port_text);
+	g_sprintf (byte_text, "%02X", mcus->output_port);
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_output_port_label")), byte_text);
+
+	/* Update the program counter label */
+	g_sprintf (byte_text, "%02X", mcus->program_counter);
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_program_counter_label")), byte_text);
+
+	/* Update the stack pointer label */
+	g_sprintf (byte_text, "%02X", mcus->stack_pointer);
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
 
 	mcus_print_debug_data ();
 }
