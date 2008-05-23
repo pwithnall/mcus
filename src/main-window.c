@@ -115,6 +115,7 @@ simulation_iterate_cb (gpointer user_data)
 		return FALSE;
 
 	mcus_read_input_port ();
+	mcus_read_analogue_input ();
 
 	if (mcus_simulation_iterate (&error) == FALSE) {
 		/* Get out of simulation UI mode */

@@ -35,6 +35,7 @@ typedef enum {
 #define MEMORY_SIZE 256
 #define STACK_SIZE 64
 #define PROGRAM_START_ADDRESS 0
+#define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
 
 typedef struct {
 	GtkWidget *main_window;
@@ -46,7 +47,7 @@ typedef struct {
 	guchar registers[REGISTER_COUNT];
 	guchar input_port;
 	guchar output_port;
-	gfloat analogue_input;
+	gdouble analogue_input;
 	guchar memory[MEMORY_SIZE];
 	guchar stack[STACK_SIZE];
 

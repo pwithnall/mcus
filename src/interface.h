@@ -29,6 +29,7 @@ void mcus_interface_error (const gchar *message, GtkWidget *parent_window);
 void mcus_print_debug_data (void);
 void mcus_update_ui (void);
 void mcus_read_input_port (void);
+void mcus_read_analogue_input (void);
 
 G_END_DECLS
 

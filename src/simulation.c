@@ -164,6 +164,16 @@ mcus_simulation_iterate (GError **error)
 		mcus->registers[operand1] >>= 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
+	case SUBROUTINE_READTABLE:
+		/* TODO: Is this correct? */
+		mcus->registers[0] = mcus->memory[mcus->registers[7]];
+		break;
+	case SUBROUTINE_WAIT1MS:
+		/* TODO */
+		break;
+	case SUBROUTINE_READADC:
+		mcus->registers[0] = 255.0 * mcus->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;
+		break;
 	default:
 		/* We've encountered some data? */
 		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_INVALID_INSTRUCTION,

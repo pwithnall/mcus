@@ -143,6 +143,11 @@
 
 	<object class="GtkSourceBuffer" id="mw_code_buffer"/>
 
+	<object class="GtkAdjustment" id="mw_analogue_input_adjustment">
+		<property name="upper">5.00</property>
+		<property name="step-increment">0.10</property>
+	</object>
+
 	<object class="GtkWindow" id="mcus_main_window">
 		<property name="title" translatable="yes">Microcontroller Simulator</property>
 		<signal name="delete-event" handler="mw_delete_event_cb"/>
@@ -179,62 +184,136 @@
 						<child>
 							<object class="GtkVBox" id="vbox3">
 								<child>
-									<object class="GtkLabel" id="label1">
-										<property name="label" translatable="yes">&lt;b&gt;Inputs/Outputs&lt;/b&gt;</property>
-										<property name="use-markup">True</property>
+									<object class="GtkFrame" id="frame1">
+										<child type="label">
+											<object class="GtkLabel" id="label1">
+												<property name="label" translatable="yes">&lt;b&gt;Inputs/Outputs&lt;/b&gt;</property>
+												<property name="use-markup">True</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkTable" id="table1">
+												<property name="n-rows">3</property>
+												<property name="n-columns">3</property>
+												<child>
+													<object class="GtkLabel" id="label4">
+														<property name="label" translatable="yes">Input Port</property>
+													</object>
+													<packing>
+														<property name="top-attach">0</property>
+														<property name="bottom-attach">1</property>
+														<property name="left-attach">0</property>
+														<property name="right-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkEntry" id="mw_input_port_entry">
+														<property name="text">00</property>
+														<property name="max-length">2</property>
+														<property name="width-chars">2</property>
+													</object>
+													<packing>
+														<property name="top-attach">0</property>
+														<property name="bottom-attach">1</property>
+														<property name="left-attach">1</property>
+														<property name="right-attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel" id="label4">
+														<property name="label" translatable="yes">Output Port</property>
+													</object>
+													<packing>
+														<property name="top-attach">1</property>
+														<property name="bottom-attach">2</property>
+														<property name="left-attach">0</property>
+														<property name="right-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel" id="mw_output_port_label">
+														<property name="label">00</property>
+													</object>
+													<packing>
+														<property name="top-attach">1</property>
+														<property name="bottom-attach">2</property>
+														<property name="left-attach">1</property>
+														<property name="right-attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel" id="label4">
+														<property name="label" translatable="yes">Analogue Input</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="bottom-attach">3</property>
+														<property name="left-attach">0</property>
+														<property name="right-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSpinButton" id="mw_analogue_input_spin_button">
+														<property name="adjustment">mw_analogue_input_adjustment</property>
+														<property name="digits">2</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="bottom-attach">3</property>
+														<property name="left-attach">1</property>
+														<property name="right-attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel" id="label5">
+														<property name="label" translatable="yes">volts</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="bottom-attach">3</property>
+														<property name="left-attach">2</property>
+														<property name="right-attach">3</property>
+													</packing>
+												</child>
+											</object>
+										</child>
 									</object>
 									<packing>
 										<property name="expand">False</property>
 									</packing>
 								</child>
 								<child>
-									<object class="GtkEntry" id="mw_input_port_entry">
-										<property name="text">00</property>
-										<property name="max-length">2</property>
-									</object>
-								</child>
-								<child>
-									<object class="GtkLabel" id="mw_output_port_label">
-										<property name="label">00</property>
-									</object>
-								</child>
-								<child>
-									<object class="GtkEntry" id="mw_adc_entry">
-										<property name="text">0.0</property>
-									</object>
-								</child>
-								<child>
-									<object class="GtkLabel" id="label2">
-										<property name="label" translatable="yes">&lt;b&gt;Registers&lt;/b&gt;</property>
-										<property name="use-markup">True</property>
+									<object class="GtkFrame" id="frame2">
+										<child type="label">
+											<object class="GtkLabel" id="label2">
+												<property name="label" translatable="yes">&lt;b&gt;Registers&lt;/b&gt;</property>
+												<property name="use-markup">True</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel" id="mw_registers_label">
+												<property name="selectable">True</property>
+												<property name="label">00 00 00 00 00 00 00 00</property>
+											</object>
+										</child>
 									</object>
 									<packing>
 										<property name="expand">False</property>
 									</packing>
 								</child>
 								<child>
-									<object class="GtkLabel" id="mw_registers_label">
-										<property name="selectable">True</property>
-										<property name="label">00 00 00 00 00 00 00 00</property>
-									</object>
-									<packing>
-										<property name="expand">False</property>
-									</packing>
-								</child>
-								<child>
-									<object class="GtkLabel" id="label2">
-										<property name="label" translatable="yes">&lt;b&gt;Memory&lt;/b&gt;</property>
-										<property name="use-markup">True</property>
-									</object>
-									<packing>
-										<property name="expand">False</property>
-									</packing>
-								</child>
-								<child>
-									<object class="GtkLabel" id="mw_memory_label">
-										<property name="selectable">True</property>
-										<property name="use-markup">True</property>
-										<property name="label">&lt;b&gt;00&lt;/b&gt; 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+									<object class="GtkFrame" id="frame3">
+										<child type="label">
+											<object class="GtkLabel" id="label3">
+												<property name="label" translatable="yes">&lt;b&gt;Memory&lt;/b&gt;</property>
+												<property name="use-markup">True</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel" id="mw_memory_label">
+												<property name="selectable">True</property>
+												<property name="use-markup">True</property>
+												<property name="label">&lt;b&gt;00&lt;/b&gt; 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -250,6 +329,8 @@
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</property>
+											</object>
+										</child>
 									</object>
 									<packing>
 										<property name="expand">False</property>

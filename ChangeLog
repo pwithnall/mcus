@@ -1,5 +1,15 @@
 2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/mcus.ui:
+	* src/interface.c:
+	* src/interface.h:
+	* src/main-window.c:
+	* src/main.h: Added support for reading the ADC, and improved the
+	interface a little.
+	* src/simulation.c: Added simulation of some of the subroutines.
+
+2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* configure.ac:
 	* data/mcus.ui:
 	* src/Makefile.am: Changed the text editor to GtkSourceView.

@@ -118,7 +118,7 @@ mcus_print_debug_data (void)
 	g_printf ("\n");
 
 	/* Ports */
-	g_printf ("Input port: %02X\nOutput port: %02X\nADC: %f\n",
+	g_printf ("Input port: %02X\nOutput port: %02X\nAnalogue input: %f\n",
 		 (guint)mcus->input_port,
 		 (guint)mcus->output_port,
 		 mcus->analogue_input);
@@ -149,7 +149,7 @@ mcus_update_ui (void)
 
 	SET_SENSITIVITY ("mw_code_view")
 	SET_SENSITIVITY2 ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
-	SET_SENSITIVITY2 ("mw_adc_entry", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_analogue_input_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
 
 	SET_SENSITIVITY ("mcus_print_action")
 	SET_SENSITIVITY ("mcus_cut_action")
@@ -190,5 +190,11 @@ mcus_read_input_port (void)
 		return;
 	}
 	mcus->input_port += digit_value;
+}
+
+void
+mcus_read_analogue_input (void)
+{
+	mcus->analogue_input = gtk_spin_button_get_value (GTK_SPIN_BUTTON (gtk_builder_get_object (mcus->builder, "mw_analogue_input_spin_button")));
 }
 
