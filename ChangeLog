@@ -1,5 +1,10 @@
 2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/main-window.c: Slightly improved error handling when parsing,
+	compiling or running a program.
+
+2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/mcus.ui:
 	* src/interface.c:
 	* src/interface.h:

@@ -86,7 +86,15 @@ mw_compile_activate_cb (GtkAction *self, gpointer user_data)
 	mcus_parser_parse (parser, code, &error);
 
 	if (error != NULL) {
-		g_error (error->message); /* TODO */
+		GtkWidget *error_dialog;
+		error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
+						       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+						       error->message);
+		gtk_dialog_run (GTK_DIALOG (error_dialog));
+
+		/* TODO? */
+
+		gtk_widget_destroy (error_dialog);
 		g_error_free (error);
 		return;
 	}
@@ -98,7 +106,15 @@ mw_compile_activate_cb (GtkAction *self, gpointer user_data)
 	mcus_parser_compile (parser, &error);
 
 	if (error != NULL) {
-		g_error (error->message); /* TODO */
+		GtkWidget *error_dialog;
+		error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
+						       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+						       error->message);
+		gtk_dialog_run (GTK_DIALOG (error_dialog));
+
+		/* TODO? */
+
+		gtk_widget_destroy (error_dialog);
 		g_error_free (error);
 		return;
 	}
@@ -124,7 +140,15 @@ simulation_iterate_cb (gpointer user_data)
 		mcus_update_ui ();
 
 		if (error != NULL) {
-			g_error (error->message); /* TODO */
+			GtkWidget *error_dialog;
+			error_dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL,
+							       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+							       error->message);
+			gtk_dialog_run (GTK_DIALOG (error_dialog));
+
+			/* TODO: Highlight the offending line */
+
+			gtk_widget_destroy (error_dialog);
 			g_error_free (error);
 		}
 
@@ -164,36 +188,4 @@ mw_stop_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus->simulation_state = SIMULATION_STOPPED;
 	mcus_update_ui ();
-}
-
-void
-mw_about_activate_cb (GtkAction *self, gpointer user_data)
-{
-	/*MCUSParser *parser;
-	GError *error = NULL;
-
-	mcus_print_debug_data ();
-
-	parser = mcus_parser_new ();
-	mcus_parser_parse (parser, "\n\
-MOVI S1, 05 ; foobar comment\n\
-MOVI S0, 00	; asd9;asd09ua9dj\n\
-loop:;asdoijasi\n\
-INC S0\n\
-OUT Q, S0\n\
-MOV S0, S2\n\
-EOR S2, S1\n\
-JNZ loop;asd809u", &error);
-	if (error != NULL)
-		g_error (error->message);
-
-	mcus_parser_compile (parser, &error);
-	if (error != NULL)
-		g_error (error->message);
-
-	mcus_print_debug_data ();
-
-	while (mcus->zero_flag == FALSE && mcus_iterate_simulation (NULL) == TRUE) {
-		mcus_print_debug_data ();
-	}*/
 }
