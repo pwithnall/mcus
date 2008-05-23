@@ -184,6 +184,9 @@
 										<property name="buffer">mw_code_buffer</property>
 										<property name="width-request">500</property>
 										<property name="height-request">400</property>
+										<property name="highlight-current-line">True</property>
+										<property name="show-line-numbers">True</property>
+										<property name="show-line-marks">True</property>
 									</object>
 								</child>
 							</object>

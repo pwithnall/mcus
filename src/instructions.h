@@ -30,6 +30,9 @@ G_BEGIN_DECLS
 /* Maximum number of operands for an instruction */
 #define MAX_OPERAND_COUNT 2
 
+/* Maximum instruction size in bytes */
+#define MAX_INSTRUCTION_SIZE MAX_OPERAND_COUNT + 1
+
 /* These are convenient enums for the instructions, their decimal opcodes for compilation,
  * and keys for looking the relevant data up in mcus_instruction_data. */
 typedef enum {

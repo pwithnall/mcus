@@ -22,6 +22,8 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <string.h>
+#include <gtksourceview/gtksourceview.h>
+#include <pango/pango.h>
 
 #include "config.h"
 #include "main.h"
@@ -58,6 +60,12 @@ mcus_create_interface (void)
 	/* TODO: This is horrible */
 	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mcus_main_window"));
 	mcus_update_ui ();
+
+	/* Create the current line source mark */
+	mcus->current_instruction_tag = gtk_text_buffer_create_tag (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")),
+								    "current-instruction",
+								    "weight", PANGO_WEIGHT_BOLD,
+								    NULL);
 
 	return mcus->main_window;
 }

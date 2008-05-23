@@ -1,6 +1,18 @@
 2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.ui:
+	* src/instructions.h:
+	* src/interface.c:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h:
+	* src/parser.c:
+	* src/simulation.c: Rearranged the parser a little and added support
+	for highlighting the current instruction as the program executes.
+
+2008-05-23  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/mcus.ui:
 	* src/interface.c:
 	* src/main-window.c:
 	* src/main.c:

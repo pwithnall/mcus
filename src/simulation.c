@@ -21,6 +21,8 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
+#include <gtksourceview/gtksourceview.h>
+#include <string.h>
 
 #include "main.h"
 #include "instructions.h"
@@ -46,10 +48,6 @@ mcus_simulation_init (void)
 	mcus->program_counter = PROGRAM_START_ADDRESS;
 	mcus->stack_pointer = 0;
 	mcus->zero_flag = 0;
-	/*mcus->input_port = 0;
-	mcus->output_port = 0;
-	mcus->analogue_input = 0.0;*/
-	/* Don't really want to reset those TODO */
 
 	for (i = 0; i < REGISTER_COUNT; i++)
 		mcus->registers[i] = 0;
@@ -202,14 +200,13 @@ mcus_simulation_update_ui (void)
 	gchar stack_text[3 * STACK_SIZE];
 	/* 3 characters for one byte as above */
 	gchar byte_text[3];
+	GtkTextIter current_instruction_iter, current_instruction_end_iter, start_iter, end_iter;
+	GtkTextBuffer *text_buffer;
 	gchar *f = memory_markup;
 
 	/* Update the memory label */
 	for (i = 0; i < MEMORY_SIZE; i++) {
-		g_sprintf (f,
-			   G_UNLIKELY (i == mcus->program_counter) ? "<b>%02X</b> " : "%02X ",
-			   mcus->memory[i]);
-
+		g_sprintf (f, G_UNLIKELY (i == mcus->program_counter) ? "<b>%02X</b> " : "%02X ", mcus->memory[i]);
 		f += 3;
 
 		if (G_UNLIKELY (i == mcus->program_counter))
@@ -236,6 +233,9 @@ mcus_simulation_update_ui (void)
 	for (i = 0; i < STACK_SIZE; i++) {
 		g_sprintf (f, "%02X ", mcus->stack[i]);
 		f += 3;
+
+		if (G_UNLIKELY (i % 16 == 15))
+			*(f - 1) = '\n';
 	}
 	*(f - 1) = '\0';
 
@@ -252,6 +252,20 @@ mcus_simulation_update_ui (void)
 	/* Update the stack pointer label */
 	g_sprintf (byte_text, "%02X", mcus->stack_pointer);
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
+
+	/* Move the current line mark */
+	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
+	gtk_text_buffer_remove_tag (text_buffer, mcus->current_instruction_tag, &start_iter, &end_iter);
+
+	gtk_text_buffer_get_iter_at_offset (text_buffer,
+					    &current_instruction_iter,
+					    mcus->offset_map[mcus->program_counter].offset);
+	gtk_text_buffer_get_iter_at_offset (text_buffer,
+					    &current_instruction_end_iter,
+					    mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length);
+	gtk_text_buffer_apply_tag (text_buffer, mcus->current_instruction_tag, &current_instruction_iter, &current_instruction_end_iter);
 
 	mcus_print_debug_data ();
 }

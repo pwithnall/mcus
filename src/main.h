@@ -31,13 +31,18 @@ typedef enum {
 	SIMULATION_RUNNING
 } MCUSSimulationState;
 
+typedef struct {
+	gint offset;
+	guint length;
+} MCUSInstructionOffset;
+
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
 #define STACK_SIZE 64
 #define PROGRAM_START_ADDRESS 0
 /* This is also in the UI file */
 #define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
-/* This is also in the UI file */
+/* This is also in the UI file (in Hz) */
 #define DEFAULT_CLOCK_SPEED 1
 
 typedef struct {
@@ -58,6 +63,8 @@ typedef struct {
 	gboolean debug;
 	guint iteration;
 	MCUSSimulationState simulation_state;
+	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
+	GtkTextTag *current_instruction_tag;
 } MCUS;
 
 MCUS *mcus;

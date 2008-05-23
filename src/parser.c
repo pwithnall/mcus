@@ -42,6 +42,8 @@ typedef struct {
 typedef struct {
 	MCUSInstructionType type;
 	MCUSOperand operands[MAX_OPERAND_COUNT];
+	guint offset;
+	guint length;
 } MCUSInstruction;
 
 const MCUSInstructionData mcus_instruction_data[] = {
@@ -90,6 +92,7 @@ struct _MCUSParserPrivate {
 
 	guchar compiled_size;
 	guint line_number;
+	gboolean dirty;
 };
 
 G_DEFINE_TYPE (MCUSParser, mcus_parser, G_TYPE_OBJECT)
@@ -113,6 +116,8 @@ static void
 mcus_parser_init (MCUSParser *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MCUS_TYPE_PARSER, MCUSParserPrivate);
+	self->priv->line_number = 1;
+	self->priv->compiled_size = PROGRAM_START_ADDRESS;
 }
 
 static void
@@ -159,6 +164,9 @@ reset_state (MCUSParser *self)
 {
 	guint i;
 
+	if (self->priv->dirty == FALSE)
+		return;
+
 	/* Free labels and instructions and reset state */
 	for (i = 0; i < self->priv->label_count; i++)
 		g_free (self->priv->labels[i].label);
@@ -168,10 +176,11 @@ reset_state (MCUSParser *self)
 
 	self->priv->label_count = 0;
 	self->priv->instruction_count = 0;
-	self->priv->compiled_size = 0;
+	self->priv->compiled_size = PROGRAM_START_ADDRESS;
 	self->priv->line_number = 1;
 
 	self->priv->i = NULL;
+	self->priv->dirty = FALSE;
 }
 
 static void
@@ -242,8 +251,6 @@ store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 	/* Increase the compiled size */
 	self->priv->compiled_size += mcus_instruction_data[instruction->type].size;
 }
-
-/* TODO: Subroutine support */
 
 static void
 skip_whitespace (MCUSParser *self, gboolean skip_newlines, gboolean skip_commas)
@@ -322,6 +329,7 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 	return TRUE;
 }
 
+/* TODO: Take an MCUSInstruction as a parameter instead? */
 static gboolean
 extract_instruction (MCUSParser *self, MCUSInstructionType *instruction_type, GError **error)
 {
@@ -481,6 +489,7 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 	/* Set up parser variables */
 	reset_state (self);
 	self->priv->i = (gchar*)code;
+	self->priv->dirty = TRUE;
 
 	skip_whitespace (self, TRUE, FALSE);
 
@@ -493,6 +502,7 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 		if (*(self->priv->i) == '\0')
 			break;
 
+		instruction.offset = self->priv->i - code;
 		if (extract_instruction (self, &(instruction.type), NULL) == TRUE) {
 			/* Instruction */
 			guint i;
@@ -532,6 +542,7 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 				}
 			}
 
+			instruction.length = self->priv->i - code - instruction.offset;
 			store_instruction (self, &instruction);
 			skip_whitespace (self, TRUE, FALSE);
 		} else if (extract_label (self, &label, &child_error) == TRUE) {
@@ -552,6 +563,16 @@ gboolean
 mcus_parser_compile (MCUSParser *self, GError **error)
 {
 	guint i;
+	self->priv->dirty = TRUE;
+
+	/* Allocate the line number map's memory */
+	g_free (mcus->offset_map);
+	mcus->offset_map = g_malloc (sizeof (*mcus->offset_map) * (self->priv->compiled_size + 1));
+
+	if (mcus->debug == TRUE)
+		g_debug ("Allocating line number map of %lu bytes.", sizeof (guint) * self->priv->compiled_size);
+
+	/* Compile it to memory */
 	self->priv->compiled_size = PROGRAM_START_ADDRESS;
 
 	for (i = 0; i < self->priv->instruction_count; i++) {
@@ -571,6 +592,10 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 				     i);
 			return FALSE;
 		}
+
+		/* Store the line number mapping for the instruction */
+		mcus->offset_map[self->priv->compiled_size].offset = instruction->offset;
+		mcus->offset_map[self->priv->compiled_size].length = instruction->length;
 
 		/* Store the opcode first, as that's easy */
 		mcus->memory[self->priv->compiled_size++] = instruction->type;
@@ -603,6 +628,10 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 			}
 		}
 	}
+
+	/* Set the last element in the line number map to -1 for safety */
+	mcus->offset_map[self->priv->compiled_size].offset = -1;
+	mcus->offset_map[self->priv->compiled_size].length = 0;
 
 	reset_state (self);
 

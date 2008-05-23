@@ -31,6 +31,7 @@ mcus_quit (void)
 {
 	g_object_unref (mcus->builder);
 	gtk_widget_destroy (mcus->main_window);
+	g_free (mcus->offset_map);
 	g_free (mcus);
 
 	if (gtk_main_level () > 0)
@@ -87,7 +88,7 @@ main (int argc, char *argv[])
 	/* Setup */
 	mcus = g_new (MCUS, 1);
 	mcus->debug = debug;
-	mcus->clock_speed = DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
+	mcus->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
 
 	/* Create and show the interface */
 	mcus_create_interface ();

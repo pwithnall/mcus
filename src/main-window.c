@@ -92,10 +92,11 @@ mw_compile_activate_cb (GtkAction *self, gpointer user_data)
 						       error->message);
 		gtk_dialog_run (GTK_DIALOG (error_dialog));
 
-		/* TODO? */
+		/* TODO: line highlighting, etc.? */
 
 		gtk_widget_destroy (error_dialog);
 		g_error_free (error);
+		g_object_unref (parser);
 		return;
 	}
 
@@ -112,12 +113,15 @@ mw_compile_activate_cb (GtkAction *self, gpointer user_data)
 						       error->message);
 		gtk_dialog_run (GTK_DIALOG (error_dialog));
 
-		/* TODO? */
+		/* TODO: line highlighting, etc.? */
 
 		gtk_widget_destroy (error_dialog);
 		g_error_free (error);
+		g_object_unref (parser);
+
 		return;
 	}
+	g_object_unref (parser);
 
 	mcus_simulation_update_ui ();
 }
