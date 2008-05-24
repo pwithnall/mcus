@@ -72,7 +72,11 @@ typedef struct {
 
 MCUS *mcus;
 
-void mcus_print_debug_data (void);
+gboolean mcus_save_changes (void);
+void mcus_new_program (void);
+void mcus_open_program (void);
+void mcus_save_program (void);
+void mcus_save_program_as (void);
 void mcus_quit (void);
 
 G_END_DECLS

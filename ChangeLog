@@ -1,5 +1,13 @@
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/interface.c:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h: Added printing support and cleaned up the file operation
+	code a little.
+
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/mcus.ui:
 	* src/main-window.c:
 	* src/main.c:

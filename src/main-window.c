@@ -21,6 +21,7 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksourceview.h>
+#include <gtksourceview/gtksourceprintcompositor.h>
 #include <pango/pango.h>
 
 #include "parser.h"
@@ -331,157 +332,80 @@ mw_about_activate_cb (GtkAction *self, gpointer user_data)
 	g_free (license);
 }
 
-void mw_save_activate_cb (GtkAction *self, gpointer user_data);
-void mw_save_as_activate_cb (GtkAction *self, gpointer user_data);
-
-/* Returns TRUE if changes were saved, or FALSE if the operation was cancelled */
-static gboolean
-ask_to_save_changes (void)
-{
-	GtkWidget *dialog;
-
-	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
-					 _("Save the changes to program before closing?"));
-	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
-				_("Close without Saving"), GTK_RESPONSE_CLOSE,
-				"gtk-cancel", GTK_RESPONSE_CANCEL,
-				"gtk-save-as", GTK_RESPONSE_OK,
-				NULL);
-	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("If you don't save, your changes will be permanently lost."));
-
-	switch (gtk_dialog_run (GTK_DIALOG (dialog))) {
-	case GTK_RESPONSE_CLOSE:
-		gtk_widget_destroy (dialog);
-		return TRUE;
-	case GTK_RESPONSE_CANCEL:
-		gtk_widget_destroy (dialog);
-		return FALSE;
-	default:
-		gtk_widget_destroy (dialog);
-		mw_save_activate_cb (NULL, NULL);
-		return TRUE;
-	}
-}
-
 void
 mw_new_activate_cb (GtkAction *self, gpointer user_data)
 {
-	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	/* Ask to save old files */
-	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    ask_to_save_changes () == TRUE) {
-		gtk_text_buffer_set_text (text_buffer, "", -1);
-		gtk_text_buffer_set_modified (text_buffer, FALSE);
-	}
+	mcus_new_program ();
 }
 
 void
 mw_open_activate_cb (GtkAction *self, gpointer user_data)
 {
-	GIOChannel *channel;
-	GtkWidget *dialog;
-	gchar *file_contents = NULL;
-	GError *error = NULL;
-	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	/* Ask to save old files */
-	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    ask_to_save_changes () == TRUE) {
-		/* Get a filename to open */
-		dialog = gtk_file_chooser_dialog_new (_("Open File"), GTK_WINDOW (mcus->main_window), GTK_FILE_CHOOSER_ACTION_OPEN,
-						      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-						      GTK_STOCK_OPEN, GTK_RESPONSE_OK,
-						      NULL);
-
-		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_OK)
-		{
-			mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-			channel = g_io_channel_new_file (mcus->current_filename, "r", &error);
-			if (error != NULL)
-				goto file_error;
-
-			g_io_channel_read_to_end (channel, &file_contents, NULL, &error);
-			if (error != NULL)
-				goto file_error;
-
-			gtk_text_buffer_set_text (text_buffer, file_contents, -1);
-			gtk_text_buffer_set_modified (text_buffer, FALSE);
-			g_free (file_contents);
-
-			g_io_channel_shutdown (channel, FALSE, NULL);
-			g_io_channel_unref (channel);
-		}
-		gtk_widget_destroy (dialog);
-	}
-
-	return;
-
-file_error:
-	mcus_interface_error (error->message);
-	g_io_channel_unref (channel);
-	gtk_widget_destroy (dialog);
-	if (file_contents != NULL)
-		g_free (file_contents);
+	mcus_open_program ();
 }
 
 void
 mw_save_activate_cb (GtkAction *self, gpointer user_data)
 {
-	GtkTextIter start_iter, end_iter;
-	GtkTextBuffer *text_buffer;
-	GIOChannel *channel;
-	gchar *file_contents = NULL;
-	GError *error = NULL;
-
-	if (mcus->current_filename == NULL)
-		return mw_save_as_activate_cb (self, user_data);
-
-	channel = g_io_channel_new_file (mcus->current_filename, "w", &error);
-	if (error != NULL)
-		goto file_error;
-
-	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
-	file_contents = gtk_text_buffer_get_text (text_buffer, &start_iter, &end_iter, FALSE);
-
-	g_io_channel_write_chars (channel, file_contents, -1, NULL, &error);
-	if (error != NULL)
-		goto file_error;
-
-	gtk_text_buffer_set_modified (text_buffer, FALSE);
-	g_free (file_contents);
-
-	g_io_channel_shutdown (channel, TRUE, NULL);
-	g_io_channel_unref (channel);
-
-	return;
-
-file_error:
-	mcus_interface_error (error->message);
-	g_io_channel_unref (channel);
-	if (file_contents != NULL)
-		g_free (file_contents);
+	mcus_save_program ();
 }
 
 void
 mw_save_as_activate_cb (GtkAction *self, gpointer user_data)
 {
-	GtkWidget *dialog;
+	mcus_save_program_as ();
+}
 
-	dialog = gtk_file_chooser_dialog_new (_("Save File"), GTK_WINDOW (mcus->main_window), GTK_FILE_CHOOSER_ACTION_SAVE,
-					      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					      GTK_STOCK_SAVE, GTK_RESPONSE_OK,
-					      NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
-	if (mcus->current_filename != NULL)
-		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), mcus->current_filename);
+static gboolean
+paginate_cb (GtkPrintOperation *operation, GtkPrintContext *context, GtkSourcePrintCompositor *source_compositor)
+{
+	if (gtk_source_print_compositor_paginate (source_compositor, context)) {
+		gint n_pages;
+        
+		n_pages = gtk_source_print_compositor_get_n_pages (source_compositor);
+		gtk_print_operation_set_n_pages (operation, n_pages);
 
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_OK) {
-		g_free (mcus->current_filename);
-		mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		mw_save_activate_cb (self, user_data);
+		return TRUE;
 	}
-	gtk_widget_destroy (dialog);
+
+	return FALSE;
+}
+
+static void
+draw_page_cb (GtkPrintOperation *operation, GtkPrintContext *context, gint page_number, GtkSourcePrintCompositor *source_compositor)
+{
+	gtk_source_print_compositor_draw_page (source_compositor, context, page_number);
+}
+
+void
+mw_print_activate_cb (GtkAction *self, gpointer user_data)
+{
+	GtkPrintOperation *operation;
+	GtkPrintOperationResult res;
+	GtkSourcePrintCompositor *source_compositor;
+	static GtkPrintSettings *settings;
+
+	/* TODO: Header/Footer? */
+	operation = gtk_print_operation_new ();
+	source_compositor = gtk_source_print_compositor_new (GTK_SOURCE_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")));
+	gtk_source_print_compositor_set_print_line_numbers (source_compositor, 1);
+	gtk_source_print_compositor_set_highlight_syntax (source_compositor, TRUE);
+
+	if (settings != NULL) 
+		gtk_print_operation_set_print_settings (operation, settings);
+
+	g_signal_connect (operation, "paginate", G_CALLBACK (paginate_cb), source_compositor);
+	g_signal_connect (operation, "draw-page", G_CALLBACK (draw_page_cb), source_compositor);
+
+	res = gtk_print_operation_run (operation, GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
+				       GTK_WINDOW (mcus->main_window), NULL);
+
+	if (res == GTK_PRINT_OPERATION_RESULT_APPLY) {
+		if (settings != NULL)
+			g_object_unref (settings);
+		settings = g_object_ref (gtk_print_operation_get_print_settings (operation));
+	}
+
+	g_object_unref (source_compositor);
+	g_object_unref (operation);
 }

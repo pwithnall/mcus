@@ -26,9 +26,169 @@
 #include "main.h"
 #include "interface.h"
 
+/* Returns TRUE if changes were saved, or FALSE if the operation was cancelled */
+gboolean
+mcus_save_changes (void)
+{
+	GtkWidget *dialog;
+
+	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
+					 _("Save the changes to program before closing?"));
+	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
+				_("Close without Saving"), GTK_RESPONSE_CLOSE,
+				"gtk-cancel", GTK_RESPONSE_CANCEL,
+				"gtk-save-as", GTK_RESPONSE_OK,
+				NULL);
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("If you don't save, your changes will be permanently lost."));
+
+	switch (gtk_dialog_run (GTK_DIALOG (dialog))) {
+	case GTK_RESPONSE_CLOSE:
+		gtk_widget_destroy (dialog);
+		return TRUE;
+	case GTK_RESPONSE_CANCEL:
+		gtk_widget_destroy (dialog);
+		return FALSE;
+	default:
+		gtk_widget_destroy (dialog);
+		mcus_save_program ();
+		return TRUE;
+	}
+}
+
+void
+mcus_new_program (void)
+{
+	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	/* Ask to save old files */
+	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
+	    mcus_save_changes () == TRUE) {
+		gtk_text_buffer_set_text (text_buffer, "", -1);
+		gtk_text_buffer_set_modified (text_buffer, FALSE);
+	}
+}
+
+void
+mcus_open_program (void)
+{
+	GIOChannel *channel;
+	GtkWidget *dialog;
+	gchar *file_contents = NULL;
+	GError *error = NULL;
+	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	/* Ask to save old files */
+	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
+	    mcus_save_changes () == TRUE) {
+		/* Get a filename to open */
+		dialog = gtk_file_chooser_dialog_new (_("Open File"), GTK_WINDOW (mcus->main_window), GTK_FILE_CHOOSER_ACTION_OPEN,
+						      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+						      GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+						      NULL);
+
+		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+		{
+			mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+			channel = g_io_channel_new_file (mcus->current_filename, "r", &error);
+			if (error != NULL)
+				goto file_error;
+
+			g_io_channel_read_to_end (channel, &file_contents, NULL, &error);
+			if (error != NULL)
+				goto file_error;
+
+			gtk_text_buffer_set_text (text_buffer, file_contents, -1);
+			gtk_text_buffer_set_modified (text_buffer, FALSE);
+			g_free (file_contents);
+
+			g_io_channel_shutdown (channel, FALSE, NULL);
+			g_io_channel_unref (channel);
+		}
+		gtk_widget_destroy (dialog);
+	}
+
+	return;
+
+file_error:
+	mcus_interface_error (error->message);
+	g_io_channel_unref (channel);
+	gtk_widget_destroy (dialog);
+	if (file_contents != NULL)
+		g_free (file_contents);
+}
+
+void
+mcus_save_program (void)
+{
+	GtkTextIter start_iter, end_iter;
+	GtkTextBuffer *text_buffer;
+	GIOChannel *channel;
+	gchar *file_contents = NULL;
+	GError *error = NULL;
+
+	if (mcus->current_filename == NULL)
+		return mcus_save_program_as ();
+
+	channel = g_io_channel_new_file (mcus->current_filename, "w", &error);
+	if (error != NULL)
+		goto file_error;
+
+	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
+	file_contents = gtk_text_buffer_get_text (text_buffer, &start_iter, &end_iter, FALSE);
+
+	g_io_channel_write_chars (channel, file_contents, -1, NULL, &error);
+	if (error != NULL)
+		goto file_error;
+
+	gtk_text_buffer_set_modified (text_buffer, FALSE);
+	g_free (file_contents);
+
+	g_io_channel_shutdown (channel, TRUE, NULL);
+	g_io_channel_unref (channel);
+
+	return;
+
+file_error:
+	mcus_interface_error (error->message);
+	g_io_channel_unref (channel);
+	if (file_contents != NULL)
+		g_free (file_contents);
+}
+
+void
+mcus_save_program_as (void)
+{
+	GtkWidget *dialog;
+
+	dialog = gtk_file_chooser_dialog_new (_("Save File"), GTK_WINDOW (mcus->main_window), GTK_FILE_CHOOSER_ACTION_SAVE,
+					      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+					      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+					      NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
+	if (mcus->current_filename != NULL)
+		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), mcus->current_filename);
+
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+		g_free (mcus->current_filename);
+		mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		mcus_save_program ();
+	}
+	gtk_widget_destroy (dialog);
+}
+
 void
 mcus_quit (void)
 {
+	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	/* Ask to save old files */
+	if (gtk_text_buffer_get_modified (text_buffer) == TRUE &&
+	    mcus_save_changes () == FALSE) {
+		return;
+	}
+
 	g_object_unref (mcus->builder);
 	gtk_widget_destroy (mcus->main_window);
 	g_free (mcus->offset_map);

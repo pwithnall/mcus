@@ -154,9 +154,13 @@ mcus_update_ui (void)
 
 	source_buffer = GTK_SOURCE_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
 
+	SET_SENSITIVITY ("mcus_new_action", sensitive)
+	SET_SENSITIVITY ("mcus_open_action", sensitive)
+	SET_SENSITIVITY ("mcus_save_action", sensitive && gtk_text_buffer_get_modified (GTK_TEXT_BUFFER (source_buffer)))
+	SET_SENSITIVITY ("mcus_save_as_action", sensitive)
 	SET_SENSITIVITY ("mcus_print_action", sensitive)
-	SET_SENSITIVITY ("mcus_undo_action", mcus->simulation_state == SIMULATION_STOPPED && gtk_source_buffer_can_undo (source_buffer))
-	SET_SENSITIVITY ("mcus_redo_action", mcus->simulation_state == SIMULATION_STOPPED && gtk_source_buffer_can_redo (source_buffer))
+	SET_SENSITIVITY ("mcus_undo_action", sensitive && gtk_source_buffer_can_undo (source_buffer))
+	SET_SENSITIVITY ("mcus_redo_action", sensitive && gtk_source_buffer_can_redo (source_buffer))
 	SET_SENSITIVITY ("mcus_cut_action", mcus->simulation_state != SIMULATION_RUNNING && gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (source_buffer)))
 	SET_SENSITIVITY ("mcus_copy_action", mcus->simulation_state != SIMULATION_RUNNING && gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (source_buffer)))
 	SET_SENSITIVITY ("mcus_paste_action", sensitive)
