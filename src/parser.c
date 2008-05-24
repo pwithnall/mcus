@@ -88,7 +88,7 @@ struct _MCUSParserPrivate {
 	guint instruction_count;
 
 	const gchar *code;
-	gchar *i;
+	const gchar *i;
 
 	guchar compiled_size;
 	guint line_number;
@@ -489,7 +489,7 @@ extract_instruction (MCUSParser *self, MCUSInstruction *instruction, GError **er
 	/* Parse the operands */
 	for (i = 0; i < instruction_data->operand_count; i++) {
 		MCUSOperand operand;
-		gchar *old_i = self->priv->i;
+		const gchar *old_i = self->priv->i;
 		GError *child_error = NULL;
 
 		if (extract_operand (self, &operand, &child_error) == TRUE) {
@@ -537,7 +537,7 @@ mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error)
 	/* Set up parser variables */
 	reset_state (self);
 	self->priv->code = code;
-	self->priv->i = (gchar*)code;
+	self->priv->i = code;
 	self->priv->dirty = TRUE;
 
 	skip_whitespace (self, TRUE, FALSE);
@@ -593,6 +593,9 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 		instruction = &(self->priv->instructions[i]);
 		instruction_data = &(mcus_instruction_data[instruction->type]);
 
+		/* In case of error, ensure the correct part of the code will be highlighted */
+		self->priv->i = self->priv->code + instruction->offset;
+
 		/* Check we're not overflowing memory */
 		projected_size = self->priv->compiled_size + instruction_data->size;
 
@@ -609,6 +612,7 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 
 		/* Store the opcode first, as that's easy */
 		mcus->memory[self->priv->compiled_size++] = instruction->type;
+		self->priv->i += strlen (instruction_data->name) + 1;
 
 		/* Store the operands, although we have to special-case IN and OUT instructions */
 		switch (instruction->type) {

@@ -94,7 +94,7 @@ mcus_main_window_init (void)
 								    NULL);
 	mcus->error_tag = gtk_text_buffer_create_tag (text_buffer,
 						      "error",
-						      "background", "red",
+						      "background", "pink",
 						      NULL);
 
 	/* Connect so we can update the undo/redo/cut/copy/delete actions */

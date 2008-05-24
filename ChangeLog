@@ -1,5 +1,14 @@
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/mcus.ui:
+	* src/main-window.c:
+	* src/parser.c: Many small interface improvements, such as padding,
+	spacing and default focus. Addition of keyboard shortcuts for most
+	of the actions which don't have them. Some more small improvements
+	to error highlighting.
+
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/Makefile.am:
 	* data/ocr-assembly.lang:
 	* src/main-window.c:

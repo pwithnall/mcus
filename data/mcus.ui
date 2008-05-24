@@ -38,6 +38,7 @@
 						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_save_as_activate_cb"/>
 					</object>
+					<accelerator key="S" modifiers="GDK_CONTROL_MASK | GDK_SHIFT_MASK"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_print_action">
@@ -45,6 +46,7 @@
 						<property name="name">file-print</property>
 						<signal name="activate" handler="mw_print_activate_cb"/>
 					</object>
+					<accelerator key="P" modifiers="GDK_CONTROL_MASK"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_quit_action">
@@ -66,6 +68,7 @@
 						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_undo_activate_cb"/>
 					</object>
+					<accelerator key="Z" modifiers="GDK_CONTROL_MASK"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_redo_action">
@@ -74,6 +77,7 @@
 						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_redo_activate_cb"/>
 					</object>
+					<accelerator key="Z" modifiers="GDK_CONTROL_MASK | GDK_SHIFT_MASK"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_cut_action">
@@ -118,6 +122,7 @@
 						<property name="name">program-run</property>
 						<signal name="activate" handler="mw_run_activate_cb"/>
 					</object>
+					<accelerator key="F5"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_pause_action">
@@ -127,6 +132,7 @@
 						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_pause_activate_cb"/>
 					</object>
+					<accelerator key="F6"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_stop_action">
@@ -136,6 +142,7 @@
 						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_stop_activate_cb"/>
 					</object>
+					<accelerator key="F7"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_step_forward_action">
@@ -145,6 +152,7 @@
 						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_step_forward_activate_cb"/>
 					</object>
+					<accelerator key="F8"/>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_help_action">
@@ -239,6 +247,7 @@
 				</child>
 				<child>
 					<object class="GtkHBox" id="hbox1">
+						<property name="spacing">5</property>
 						<child>
 							<object class="GtkScrolledWindow" id="scrolledwindow1">
 								<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
@@ -252,6 +261,7 @@
 										<property name="highlight-current-line">True</property>
 										<property name="show-line-numbers">True</property>
 										<property name="show-line-marks">True</property>
+										<property name="has-focus">True</property>
 									</object>
 								</child>
 							</object>
@@ -270,9 +280,12 @@
 											<object class="GtkTable" id="table0">
 												<property name="n-rows">3</property>
 												<property name="n-columns">3</property>
+												<property name="column-spacing">5</property>
 												<child>
 													<object class="GtkLabel" id="label6">
-														<property name="label" translatable="yes">Program Counter</property>
+														<property name="label" translatable="yes">&lt;b&gt;Program Counter&lt;/b&gt;</property>
+														<property name="use-markup">True</property>
+														<property name="xalign">1</property>
 													</object>
 													<packing>
 														<property name="top-attach">0</property>
@@ -284,6 +297,7 @@
 												<child>
 													<object class="GtkLabel" id="mw_program_counter_label">
 														<property name="label">00</property>
+														<property name="xalign">0</property>
 													</object>
 													<packing>
 														<property name="top-attach">0</property>
@@ -294,7 +308,9 @@
 												</child>
 												<child>
 													<object class="GtkLabel" id="label7">
-														<property name="label" translatable="yes">Stack Pointer</property>
+														<property name="label" translatable="yes">&lt;b&gt;Stack Pointer&lt;/b&gt;</property>
+														<property name="use-markup">True</property>
+														<property name="xalign">1</property>
 													</object>
 													<packing>
 														<property name="top-attach">1</property>
@@ -306,6 +322,7 @@
 												<child>
 													<object class="GtkLabel" id="mw_stack_pointer_label">
 														<property name="label">00</property>
+														<property name="xalign">0</property>
 													</object>
 													<packing>
 														<property name="top-attach">1</property>
@@ -316,7 +333,9 @@
 												</child>
 												<child>
 													<object class="GtkLabel" id="label8">
-														<property name="label" translatable="yes">Clock Speed</property>
+														<property name="label" translatable="yes">&lt;b&gt;Clock Speed&lt;/b&gt;</property>
+														<property name="use-markup">True</property>
+														<property name="xalign">1</property>
 													</object>
 													<packing>
 														<property name="top-attach">2</property>
@@ -342,6 +361,7 @@
 												<child>
 													<object class="GtkLabel" id="label9">
 														<property name="label" translatable="yes">Hz</property>
+														<property name="xalign">0</property>
 													</object>
 													<packing>
 														<property name="top-attach">2</property>
@@ -353,6 +373,9 @@
 											</object>
 										</child>
 									</object>
+									<packing>
+										<property name="expand">False</property>
+									</packing>
 								</child>
 								<child>
 									<object class="GtkFrame" id="frame1">
@@ -366,9 +389,12 @@
 											<object class="GtkTable" id="table1">
 												<property name="n-rows">3</property>
 												<property name="n-columns">3</property>
+												<property name="column-spacing">5</property>
 												<child>
 													<object class="GtkLabel" id="label4">
-														<property name="label" translatable="yes">Input Port</property>
+														<property name="label" translatable="yes">&lt;b&gt;Input Port&lt;/b&gt;</property>
+														<property name="use-markup">True</property>
+														<property name="xalign">1</property>
 													</object>
 													<packing>
 														<property name="top-attach">0</property>
@@ -392,7 +418,9 @@
 												</child>
 												<child>
 													<object class="GtkLabel" id="label4">
-														<property name="label" translatable="yes">Output Port</property>
+														<property name="label" translatable="yes">&lt;b&gt;Output Port&lt;/b&gt;</property>
+														<property name="use-markup">True</property>
+														<property name="xalign">1</property>
 													</object>
 													<packing>
 														<property name="top-attach">1</property>
@@ -404,6 +432,7 @@
 												<child>
 													<object class="GtkLabel" id="mw_output_port_label">
 														<property name="label">00</property>
+														<property name="xalign">0</property>
 													</object>
 													<packing>
 														<property name="top-attach">1</property>
@@ -414,7 +443,9 @@
 												</child>
 												<child>
 													<object class="GtkLabel" id="label4">
-														<property name="label" translatable="yes">Analogue Input</property>
+														<property name="label" translatable="yes">&lt;b&gt;Analogue Input&lt;/b&gt;</property>
+														<property name="use-markup">True</property>
+														<property name="xalign">1</property>
 													</object>
 													<packing>
 														<property name="top-attach">2</property>
@@ -438,6 +469,7 @@
 												<child>
 													<object class="GtkLabel" id="label5">
 														<property name="label" translatable="yes">volts</property>
+														<property name="xalign">0</property>
 													</object>
 													<packing>
 														<property name="top-attach">2</property>
@@ -535,14 +567,6 @@
 							</packing>
 						</child>
 					</object>
-				</child>
-				<child>
-					<object class="GtkStatusbar" id="mw_statusbar">
-						<property name="spacing">2</property>
-					</object>
-					<packing>
-						<property name="expand">False</property>
-					</packing>
 				</child>
 			</object>
 		</child>
