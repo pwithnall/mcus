@@ -169,7 +169,7 @@ mcus_simulation_iterate (GError **error)
 		mcus->registers[0] = mcus->memory[mcus->registers[7]];
 		break;
 	case SUBROUTINE_WAIT1MS:
-		/* TODO */
+		g_usleep (1000);
 		break;
 	case SUBROUTINE_READADC:
 		mcus->registers[0] = 255.0 * mcus->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;

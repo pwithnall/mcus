@@ -24,6 +24,8 @@
 
 G_BEGIN_DECLS
 
+void mcus_main_window_init (void);
+
 G_END_DECLS
 
 #endif /* !MCUS_MAIN_WINDOW_H */

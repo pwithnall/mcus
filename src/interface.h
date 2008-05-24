@@ -25,11 +25,18 @@
 
 G_BEGIN_DECLS
 
+#define MCUS_IO_ERROR (mcus_io_error_quark ())
+GQuark mcus_io_error_quark (void);
+
+enum {
+	MCUS_IO_ERROR_INPUT
+};
+
 GtkWidget *mcus_create_interface (void);
-void mcus_interface_error (const gchar *message, GtkWidget *parent_window);
+void mcus_interface_error (const gchar *message);
 void mcus_print_debug_data (void);
 void mcus_update_ui (void);
-void mcus_read_input_port (void);
+gboolean mcus_read_input_port (GError **error);
 void mcus_read_analogue_input (void);
 void mcus_remove_tag (GtkTextTag *tag);
 void mcus_tag_range (GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);

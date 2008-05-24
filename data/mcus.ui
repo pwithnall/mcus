@@ -10,6 +10,34 @@
 					</object>
 				</child>
 				<child>
+					<object class="GtkAction" id="mcus_new_action">
+						<property name="stock-id">gtk-new</property>
+						<property name="name">file-new</property>
+						<signal name="activate" handler="mw_new_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_open_action">
+						<property name="stock-id">gtk-open</property>
+						<property name="name">file-open</property>
+						<signal name="activate" handler="mw_open_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_save_action">
+						<property name="stock-id">gtk-save</property>
+						<property name="name">file-save</property>
+						<signal name="activate" handler="mw_save_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_save_as_action">
+						<property name="stock-id">gtk-save-as</property>
+						<property name="name">file-save-as</property>
+						<signal name="activate" handler="mw_save_as_activate_cb"/>
+					</object>
+				</child>
+				<child>
 					<object class="GtkAction" id="mcus_print_action">
 						<property name="stock-id">gtk-print</property>
 						<property name="name">file-print</property>
@@ -30,9 +58,26 @@
 					</object>
 				</child>
 				<child>
+					<object class="GtkAction" id="mcus_undo_action">
+						<property name="stock-id">gtk-undo</property>
+						<property name="name">edit-undo</property>
+						<property name="sensitive">False</property>
+						<signal name="activate" handler="mw_undo_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_redo_action">
+						<property name="stock-id">gtk-redo</property>
+						<property name="name">edit-redo</property>
+						<property name="sensitive">False</property>
+						<signal name="activate" handler="mw_redo_activate_cb"/>
+					</object>
+				</child>
+				<child>
 					<object class="GtkAction" id="mcus_cut_action">
 						<property name="stock-id">gtk-cut</property>
 						<property name="name">edit-cut</property>
+						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_cut_activate_cb"/>
 					</object>
 				</child>
@@ -40,6 +85,7 @@
 					<object class="GtkAction" id="mcus_copy_action">
 						<property name="stock-id">gtk-copy</property>
 						<property name="name">edit-copy</property>
+						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_copy_activate_cb"/>
 					</object>
 				</child>
@@ -66,6 +112,7 @@
 				<child>
 					<object class="GtkAction" id="mcus_run_action">
 						<property name="label">_Run</property>
+						<property name="stock-id">gtk-media-play</property>
 						<property name="name">program-run</property>
 						<signal name="activate" handler="mw_run_activate_cb"/>
 					</object>
@@ -73,15 +120,28 @@
 				<child>
 					<object class="GtkAction" id="mcus_pause_action">
 						<property name="label">_Pause</property>
+						<property name="stock-id">gtk-media-pause</property>
 						<property name="name">program-pause</property>
+						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_pause_activate_cb"/>
 					</object>
 				</child>
 				<child>
 					<object class="GtkAction" id="mcus_stop_action">
 						<property name="label">_Stop</property>
+						<property name="stock-id">gtk-media-stop</property>
 						<property name="name">program-stop</property>
+						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_stop_activate_cb"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAction" id="mcus_step_forward_action">
+						<property name="label">Step _Forward</property>
+						<property name="stock-id">gtk-media-forward</property>
+						<property name="name">program-step-forward</property>
+						<property name="sensitive">False</property>
+						<signal name="activate" handler="mw_step_forward_activate_cb"/>
 					</object>
 				</child>
 				<child>
@@ -102,10 +162,19 @@
 		<ui>
 			<menubar name="mw_menu_bar">
 				<menu action="mcus_file_action">
+					<menuitem action="mcus_new_action"/>
+					<menuitem action="mcus_open_action"/>
+					<separator/>
+					<menuitem action="mcus_save_action"/>
+					<menuitem action="mcus_save_as_action"/>
+					<separator/>
 					<menuitem action="mcus_print_action"/>
 					<menuitem action="mcus_quit_action"/>
 				</menu>
 				<menu action="mcus_edit_action">
+					<menuitem action="mcus_undo_action"/>
+					<menuitem action="mcus_redo_action"/>
+					<separator/>
 					<menuitem action="mcus_cut_action"/>
 					<menuitem action="mcus_copy_action"/>
 					<menuitem action="mcus_paste_action"/>
@@ -115,6 +184,8 @@
 					<menuitem action="mcus_run_action"/>
 					<menuitem action="mcus_pause_action"/>
 					<menuitem action="mcus_stop_action"/>
+					<separator/>
+					<menuitem action="mcus_step_forward_action"/>
 				</menu>
 				<menu action="mcus_help_action">
 					<menuitem action="mcus_about_action"/>
@@ -128,6 +199,7 @@
 				<toolitem action="mcus_run_action"/>
 				<toolitem action="mcus_pause_action"/>
 				<toolitem action="mcus_stop_action"/>
+				<toolitem action="mcus_step_forward_action"/>
 			</toolbar>
 		</ui>
 	</object>

@@ -1,5 +1,16 @@
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/mcus.ui:
+	* src/interface.c:
+	* src/interface.h:
+	* src/main-window.c:
+	* src/main-window.h:
+	* src/simulation.c: Finalised the menu structure, implemented a few
+	more of the menu items, added support for step-through execution,
+	and cleaned up some error reporting code.
+
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/mcus.ui: Merged the "Compile" operation into the "Run"
 	operation.
 	* src/instructions.h:

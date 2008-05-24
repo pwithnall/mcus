@@ -23,16 +23,15 @@
 #include <glib/gprintf.h>
 #include <string.h>
 #include <gtksourceview/gtksourceview.h>
-#include <pango/pango.h>
 
 #include "config.h"
 #include "main.h"
 #include "interface.h"
+#include "main-window.h"
 
 GtkWidget *
 mcus_create_interface (void)
 {
-	GtkTextBuffer *text_buffer;
 	GError *error = NULL;
 
 	mcus->builder = gtk_builder_new ();
@@ -58,20 +57,8 @@ mcus_create_interface (void)
 	gtk_builder_connect_signals (mcus->builder, NULL);
 
 	/* Set up the main window */
-	/* TODO: This is horrible */
 	mcus->main_window = GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mcus_main_window"));
-	mcus_update_ui ();
-
-	/* Create the highlighting tags */
-	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-	mcus->current_instruction_tag = gtk_text_buffer_create_tag (text_buffer,
-								    "current-instruction",
-								    "weight", PANGO_WEIGHT_BOLD,
-								    NULL);
-	mcus->error_tag = gtk_text_buffer_create_tag (text_buffer,
-						      "error",
-						      "background", "red",
-						      NULL);
+	mcus_main_window_init ();
 
 	return mcus->main_window;
 }
@@ -85,13 +72,13 @@ mcus_create_interface (void)
  * the console.
  **/
 void
-mcus_interface_error (const gchar *message, GtkWidget *parent_window)
+mcus_interface_error (const gchar *message)
 {
 	GtkWidget *dialog;
 
 	g_warning (message);
 
-	dialog = gtk_message_dialog_new (GTK_WINDOW (parent_window),
+	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
 				GTK_DIALOG_MODAL,
 				GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK,
@@ -154,56 +141,78 @@ mcus_print_debug_data (void)
 void
 mcus_update_ui (void)
 {
+	GtkSourceBuffer *source_buffer;
 	gboolean sensitive = mcus->simulation_state == SIMULATION_STOPPED ? TRUE : FALSE;
 
-#define SET_SENSITIVITY2(W,S) \
+#define SET_SENSITIVITY(W,S) \
 	g_object_set (gtk_builder_get_object (mcus->builder, (W)), "sensitive", (S), NULL);
-#define SET_SENSITIVITY(W) \
-	SET_SENSITIVITY2(W, sensitive)
 
-	SET_SENSITIVITY ("mw_code_view")
-	SET_SENSITIVITY2 ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
-	SET_SENSITIVITY2 ("mw_analogue_input_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
-	SET_SENSITIVITY2 ("mw_clock_speed_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY ("mw_code_view", sensitive)
+	SET_SENSITIVITY ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY ("mw_analogue_input_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY ("mw_clock_speed_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
 
-	SET_SENSITIVITY ("mcus_print_action")
-	SET_SENSITIVITY ("mcus_cut_action")
-	SET_SENSITIVITY ("mcus_copy_action")
-	SET_SENSITIVITY ("mcus_paste_action")
-	SET_SENSITIVITY ("mcus_delete_action")
+	source_buffer = GTK_SOURCE_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
 
-	SET_SENSITIVITY2 ("mcus_run_action", mcus->simulation_state != SIMULATION_RUNNING)
-	SET_SENSITIVITY2 ("mcus_pause_action", mcus->simulation_state == SIMULATION_RUNNING)
-	SET_SENSITIVITY2 ("mcus_stop_action", mcus->simulation_state != SIMULATION_STOPPED)
+	SET_SENSITIVITY ("mcus_print_action", sensitive)
+	SET_SENSITIVITY ("mcus_undo_action", mcus->simulation_state == SIMULATION_STOPPED && gtk_source_buffer_can_undo (source_buffer))
+	SET_SENSITIVITY ("mcus_redo_action", mcus->simulation_state == SIMULATION_STOPPED && gtk_source_buffer_can_redo (source_buffer))
+	SET_SENSITIVITY ("mcus_cut_action", mcus->simulation_state != SIMULATION_RUNNING && gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (source_buffer)))
+	SET_SENSITIVITY ("mcus_copy_action", mcus->simulation_state != SIMULATION_RUNNING && gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (source_buffer)))
+	SET_SENSITIVITY ("mcus_paste_action", sensitive)
+	SET_SENSITIVITY ("mcus_delete_action", mcus->simulation_state != SIMULATION_RUNNING && gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (source_buffer)))
+
+	SET_SENSITIVITY ("mcus_run_action", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY ("mcus_pause_action", mcus->simulation_state == SIMULATION_RUNNING)
+	SET_SENSITIVITY ("mcus_stop_action", mcus->simulation_state != SIMULATION_STOPPED)
+	SET_SENSITIVITY ("mcus_step_forward_action", mcus->simulation_state == SIMULATION_PAUSED)
 }
 
-void
-mcus_read_input_port (void)
+GQuark
+mcus_io_error_quark (void)
+{
+	static GQuark q = 0;
+
+	if (q == 0)
+		q = g_quark_from_static_string ("mcus-io-error-quark");
+
+	return q;
+}
+
+gboolean
+mcus_read_input_port (GError **error)
 {
 	gint digit_value;
 	const gchar *entry_text;
 
 	entry_text = gtk_entry_get_text (GTK_ENTRY (gtk_builder_get_object (mcus->builder, "mw_input_port_entry")));
 	if (strlen (entry_text) != 2) {
-		g_error ("TODO: bad input port length");
-		return;
+		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
+			     _("The input port value was not two digits long."));
+		return FALSE;
 	}
 
 	/* Deal with the first digit */
 	digit_value = g_ascii_xdigit_value (entry_text[0]);
 	if (digit_value == -1) {
-		g_error ("TODO: bad input port value");
-		return;
+		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
+			     _("The input port contained a non-hexadecimal digit (\"%c\")."),
+			     entry_text[0]);
+		return FALSE;
 	}
 	mcus->input_port = digit_value * 16;
 
 	/* Deal with the second digit */
 	digit_value = g_ascii_xdigit_value (entry_text[1]);
 	if (digit_value == -1) {
-		g_error ("TODO: bad input port value");
-		return;
+		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
+			     _("The input port contained a non-hexadecimal digit (\"%c\")."),
+			     entry_text[1]);
+		return FALSE;
 	}
 	mcus->input_port += digit_value;
+
+	return TRUE;
 }
 
 void
