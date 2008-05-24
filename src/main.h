@@ -19,6 +19,7 @@
 
 #include <gtk/gtk.h>
 #include <glib.h>
+#include <gtksourceview/gtksourcelanguagemanager.h>
 
 #ifndef MCUS_MAIN_H
 #define MCUS_MAIN_H
@@ -68,6 +69,7 @@ typedef struct {
 	GtkTextTag *current_instruction_tag;
 	GtkTextTag *error_tag;
 	gchar *current_filename;
+	GtkSourceLanguageManager *language_manager;
 } MCUS;
 
 MCUS *mcus;

@@ -22,6 +22,7 @@
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksourceview.h>
 #include <gtksourceview/gtksourceprintcompositor.h>
+#include <gtksourceview/gtksourcelanguagemanager.h>
 #include <pango/pango.h>
 
 #include "parser.h"
@@ -76,6 +77,12 @@ void
 mcus_main_window_init (void)
 {
 	GtkTextBuffer *text_buffer;
+	GtkSourceLanguage *language;
+	const gchar * const language_dirs[] = {
+		PACKAGE_DATA_DIR"/mcus/",
+		"./data/",
+		NULL
+	};
 
 	mcus_update_ui ();
 
@@ -98,6 +105,13 @@ mcus_main_window_init (void)
 	/* Watch for modification of the code buffer */
 	g_signal_connect (text_buffer, "modified-changed", G_CALLBACK (buffer_modified_changed_cb), NULL);
 	gtk_text_buffer_set_modified (text_buffer, FALSE);
+
+	/* Set up the syntax highlighting */
+	mcus->language_manager = gtk_source_language_manager_new ();
+	gtk_source_language_manager_set_search_path (mcus->language_manager, (gchar**)language_dirs);
+	language = gtk_source_language_manager_get_language (mcus->language_manager, "ocr-assembly");
+
+	gtk_source_buffer_set_language (GTK_SOURCE_BUFFER (text_buffer), language);
 }
 
 gboolean

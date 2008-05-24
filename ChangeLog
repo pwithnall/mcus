@@ -1,5 +1,14 @@
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/Makefile.am:
+	* data/ocr-assembly.lang:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h:
+	* src/parser.c: Added syntax highlighting support.
+
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/interface.c:
 	* src/main-window.c:
 	* src/main.c:

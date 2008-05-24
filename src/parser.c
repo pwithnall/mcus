@@ -46,7 +46,7 @@ typedef struct {
 	guint length;
 } MCUSInstruction;
 
-const MCUSInstructionData mcus_instruction_data[] = {
+const MCUSInstructionData const mcus_instruction_data[] = {
 	/* Instruction type,	name,		operand count,	size (bytes),		operand types */
 	{ INSTRUCTION_END,	"END",		0,		1,			{  } },
 	{ INSTRUCTION_MOVI,	"MOVI",		2,		3,			{ OPERAND_REGISTER,	OPERAND_CONSTANT } },

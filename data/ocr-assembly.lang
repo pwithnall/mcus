@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language id="ocr-assembly" _name="OCR Assembly" version="2.0" _section="Sources">
+	<metadata>
+		<property name="mimetypes">text/plain</property>
+		<property name="globs">*.asm</property>
+		<property name="line-comment-start">;</property>
+	</metadata>
+	<styles>
+		<style id="comment" _name="Comment" map-to="def:comment"/>
+		<style id="instruction" _name="Instruction" map-to="def:keyword"/>
+		<style id="subroutine" _name="Subroutine" map-to="def:preprocessor"/>
+		<style id="register" _name="Register" map-to="def:special-constant"/>
+		<style id="io-register" _name="I/O Register" map-to="def:special-constant"/>
+		<style id="constant" _name="Constant" map-to="def:base-n-integer"/>
+		<style id="label" _name="Label" map-to="def:identifier"/>
+	</styles>
+	<definitions>
+		<context id="ocr-assembly">
+			<include>
+				<context id="comment" style-ref="comment">
+					<start>;</start>
+					<end>$</end>
+					<include>
+						<context ref="def:in-comment"/>
+					</include>
+				</context>
+				<context id="instruction" style-ref="instruction">
+					<keyword>END</keyword>
+					<keyword>MOVI</keyword>
+					<keyword>MOV</keyword>
+					<keyword>ADD</keyword>
+					<keyword>SUB</keyword>
+					<keyword>AND</keyword>
+					<keyword>EOR</keyword>
+					<keyword>INC</keyword>
+					<keyword>DEC</keyword>
+					<keyword>IN</keyword>
+					<keyword>OUT</keyword>
+					<keyword>JP</keyword>
+					<keyword>JZ</keyword>
+					<keyword>JNZ</keyword>
+					<keyword>RCALL</keyword>
+					<keyword>RET</keyword>
+					<keyword>SHL</keyword>
+					<keyword>SHR</keyword>
+				</context>
+				<context id="subroutine" style-ref="subroutine">
+					<keyword>readtable</keyword>
+					<keyword>wait1ms</keyword>
+					<keyword>readadc</keyword>
+				</context>
+				<context id="register" style-ref="register">
+					<match>S[0-7]</match>
+				</context>
+				<context id="io-register" style-ref="io-register">
+					<keyword>I</keyword>
+					<keyword>Q</keyword>
+				</context>
+				<context id="constant" style-ref="constant">
+					<match>[0-9A-F]{2}</match>
+				</context>
+				<context id="label" style-ref="label">
+					<start>[a-zA-Z0-9]</start>
+					<end>:</end>
+				</context>
+			</include>
+		</context>
+	</definitions>
+</language>

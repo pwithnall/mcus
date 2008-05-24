@@ -26,6 +26,20 @@
 #include "main.h"
 #include "interface.h"
 
+static GtkFileFilter *
+get_file_filter (void)
+{
+	static GtkFileFilter *filter;
+
+	if (filter == NULL) {
+		/* Set up the filter */
+		filter = gtk_file_filter_new ();
+		gtk_file_filter_add_pattern (filter, "*.asm");
+	}
+
+	return filter;
+}
+
 /* Returns TRUE if changes were saved, or FALSE if the operation was cancelled */
 gboolean
 mcus_save_changes (void)
@@ -85,6 +99,7 @@ mcus_open_program (void)
 						      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 						      GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 						      NULL);
+		gtk_file_chooser_set_filter (GTK_FILE_CHOOSER (dialog), get_file_filter ());
 
 		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 		{
@@ -167,6 +182,8 @@ mcus_save_program_as (void)
 					      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_filter (GTK_FILE_CHOOSER (dialog), get_file_filter ());
+
 	if (mcus->current_filename != NULL)
 		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), mcus->current_filename);
 
@@ -190,6 +207,7 @@ mcus_quit (void)
 	}
 
 	g_object_unref (mcus->builder);
+	g_object_unref (mcus->language_manager);
 	gtk_widget_destroy (mcus->main_window);
 	g_free (mcus->offset_map);
 	g_free (mcus->current_filename);
