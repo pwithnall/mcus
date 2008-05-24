@@ -32,6 +32,7 @@ mcus_quit (void)
 	g_object_unref (mcus->builder);
 	gtk_widget_destroy (mcus->main_window);
 	g_free (mcus->offset_map);
+	g_free (mcus->current_filename);
 	g_free (mcus);
 
 	if (gtk_main_level () > 0)

@@ -64,8 +64,10 @@ typedef struct {
 	guint iteration;
 	MCUSSimulationState simulation_state;
 	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
+
 	GtkTextTag *current_instruction_tag;
 	GtkTextTag *error_tag;
+	gchar *current_filename;
 } MCUS;
 
 MCUS *mcus;

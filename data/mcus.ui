@@ -27,6 +27,7 @@
 					<object class="GtkAction" id="mcus_save_action">
 						<property name="stock-id">gtk-save</property>
 						<property name="name">file-save</property>
+						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_save_activate_cb"/>
 					</object>
 				</child>
@@ -34,6 +35,7 @@
 					<object class="GtkAction" id="mcus_save_as_action">
 						<property name="stock-id">gtk-save-as</property>
 						<property name="name">file-save-as</property>
+						<property name="sensitive">False</property>
 						<signal name="activate" handler="mw_save_as_activate_cb"/>
 					</object>
 				</child>

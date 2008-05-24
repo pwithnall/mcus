@@ -1,6 +1,13 @@
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.ui:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h: Added file load/save support.
+
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/mcus.ui:
 	* src/interface.c:
 	* src/interface.h:
 	* src/main-window.c:
