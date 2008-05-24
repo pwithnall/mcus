@@ -319,7 +319,8 @@ extract_label (MCUSParser *self, MCUSLabel *label, GError **error)
 	}
 
 	/* Make a copy of the label, excluding the colon and delimiter after it */
-	label_string = g_memdup (self->priv->i, sizeof (gchar) * (length - 1));
+	label_string = g_memdup (self->priv->i, sizeof (gchar) * length);
+	label_string[length - 1] = '\0';
 	self->priv->i += length;
 
 	/* Store it */
@@ -357,7 +358,7 @@ extract_operand (MCUSParser *self, MCUSOperand *operand, GError **error)
 		return FALSE;
 	}
 
-	operand_string = g_memdup (self->priv->i, sizeof (gchar) * length + 1);
+	operand_string = g_memdup (self->priv->i, sizeof (gchar) * (length + 1));
 	operand_string[length] = '\0';
 	self->priv->i += length;
 

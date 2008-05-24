@@ -84,6 +84,7 @@ mcus_main_window_init (void)
 		NULL
 	};
 
+	mcus->simulation_state = SIMULATION_STOPPED;
 	mcus_update_ui ();
 
 	/* Create the highlighting tags */
@@ -228,10 +229,10 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 	/* Parse it */
 	parser = mcus_parser_new ();
 	mcus_parser_parse (parser, code, &error);
+	g_free (code);
 
 	if (error != NULL)
 		goto parser_error;
-	g_free (code);
 	mcus_print_debug_data ();
 
 	/* Compile it */

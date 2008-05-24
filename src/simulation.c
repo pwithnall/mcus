@@ -254,10 +254,12 @@ mcus_simulation_update_ui (void)
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
 
 	/* Move the current line mark */
-	mcus_tag_range (mcus->current_instruction_tag,
-			mcus->offset_map[mcus->program_counter].offset,
-			mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length,
-			TRUE);
+	if (mcus->offset_map != NULL) {
+		mcus_tag_range (mcus->current_instruction_tag,
+				mcus->offset_map[mcus->program_counter].offset,
+				mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length,
+				TRUE);
+	}
 
 	mcus_print_debug_data ();
 }

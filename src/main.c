@@ -26,15 +26,16 @@
 #include "main.h"
 #include "interface.h"
 
+static GtkFileFilter *filter = NULL;
+
 static GtkFileFilter *
 get_file_filter (void)
 {
-	static GtkFileFilter *filter;
-
 	if (filter == NULL) {
 		/* Set up the filter */
 		filter = gtk_file_filter_new ();
 		gtk_file_filter_add_pattern (filter, "*.asm");
+		g_object_ref_sink (filter);
 	}
 
 	return filter;
@@ -51,7 +52,7 @@ mcus_save_changes (void)
 	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
 				_("Close without Saving"), GTK_RESPONSE_CLOSE,
 				"gtk-cancel", GTK_RESPONSE_CANCEL,
-				"gtk-save-as", GTK_RESPONSE_OK,
+				(mcus->current_filename == NULL) ? "gtk-save-as" : "gtk-save", GTK_RESPONSE_OK,
 				NULL);
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("If you don't save, your changes will be permanently lost."));
 
@@ -206,8 +207,12 @@ mcus_quit (void)
 		return;
 	}
 
+	if (filter != NULL)
+		g_object_unref (filter);
 	g_object_unref (mcus->builder);
 	g_object_unref (mcus->language_manager);
+	g_object_unref (mcus->current_instruction_tag);
+	g_object_unref (mcus->error_tag);
 	gtk_widget_destroy (mcus->main_window);
 	g_free (mcus->offset_map);
 	g_free (mcus->current_filename);
@@ -265,7 +270,7 @@ main (int argc, char *argv[])
 	g_option_context_free (context);
 
 	/* Setup */
-	mcus = g_new (MCUS, 1);
+	mcus = g_new0 (MCUS, 1);
 	mcus->debug = debug;
 	mcus->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
 

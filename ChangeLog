@@ -1,5 +1,13 @@
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/main-window.c:
+	* src/main.c:
+	* src/parser.c:
+	* src/simulation.c: Small memory handling improvements to fix some
+	Valgrind warnings.
+
+2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/mcus.ui:
 	* src/main-window.c:
 	* src/parser.c: Many small interface improvements, such as padding,
