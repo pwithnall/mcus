@@ -194,7 +194,7 @@ store_label (MCUSParser *self, const MCUSLabel *label)
 
 		if (mcus->debug == TRUE) {
 			g_debug ("Reallocating label memory block to %lu bytes due to having to store label %u (\"%s\").",
-				 sizeof (MCUSLabel) * (self->priv->label_count - self->priv->label_count % LABEL_BLOCK_SIZE + 1) * LABEL_BLOCK_SIZE,
+				 (gulong)(sizeof (MCUSLabel) * (self->priv->label_count - self->priv->label_count % LABEL_BLOCK_SIZE + 1) * LABEL_BLOCK_SIZE),
 				 self->priv->label_count,
 				 label->label);
 		}
@@ -237,7 +237,7 @@ store_instruction (MCUSParser *self, const MCUSInstruction *instruction)
 
 		if (mcus->debug == TRUE) {
 			g_debug ("Reallocating instruction memory block to %lu bytes due to having to store instruction %u (\"%s\").",
-				 sizeof (MCUSInstruction) * (self->priv->instruction_count - self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE + 1) * INSTRUCTION_BLOCK_SIZE,
+				 (gulong)(sizeof (MCUSInstruction) * (self->priv->instruction_count - self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE + 1) * INSTRUCTION_BLOCK_SIZE),
 				 self->priv->instruction_count,
 				 mcus_instruction_data[instruction->type].name);
 		}
@@ -581,7 +581,7 @@ mcus_parser_compile (MCUSParser *self, GError **error)
 	mcus->offset_map = g_malloc (sizeof (*mcus->offset_map) * (self->priv->compiled_size + 1));
 
 	if (mcus->debug == TRUE)
-		g_debug ("Allocating line number map of %lu bytes.", sizeof (guint) * self->priv->compiled_size);
+		g_debug ("Allocating line number map of %lu bytes.", (gulong)(sizeof (guint) * self->priv->compiled_size));
 
 	/* Compile it to memory */
 	self->priv->compiled_size = PROGRAM_START_ADDRESS;

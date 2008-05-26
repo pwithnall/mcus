@@ -14,6 +14,12 @@ AM_CFLAGS += \
 	-ftest-coverage
 endif
 
+if WIN32
+AM_CFLAGS += \
+        -mms-bitfields  \
+        -mwindows
+endif
+
 bin_PROGRAMS = mcus
 
 mcus_SOURCES = \

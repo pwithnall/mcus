@@ -1,3 +1,11 @@
+2008-05-26  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* .bzrignore:
+	* configure.ac:
+	* src/Makefile.am:
+	* src/main-window.c:
+	* src/parser.c: Add support for compiling for Windows.
+
 2008-05-24  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/main-window.c:

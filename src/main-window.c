@@ -31,7 +31,7 @@
 #include "interface.h"
 #include "config.h"
 
-void
+G_MODULE_EXPORT void
 notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
 {
 	g_object_set (gtk_builder_get_object (mcus->builder, "mcus_undo_action"),
@@ -39,7 +39,7 @@ notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
 		      NULL);
 }
 
-void
+G_MODULE_EXPORT void
 notify_can_redo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
 {
 	g_object_set (gtk_builder_get_object (mcus->builder, "mcus_redo_action"),
@@ -47,7 +47,7 @@ notify_can_redo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
 		      NULL);
 }
 
-void
+G_MODULE_EXPORT void
 notify_has_selection_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
 {
 	gboolean sensitive = gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (object));
@@ -62,7 +62,7 @@ notify_has_selection_cb (GObject *object, GParamSpec *param_spec, gpointer user_
 		      NULL);
 }
 
-void
+G_MODULE_EXPORT void
 buffer_modified_changed_cb (GtkTextBuffer *self, gpointer user_data)
 {
 	g_object_set (gtk_builder_get_object (mcus->builder, "mcus_save_action"),
@@ -115,53 +115,53 @@ mcus_main_window_init (void)
 	gtk_source_buffer_set_language (GTK_SOURCE_BUFFER (text_buffer), language);
 }
 
-gboolean
+G_MODULE_EXPORT gboolean
 mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
 	mcus_quit ();
 	return TRUE;
 }
 
-void
+G_MODULE_EXPORT void
 mw_quit_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus_quit ();
 }
 
-void
+G_MODULE_EXPORT void
 mw_undo_activate_cb (GtkAction *self, gpointer user_data)
 {
 	gtk_source_buffer_undo (GTK_SOURCE_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")));
 }
 
-void
+G_MODULE_EXPORT void
 mw_redo_activate_cb (GtkAction *self, gpointer user_data)
 {
 	gtk_source_buffer_redo (GTK_SOURCE_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")));
 }
 
-void
+G_MODULE_EXPORT void
 mw_cut_activate_cb (GtkAction *self, gpointer user_data)
 {
 	GtkClipboard *clipboard = gtk_clipboard_get_for_display (gtk_widget_get_display (GTK_WIDGET (mcus->main_window)), GDK_SELECTION_CLIPBOARD);
 	gtk_text_buffer_cut_clipboard (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")), clipboard, TRUE);
 }
 
-void
+G_MODULE_EXPORT void
 mw_copy_activate_cb (GtkAction *self, gpointer user_data)
 {
 	GtkClipboard *clipboard = gtk_clipboard_get_for_display (gtk_widget_get_display (GTK_WIDGET (mcus->main_window)), GDK_SELECTION_CLIPBOARD);
 	gtk_text_buffer_copy_clipboard (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")), clipboard);
 }
 
-void
+G_MODULE_EXPORT void
 mw_paste_activate_cb (GtkAction *self, gpointer user_data)
 {
 	GtkClipboard *clipboard = gtk_clipboard_get_for_display (gtk_widget_get_display (GTK_WIDGET (mcus->main_window)), GDK_SELECTION_CLIPBOARD);
 	gtk_text_buffer_paste_clipboard (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")), clipboard, NULL, TRUE);
 }
 
-void
+G_MODULE_EXPORT void
 mw_delete_activate_cb (GtkAction *self, gpointer user_data)
 {
 	gtk_text_buffer_delete_selection (GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer")), TRUE, TRUE);
@@ -207,7 +207,7 @@ simulation_iterate_cb (gpointer user_data)
 	return TRUE;
 }
 
-void
+G_MODULE_EXPORT void
 mw_run_activate_cb (GtkAction *self, gpointer user_data)
 {
 	MCUSParser *parser;
@@ -269,21 +269,21 @@ parser_error:
 	g_object_unref (parser);
 }
 
-void
+G_MODULE_EXPORT void
 mw_pause_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus->simulation_state = SIMULATION_PAUSED;
 	mcus_update_ui ();
 }
 
-void
+G_MODULE_EXPORT void
 mw_stop_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus->simulation_state = SIMULATION_STOPPED;
 	mcus_update_ui ();
 }
 
-void
+G_MODULE_EXPORT void
 mw_step_forward_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus->simulation_state = SIMULATION_RUNNING;
@@ -291,13 +291,13 @@ mw_step_forward_activate_cb (GtkAction *self, gpointer user_data)
 		mcus->simulation_state = SIMULATION_PAUSED;
 }
 
-void
+G_MODULE_EXPORT void
 mw_clock_speed_spin_button_value_changed_cb (GtkSpinButton *self, gpointer user_data)
 {
 	mcus->clock_speed = 1000 / gtk_spin_button_get_value (self);
 }
 
-void
+G_MODULE_EXPORT void
 mw_about_activate_cb (GtkAction *self, gpointer user_data)
 {
 	gchar *license;
@@ -347,25 +347,25 @@ mw_about_activate_cb (GtkAction *self, gpointer user_data)
 	g_free (license);
 }
 
-void
+G_MODULE_EXPORT void
 mw_new_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus_new_program ();
 }
 
-void
+G_MODULE_EXPORT void
 mw_open_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus_open_program ();
 }
 
-void
+G_MODULE_EXPORT void
 mw_save_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus_save_program ();
 }
 
-void
+G_MODULE_EXPORT void
 mw_save_as_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus_save_program_as ();
@@ -392,7 +392,7 @@ draw_page_cb (GtkPrintOperation *operation, GtkPrintContext *context, gint page_
 	gtk_source_print_compositor_draw_page (source_compositor, context, page_number);
 }
 
-void
+G_MODULE_EXPORT void
 mw_print_activate_cb (GtkAction *self, gpointer user_data)
 {
 	GtkPrintOperation *operation;

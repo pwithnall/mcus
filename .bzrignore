@@ -25,3 +25,4 @@ config.guess
 config.h
 .libs
 src/mcus
+src/mcus.exe
