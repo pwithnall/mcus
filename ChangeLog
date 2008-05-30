@@ -1,3 +1,18 @@
+2008-05-30  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/ocr-assembly.lang: Fixed a bug in highlighting labels.
+	* src/main.c: Ensured that all saved files have the ".asm" extension
+	for Windows compatibility.
+	* src/Makefile.am:
+	* src/instructions.h:
+	* src/main-window.c:
+	* src/simulation.c:
+	* src/simulation.h:
+	* src/compiler.c:
+	* src/compiler.h: Renamed a few files, variables and structures in the
+	parser and compiler to make it more correct. Added some comments
+	detailing the language format in EBNF.
+
 2008-05-26  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* .bzrignore:

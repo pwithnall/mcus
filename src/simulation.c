@@ -61,7 +61,7 @@ mcus_simulation_init (void)
 gboolean
 mcus_simulation_iterate (GError **error)
 {
-	guchar instruction, operand1, operand2;
+	guchar opcode, operand1, operand2;
 
 	mcus->iteration++;
 
@@ -74,66 +74,66 @@ mcus_simulation_iterate (GError **error)
 		return FALSE;
 	}
 
-	instruction = mcus->memory[mcus->program_counter];
+	opcode = mcus->memory[mcus->program_counter];
 	operand1 = (mcus->program_counter + 1 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+1] : 0;
 	operand2 = (mcus->program_counter + 2 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+2] : 0;
 
-	switch (instruction) {
-	case INSTRUCTION_END:
+	switch (opcode) {
+	case OPCODE_END:
 		return FALSE;
 		break;
-	case INSTRUCTION_MOVI:
+	case OPCODE_MOVI:
 		mcus->registers[operand1] = operand2;
 		break;
-	case INSTRUCTION_MOV:
+	case OPCODE_MOV:
 		mcus->registers[operand1] = mcus->registers[operand2];
 		break;
-	case INSTRUCTION_ADD:
+	case OPCODE_ADD:
 		mcus->registers[operand1] += mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_SUB:
+	case OPCODE_SUB:
 		mcus->registers[operand1] -= mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_AND:
+	case OPCODE_AND:
 		mcus->registers[operand1] &= mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_EOR:
+	case OPCODE_EOR:
 		mcus->registers[operand1] ^= mcus->registers[operand2];
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_INC:
+	case OPCODE_INC:
 		mcus->registers[operand1] += 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_DEC:
+	case OPCODE_DEC:
 		mcus->registers[operand1] -= 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_IN:
+	case OPCODE_IN:
 		mcus->registers[operand1] = mcus->input_port; /* only one operand is stored */
 		break;
-	case INSTRUCTION_OUT:
+	case OPCODE_OUT:
 		mcus->output_port = mcus->registers[operand1]; /* only one operand is stored */
 		break;
-	case INSTRUCTION_JP:
+	case OPCODE_JP:
 		mcus->program_counter = operand1;
 		return TRUE;
-	case INSTRUCTION_JZ:
+	case OPCODE_JZ:
 		if (mcus->zero_flag == TRUE) {
 			mcus->program_counter = operand1;
 			return TRUE;
 		}
 		break;
-	case INSTRUCTION_JNZ:
+	case OPCODE_JNZ:
 		if (mcus->zero_flag == FALSE) {
 			mcus->program_counter = operand1;
 			return TRUE;
 		}
 		break;
-	case INSTRUCTION_RCALL:
+	case OPCODE_RCALL:
 		/* Check for overflows */
 		if (mcus->stack_pointer == STACK_SIZE) {
 			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
@@ -145,7 +145,7 @@ mcus_simulation_iterate (GError **error)
 		mcus->stack[mcus->stack_pointer++] = mcus->program_counter;
 		mcus->program_counter = operand1;
 		return TRUE;
-	case INSTRUCTION_RET:
+	case OPCODE_RET:
 		/* Check for underflows */
 		if (mcus->stack_pointer == 0) {
 			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
@@ -156,11 +156,11 @@ mcus_simulation_iterate (GError **error)
 
 		mcus->program_counter = mcus->memory[--mcus->stack_pointer];
 		return TRUE;
-	case INSTRUCTION_SHL:
+	case OPCODE_SHL:
 		mcus->registers[operand1] <<= 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
-	case INSTRUCTION_SHR:
+	case OPCODE_SHR:
 		mcus->registers[operand1] >>= 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
 		break;
@@ -176,15 +176,16 @@ mcus_simulation_iterate (GError **error)
 		break;
 	default:
 		/* We've encountered some data? */
-		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_INVALID_INSTRUCTION,
-			     _("An invalid instruction was encountered at address %02X in simulation iteration %u."),
+		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_INVALID_OPCODE,
+			     _("An invalid opcode \"%02X\" was encountered at address %02X in simulation iteration %u."),
+			     (guint)opcode,
 			     (guint)mcus->program_counter,
 			     mcus->iteration);
 		return FALSE;
 	}
 
 	/* Don't forget to increment the PC */
-	mcus->program_counter += mcus_instruction_data[instruction].size;
+	mcus->program_counter += mcus_instruction_data[opcode].size;
 
 	return TRUE;
 }

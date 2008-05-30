@@ -27,8 +27,8 @@ mcus_SOURCES = \
 	main.h			\
 	interface.c		\
 	interface.h		\
-	parser.c		\
-	parser.h		\
+	compiler.c		\
+	compiler.h		\
 	instructions.h		\
 	main-window.c		\
 	main-window.h		\

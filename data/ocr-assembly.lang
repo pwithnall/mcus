@@ -59,7 +59,7 @@
 				<context id="constant" style-ref="constant">
 					<match>[0-9A-F]{2}</match>
 				</context>
-				<context id="label" style-ref="label">
+				<context id="label" style-ref="label" end-at-line-end="true">
 					<start>[a-zA-Z0-9]</start>
 					<end>:</end>
 				</context>

@@ -25,7 +25,7 @@
 #include <gtksourceview/gtksourcelanguagemanager.h>
 #include <pango/pango.h>
 
-#include "parser.h"
+#include "compiler.h"
 #include "main.h"
 #include "simulation.h"
 #include "interface.h"
@@ -210,7 +210,7 @@ simulation_iterate_cb (gpointer user_data)
 G_MODULE_EXPORT void
 mw_run_activate_cb (GtkAction *self, gpointer user_data)
 {
-	MCUSParser *parser;
+	MCUSCompiler *compiler;
 	GtkTextBuffer *code_buffer;
 	GtkTextIter start_iter, end_iter;
 	gchar *code;
@@ -227,20 +227,20 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 	mcus_print_debug_data ();
 
 	/* Parse it */
-	parser = mcus_parser_new ();
-	mcus_parser_parse (parser, code, &error);
+	compiler = mcus_compiler_new ();
+	mcus_compiler_parse (compiler, code, &error);
 	g_free (code);
 
 	if (error != NULL)
-		goto parser_error;
+		goto compiler_error;
 	mcus_print_debug_data ();
 
 	/* Compile it */
-	mcus_parser_compile (parser, &error);
+	mcus_compiler_compile (compiler, &error);
 
 	if (error != NULL)
-		goto parser_error;
-	g_object_unref (parser);
+		goto compiler_error;
+	g_object_unref (compiler);
 
 	/* Initialise the simulator */
 	if (mcus->simulation_state == SIMULATION_STOPPED)
@@ -256,17 +256,17 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 
 	return;
 
-parser_error:
+compiler_error:
 	/* Highlight the offending line */
 	mcus_tag_range (mcus->error_tag,
-			mcus_parser_get_offset (parser),
-			mcus_parser_get_offset (parser) + PARSER_ERROR_CONTEXT_LENGTH,
+			mcus_compiler_get_offset (compiler),
+			mcus_compiler_get_offset (compiler) + COMPILER_ERROR_CONTEXT_LENGTH,
 			FALSE);
 
 	/* Display an error message */
 	mcus_interface_error (error->message);
 	g_error_free (error);
-	g_object_unref (parser);
+	g_object_unref (compiler);
 }
 
 G_MODULE_EXPORT void

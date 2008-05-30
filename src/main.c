@@ -191,6 +191,14 @@ mcus_save_program_as (void)
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		g_free (mcus->current_filename);
 		mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+
+		/* Ensure it ends with ".asm" */
+		if (g_str_has_suffix (mcus->current_filename, ".asm") == FALSE) {
+			gchar *temp_string = g_strconcat (mcus->current_filename, ".asm", NULL);
+			g_free (mcus->current_filename);
+			mcus->current_filename = temp_string;
+		}
+
 		mcus_save_program ();
 	}
 	gtk_widget_destroy (dialog);
@@ -209,13 +217,17 @@ mcus_quit (void)
 
 	if (filter != NULL)
 		g_object_unref (filter);
-	g_object_unref (mcus->builder);
+
+	/*g_object_unref (mcus->current_instruction_tag);
+	g_object_unref (mcus->error_tag);*/
 	g_object_unref (mcus->language_manager);
-	g_object_unref (mcus->current_instruction_tag);
-	g_object_unref (mcus->error_tag);
+
+	g_object_unref (mcus->builder);
 	gtk_widget_destroy (mcus->main_window);
+
 	g_free (mcus->offset_map);
 	g_free (mcus->current_filename);
+
 	g_free (mcus);
 
 	if (gtk_main_level () > 0)
