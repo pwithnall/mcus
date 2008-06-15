@@ -249,19 +249,399 @@
 					<object class="GtkHBox" id="hbox1">
 						<property name="spacing">5</property>
 						<child>
-							<object class="GtkScrolledWindow" id="scrolledwindow1">
-								<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
-								<property name="vscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
-								<property name="shadow-type">GTK_SHADOW_IN</property>
+							<object class="GtkVBox" id="vbox2">
 								<child>
-									<object class="GtkSourceView" id="mw_code_view">
-										<property name="buffer">mw_code_buffer</property>
-										<property name="width-request">500</property>
-										<property name="height-request">400</property>
-										<property name="highlight-current-line">True</property>
-										<property name="show-line-numbers">True</property>
-										<property name="show-line-marks">True</property>
-										<property name="has-focus">True</property>
+									<object class="GtkScrolledWindow" id="scrolledwindow1">
+										<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+										<property name="vscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+										<property name="shadow-type">GTK_SHADOW_IN</property>
+										<child>
+											<object class="GtkSourceView" id="mw_code_view">
+												<property name="buffer">mw_code_buffer</property>
+												<property name="width-request">500</property>
+												<property name="height-request">400</property>
+												<property name="highlight-current-line">True</property>
+												<property name="show-line-numbers">True</property>
+												<property name="show-line-marks">True</property>
+												<property name="has-focus">True</property>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkNotebook" id="notebook1">
+										<property name="tab-pos">GTK_POS_LEFT</property>
+										<child>
+											<object class="GtkNotebook" id="notebook2">
+												<child>
+													<object class="GtkLabel" id="label22">
+														<property name="label" translatable="yes">TODO</property>
+													</object>
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label21">
+														<property name="label" translatable="yes">LEDs</property>
+													</object>
+												</child>
+											</object>
+										</child>
+										<child type="tab">
+											<object class="GtkLabel" id="label20">
+												<property name="label" translatable="yes">Inputs</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkNotebook" id="notebook3">
+												<child>
+													<object class="GtkTable" id="table2">
+														<property name="n-rows">2</property>
+														<property name="n-columns">8</property>
+														<child>
+															<object class="GtkLabel" id="label16">
+																<property name="label" translatable="yes">MSB</property>
+																<property name="use-markup">True</property>
+															</object>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+																<property name="y-options">GTK_FILL</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="label17">
+																<property name="label" translatable="yes">LSB</property>
+																<property name="use-markup">True</property>
+															</object>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">7</property>
+																<property name="right-attach">8</property>
+																<property name="y-options">GTK_FILL</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_7"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_6"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">2</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_5"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">2</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_4"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">3</property>
+																<property name="right-attach">4</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_3"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">4</property>
+																<property name="right-attach">5</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_2"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">5</property>
+																<property name="right-attach">6</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_1"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">6</property>
+																<property name="right-attach">7</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSLED" id="mw_output_led_0"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">7</property>
+																<property name="right-attach">8</property>
+															</packing>
+														</child>
+													</object>
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label10">
+														<property name="label" translatable="yes">LEDs</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkHBox" id="hbox2">
+														<child>
+															<object class="GtkFrame" id="frame1">
+																<child type="label">
+																	<object class="GtkLabel" id="label18">
+																		<property name="label" translatable="yes">Decoder</property>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkVBox" id="vbox3">
+																		<property name="spacing">5</property>
+																		<child>
+																			<object class="GtkRadioButton" id="mw_output_single_ssd_segment_option">
+																				<property name="label" translatable="yes">Segments</property>
+																				<property name="tooltip-text" translatable="yes">Bits in the output correspond to segments on the SSD, lighting them when high. The MSB corresponds to the point, bit 6 corresponds to segment G, all the way down to bit 0, which corresponds to segment A.</property>
+																			</object>
+																			<packing>
+																				<property name="expand">False</property>
+																			</packing>
+																		</child>
+																		<child>
+																			<object class="GtkRadioButton" id="mw_output_single_ssd_bcd_option">
+																				<property name="label" translatable="yes">BCD</property>
+																				<property name="tooltip-text" translatable="yes">The first four bits of the output are treated as a binary-coded decimal, and decoded to set the SSD.</property>
+																				<property name="group">mw_output_single_ssd_segment_option</property>
+																			</object>
+																			<packing>
+																				<property name="expand">False</property>
+																			</packing>
+																		</child>
+																	</object>
+																</child>
+															</object>
+															<packing>
+																<property name="expand">False</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_single_ssd"/>
+														</child>
+													</object>
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label11">
+														<property name="label" translatable="yes">Single SSD</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkHBox" id="hbox3">
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_dual_ssd1"/>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_dual_ssd0"/>
+														</child>
+													</object>
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label12">
+														<property name="label" translatable="yes">Dual SSDs</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkTable" id="table2">
+														<property name="n-rows">2</property>
+														<property name="n-columns">8</property>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd15"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd14"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">2</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd13"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">2</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd12"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">3</property>
+																<property name="right-attach">4</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd11"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">4</property>
+																<property name="right-attach">5</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd10"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">5</property>
+																<property name="right-attach">6</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd9"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">6</property>
+																<property name="right-attach">7</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd8"/>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">7</property>
+																<property name="right-attach">8</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd7"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd6"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">2</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd5"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">2</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd4"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">3</property>
+																<property name="right-attach">4</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd3"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">4</property>
+																<property name="right-attach">5</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd2"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">5</property>
+																<property name="right-attach">6</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd1"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">6</property>
+																<property name="right-attach">7</property>
+															</packing>
+														</child>
+														<child>
+															<object class="MCUSSevenSegmentDisplay" id="mw_output_multi_ssd0"/>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">7</property>
+																<property name="right-attach">8</property>
+															</packing>
+														</child>
+													</object>
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label13">
+														<property name="label" translatable="yes">Multiplexed SSDs</property>
+													</object>
+												</child>
+												<!--<child>
+													TODO
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label14">
+														<property name="label" translatable="yes">Stepper motor</property>
+													</object>
+												</child>
+												<child>
+													TODO
+												</child>
+												<child type="tab">
+													<object class="GtkLabel" id="label15">
+														<property name="label" translatable="yes">Speaker</property>
+													</object>
+												</child>-->
+											</object>
+										</child>
+										<child type="tab">
+											<object class="GtkLabel" id="label19">
+												<property name="label" translatable="yes">Outputs</property>
+											</object>
+										</child>
 									</object>
 								</child>
 							</object>

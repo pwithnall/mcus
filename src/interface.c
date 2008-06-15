@@ -28,11 +28,16 @@
 #include "main.h"
 #include "interface.h"
 #include "main-window.h"
+#include "widgets/seven-segment-display.h"
+#include "widgets/led.h"
 
 GtkWidget *
 mcus_create_interface (void)
 {
 	GError *error = NULL;
+
+	mcus_seven_segment_display_get_type (); /* TODO: Remove me! */
+	mcus_led_get_type ();
 
 	mcus->builder = gtk_builder_new ();
 

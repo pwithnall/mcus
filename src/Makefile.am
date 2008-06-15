@@ -33,7 +33,11 @@ mcus_SOURCES = \
 	main-window.c		\
 	main-window.h		\
 	simulation.c		\
-	simulation.h
+	simulation.h		\
+	widgets/seven-segment-display.c	\
+	widgets/seven-segment-display.h	\
+	widgets/led.c		\
+	widgets/led.h
 
 mcus_LDFLAGS = 
 mcus_LDADD = $(STANDARD_LIBS)

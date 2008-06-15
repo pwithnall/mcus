@@ -1,3 +1,20 @@
+2008-06-15  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/compiler.c:
+	* src/instructions.h: Added context-sensitive help to error messages
+	about operands of the wrong type.
+	* data/mcus.ui:
+	* src/Makefile.am:
+	* src/interface.c:
+	* src/simulation.c:
+	* src/widgets/led.c:
+	* src/widgets/led.h:
+	* src/widgets/seven-segment-display.c:
+	* src/widgets/seven-segment-display.h: Added LED and SSD widgets, and
+	started to use them to visualise the output port in various ways.
+	Also added the beginnings of support for visually setting the input
+	port value in a similar manner.
+
 2008-05-30  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/ocr-assembly.lang: Fixed a bug in highlighting labels.

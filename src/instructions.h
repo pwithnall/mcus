@@ -28,10 +28,10 @@ G_BEGIN_DECLS
 #define MAX_MNEMONIC_LENGTH 9
 
 /* Maximum number of operands for an instruction */
-#define MAX_OPERAND_COUNT 2
+#define MAX_ARITY 2
 
 /* Maximum instruction size in bytes (operand count plus one byte for the opcode) */
-#define MAX_INSTRUCTION_SIZE MAX_OPERAND_COUNT + 1
+#define MAX_INSTRUCTION_SIZE MAX_ARITY + 1
 
 /* These are convenient enums for the instructions, their decimal opcodes for compilation,
  * and keys for looking the relevant data up in mcus_instruction_data. */
@@ -72,9 +72,10 @@ typedef enum {
 typedef struct {
 	const MCUSOpcode opcode;
 	const gchar *mnemonic;
-	const guint operand_count;
+	const guint arity;
 	const guint size;
-	const MCUSOperandType operand_types[MAX_OPERAND_COUNT];
+	const MCUSOperandType operand_types[MAX_ARITY];
+	const gchar *help;
 } MCUSInstructionData;
 
 extern const MCUSInstructionData mcus_instruction_data[];

@@ -26,6 +26,8 @@
 #include "instructions.h"
 #include "simulation.h"
 #include "interface.h"
+#include "widgets/led.h"
+#include "widgets/seven-segment-display.h"
 
 GQuark
 mcus_simulation_error_quark (void)
@@ -190,6 +192,52 @@ mcus_simulation_iterate (GError **error)
 	return TRUE;
 }
 
+static void
+update_single_ssd_output (void)
+{
+	/* TODO: Update display when the radio button is changed */
+	MCUSSevenSegmentDisplay *ssd = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd"));
+
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd_segment_option"))) == TRUE) {
+		/* Each bit in the output corresponds to one segment */
+		mcus_seven_segment_display_set_segment_mask (ssd, mcus->output_port);
+	} else {
+		/* The output is BCD-encoded, and we should display that number */
+		guint digit = mcus->output_port & 0x0F;
+
+		if (digit > 9)
+			digit = 0;
+
+		mcus_seven_segment_display_set_digit (ssd, digit);
+	}
+}
+
+static void
+update_multi_ssd_output (void)
+{
+	guint i;
+	gchar object_id[21];
+
+	for (i = 0; i < 16; i++) {
+		/* Work out which SSD we're setting */
+		g_sprintf (object_id, "mw_output_multi_ssd%u", i);
+
+		if (i == mcus->output_port >> 4) {
+			guint digit;
+
+			/* Get the new value */
+			digit = mcus->output_port & 0x0F;
+			if (digit > 9)
+				digit = 0;
+
+			mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), digit);
+		} else {
+			/* Blank the display */
+			mcus_seven_segment_display_set_segment_mask (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), 0);
+		}
+	}
+}
+
 void
 mcus_simulation_update_ui (void)
 {
@@ -253,6 +301,34 @@ mcus_simulation_update_ui (void)
 	/* Update the stack pointer label */
 	g_sprintf (byte_text, "%02X", mcus->stack_pointer);
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
+
+	/* TODO: Only update outputs if they're visible */
+
+	/* Update the LED outputs */
+	for (i = 0; i < 8; i++) {
+		gchar object_id[16];
+
+		g_sprintf (object_id, "mw_output_led_%u", i);
+		mcus_led_set_enabled (MCUS_LED (gtk_builder_get_object (mcus->builder, object_id)),
+				      mcus->output_port & (1 << i));
+	}
+
+	/* Update the single SSD output */
+	update_single_ssd_output ();
+
+	/* Update the dual-SSD output */
+	i = mcus->output_port >> 4;
+	if (i > 9)
+		i = 0;
+	mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd1")), i);
+
+	i = mcus->output_port & 0x0F;
+	if (i > 9)
+		i = 0;
+	mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd0")), i);
+
+	/* Update the multi-SSD output */
+	update_multi_ssd_output ();
 
 	/* Move the current line mark */
 	if (mcus->offset_map != NULL) {

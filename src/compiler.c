@@ -41,36 +41,54 @@ typedef struct {
 
 typedef struct {
 	MCUSOpcode opcode;
-	MCUSOperand operands[MAX_OPERAND_COUNT];
+	MCUSOperand operands[MAX_ARITY];
 	guint offset;
 	guint length;
 } MCUSInstruction;
 
 const MCUSInstructionData const mcus_instruction_data[] = {
-	/* Opcode,	name,		operand count,	size (bytes),		operand types */
-	{ OPCODE_END,	"END",		0,		1,			{  } },
-	{ OPCODE_MOVI,	"MOVI",		2,		3,			{ OPERAND_REGISTER,	OPERAND_CONSTANT } },
-	{ OPCODE_MOV,	"MOV",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ OPCODE_ADD,	"ADD",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ OPCODE_SUB,	"SUB",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ OPCODE_AND,	"AND",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ OPCODE_EOR,	"EOR",		2,		3,			{ OPERAND_REGISTER,	OPERAND_REGISTER } },
-	{ OPCODE_INC,	"INC",		1,		2,			{ OPERAND_REGISTER, } },
-	{ OPCODE_DEC,	"DEC",		1,		2,			{ OPERAND_REGISTER, } },
-	{ OPCODE_IN,	"IN",		2,		2, /* <-- special */	{ OPERAND_REGISTER,	OPERAND_INPUT } },
-	{ OPCODE_OUT,	"OUT",		2,		2, /* <-- special */	{ OPERAND_OUTPUT,	OPERAND_REGISTER } },
-	{ OPCODE_JP,	"JP",		1,		2,			{ OPERAND_LABEL, } },
-	{ OPCODE_JZ,	"JZ",		1,		2,			{ OPERAND_LABEL, } },
-	{ OPCODE_JNZ,	"JNZ",		1,		2,			{ OPERAND_LABEL, } },
-	{ OPCODE_RCALL,	"RCALL",	1,		2,			{ OPERAND_LABEL, } },
-	{ OPCODE_RET,	"RET",		0,		1,			{  } },
-	{ OPCODE_SHL,	"SHL",		1,		2,			{ OPERAND_REGISTER, } },
-	{ OPCODE_SHR,	"SHR",		1,		2,			{ OPERAND_REGISTER, } },
+	/* Opcode,	name,		arity,	size (bytes),		operand types */
+	{ OPCODE_END,	"END",		0,	1,			{  },
+		N_("END — ends simulation of the program.") },
+	{ OPCODE_MOVI,	"MOVI",		2,	3,			{ OPERAND_REGISTER,	OPERAND_CONSTANT },
+		N_("MOVI Sx, 00 — move the second operand into the register specified by the first.") },
+	{ OPCODE_MOV,	"MOV",		2,	3,			{ OPERAND_REGISTER,	OPERAND_REGISTER },
+		N_("MOV Sx, Sy — move the second register into the first.") },
+	{ OPCODE_ADD,	"ADD",		2,	3,			{ OPERAND_REGISTER,	OPERAND_REGISTER },
+		N_("ADD Sx, Sy — add the second register to the first and store the result in the first.") },
+	{ OPCODE_SUB,	"SUB",		2,	3,			{ OPERAND_REGISTER,	OPERAND_REGISTER },
+		N_("SUB Sx, Sy — subtract the second register from the first and store the result in the first.") },
+	{ OPCODE_AND,	"AND",		2,	3,			{ OPERAND_REGISTER,	OPERAND_REGISTER },
+		N_("AND Sx, Sy — logically AND the two registers, storing the result in the first.") },
+	{ OPCODE_EOR,	"EOR",		2,	3,			{ OPERAND_REGISTER,	OPERAND_REGISTER },
+		N_("EOR Sx, Sy — logically EOR the two registers, storing the result in the first.") },
+	{ OPCODE_INC,	"INC",		1,	2,			{ OPERAND_REGISTER, },
+		N_("INC Sx — increment the register by 1.") },
+	{ OPCODE_DEC,	"DEC",		1,	2,			{ OPERAND_REGISTER, },
+		N_("DEC Sx — decrement the register by 1.") },
+	{ OPCODE_IN,	"IN",		2,	2, /* <-- special */	{ OPERAND_REGISTER,	OPERAND_INPUT },
+		N_("IN Sx, I — move the value at the input port into the register.") },
+	{ OPCODE_OUT,	"OUT",		2,	2, /* <-- special */	{ OPERAND_OUTPUT,	OPERAND_REGISTER },
+		N_("OUT Q, Sx — move the value in the register to the output port.") },
+	{ OPCODE_JP,	"JP",		1,	2,			{ OPERAND_LABEL, },
+		N_("JP label — unconditionally jump to the instruction after the label.") },
+	{ OPCODE_JZ,	"JZ",		1,	2,			{ OPERAND_LABEL, },
+		N_("JZ label — jump to the instruction after the label if the result of the last operation was zero.") },
+	{ OPCODE_JNZ,	"JNZ",		1,	2,			{ OPERAND_LABEL, },
+		N_("JNZ label — jump to the instruction after the label if the result of the last operation was not zero.") },
+	{ OPCODE_RCALL,	"RCALL",	1,	2,			{ OPERAND_LABEL, },
+		N_("RCALL label — jump to the subroutine at label, storing the current program counter on the stack.") },
+	{ OPCODE_RET,	"RET",		0,	1,			{  },
+		N_("RET — return from the current subroutine call, popping the program counter off the stack.") },
+	{ OPCODE_SHL,	"SHL",		1,	2,			{ OPERAND_REGISTER, },
+		N_("SHL Sx — logically shift the bits in the register left one place.") },
+	{ OPCODE_SHR,	"SHR",		1,	2,			{ OPERAND_REGISTER, },
+		N_("SHR Sx — logically shift the bits in the register right one place.") },
 
 	/* Subroutines */
-	{ SUBROUTINE_READTABLE,	"readtable",	0,		1,			{  } },
-	{ SUBROUTINE_WAIT1MS,	"wait1ms",	0,		1,			{  } },
-	{ SUBROUTINE_READADC,	"readadc",	0,		1,			{  } }
+	{ SUBROUTINE_READTABLE,	"readtable",	0,		1,			{  }, "" },
+	{ SUBROUTINE_WAIT1MS,	"wait1ms",	0,		1,			{  }, "" },
+	{ SUBROUTINE_READADC,	"readadc",	0,		1,			{  }, "" }
 };
 
 static void mcus_compiler_init (MCUSCompiler *self);
@@ -512,7 +530,7 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 	skip_whitespace (self, FALSE, FALSE);
 
 	/* Lex the operands */
-	for (i = 0; i < instruction_data->operand_count; i++) {
+	for (i = 0; i < instruction_data->arity; i++) {
 		MCUSOperand operand;
 		const gchar *old_i = self->priv->i;
 		GError *child_error = NULL;
@@ -528,11 +546,12 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 				g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 
 				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
-					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\"."),
+					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\".\n\n%s"),
 					     operand_type_to_string (operand.type),
 					     operand_type_to_string (instruction_data->operand_types[i]),
 					     self->priv->line_number,
-					     following_section);
+					     following_section,
+					     instruction_data->help);
 
 				/* Restore i to before the operand so that error highlighting works correctly */
 				self->priv->i = old_i;
@@ -653,7 +672,7 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 			mcus->memory[self->priv->compiled_size++] = instruction->operands[1].number;
 			break;
 		default:
-			for (f = 0; f < instruction_data->operand_count; f++) {
+			for (f = 0; f < instruction_data->arity; f++) {
 				if (instruction_data->operand_types[f] == OPERAND_LABEL) {
 					GError *child_error = NULL;
 
