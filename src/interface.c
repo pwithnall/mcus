@@ -48,7 +48,8 @@ mcus_create_interface (void)
 				GTK_DIALOG_MODAL,
 				GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK,
-				_("UI file \"%s/mcus/mcus.ui\" could not be loaded. Error: %s"), PACKAGE_DATA_DIR, error->message);
+				_("UI file \"%s/mcus/mcus.ui\" could not be loaded."), PACKAGE_DATA_DIR);
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
 
@@ -150,12 +151,14 @@ mcus_update_ui (void)
 	gboolean sensitive = mcus->simulation_state == SIMULATION_STOPPED ? TRUE : FALSE;
 
 #define SET_SENSITIVITY(W,S) \
-	g_object_set (gtk_builder_get_object (mcus->builder, (W)), "sensitive", (S), NULL);
+	gtk_action_set_sensitive (GTK_ACTION (gtk_builder_get_object (mcus->builder, (W))), (S));
+#define SET_SENSITIVITY2(W,S) \
+	gtk_widget_set_sensitive (GTK_WIDGET (gtk_builder_get_object (mcus->builder, (W))), (S));
 
-	SET_SENSITIVITY ("mw_code_view", sensitive)
-	SET_SENSITIVITY ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
-	SET_SENSITIVITY ("mw_analogue_input_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
-	SET_SENSITIVITY ("mw_clock_speed_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_code_view", sensitive)
+	SET_SENSITIVITY2 ("mw_input_port_entry", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_analogue_input_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_clock_speed_spin_button", mcus->simulation_state != SIMULATION_RUNNING)
 
 	source_buffer = GTK_SOURCE_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
 
@@ -175,59 +178,10 @@ mcus_update_ui (void)
 	SET_SENSITIVITY ("mcus_pause_action", mcus->simulation_state == SIMULATION_RUNNING)
 	SET_SENSITIVITY ("mcus_stop_action", mcus->simulation_state != SIMULATION_STOPPED)
 	SET_SENSITIVITY ("mcus_step_forward_action", mcus->simulation_state == SIMULATION_PAUSED)
-}
 
-GQuark
-mcus_io_error_quark (void)
-{
-	static GQuark q = 0;
-
-	if (q == 0)
-		q = g_quark_from_static_string ("mcus-io-error-quark");
-
-	return q;
-}
-
-gboolean
-mcus_read_input_port (GError **error)
-{
-	gint digit_value;
-	const gchar *entry_text;
-
-	entry_text = gtk_entry_get_text (GTK_ENTRY (gtk_builder_get_object (mcus->builder, "mw_input_port_entry")));
-	if (strlen (entry_text) != 2) {
-		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
-			     _("The input port value was not two digits long."));
-		return FALSE;
-	}
-
-	/* Deal with the first digit */
-	digit_value = g_ascii_xdigit_value (entry_text[0]);
-	if (digit_value == -1) {
-		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
-			     _("The input port contained a non-hexadecimal digit (\"%c\")."),
-			     entry_text[0]);
-		return FALSE;
-	}
-	mcus->input_port = digit_value * 16;
-
-	/* Deal with the second digit */
-	digit_value = g_ascii_xdigit_value (entry_text[1]);
-	if (digit_value == -1) {
-		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
-			     _("The input port contained a non-hexadecimal digit (\"%c\")."),
-			     entry_text[1]);
-		return FALSE;
-	}
-	mcus->input_port += digit_value;
-
-	return TRUE;
-}
-
-void
-mcus_read_analogue_input (void)
-{
-	mcus->analogue_input = gtk_spin_button_get_value (GTK_SPIN_BUTTON (gtk_builder_get_object (mcus->builder, "mw_analogue_input_spin_button")));
+	SET_SENSITIVITY2 ("mw_analogue_input_notebook", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_output_notebook", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_input_alignment", mcus->simulation_state != SIMULATION_RUNNING)
 }
 
 void

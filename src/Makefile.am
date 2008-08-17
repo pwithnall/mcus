@@ -34,6 +34,10 @@ mcus_SOURCES = \
 	main-window.h		\
 	simulation.c		\
 	simulation.h		\
+	analogue-input.c	\
+	analogue-input.h	\
+	input-port.c		\
+	input-port.h		\
 	widgets/seven-segment-display.c	\
 	widgets/seven-segment-display.h	\
 	widgets/led.c		\

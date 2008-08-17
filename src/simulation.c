@@ -26,6 +26,7 @@
 #include "instructions.h"
 #include "simulation.h"
 #include "interface.h"
+#include "analogue-input.h"
 #include "widgets/led.h"
 #include "widgets/seven-segment-display.h"
 
@@ -65,6 +66,8 @@ mcus_simulation_iterate (GError **error)
 {
 	guchar opcode, operand1, operand2;
 
+	mcus_read_analogue_input ();
+
 	mcus->iteration++;
 
 	/* Can't check it with >= as it does a check against guchar, which
@@ -81,7 +84,7 @@ mcus_simulation_iterate (GError **error)
 	operand2 = (mcus->program_counter + 2 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+2] : 0;
 
 	switch (opcode) {
-	case OPCODE_END:
+	case OPCODE_HALT:
 		return FALSE;
 		break;
 	case OPCODE_MOVI:
@@ -122,17 +125,17 @@ mcus_simulation_iterate (GError **error)
 		break;
 	case OPCODE_JP:
 		mcus->program_counter = operand1;
-		return TRUE;
+		goto update_and_exit;
 	case OPCODE_JZ:
 		if (mcus->zero_flag == TRUE) {
 			mcus->program_counter = operand1;
-			return TRUE;
+			goto update_and_exit;
 		}
 		break;
 	case OPCODE_JNZ:
 		if (mcus->zero_flag == FALSE) {
 			mcus->program_counter = operand1;
-			return TRUE;
+			goto update_and_exit;
 		}
 		break;
 	case OPCODE_RCALL:
@@ -146,7 +149,7 @@ mcus_simulation_iterate (GError **error)
 
 		mcus->stack[mcus->stack_pointer++] = mcus->program_counter;
 		mcus->program_counter = operand1;
-		return TRUE;
+		goto update_and_exit;
 	case OPCODE_RET:
 		/* Check for underflows */
 		if (mcus->stack_pointer == 0) {
@@ -157,7 +160,7 @@ mcus_simulation_iterate (GError **error)
 		}
 
 		mcus->program_counter = mcus->memory[--mcus->stack_pointer];
-		return TRUE;
+		goto update_and_exit;
 	case OPCODE_SHL:
 		mcus->registers[operand1] <<= 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
@@ -189,13 +192,14 @@ mcus_simulation_iterate (GError **error)
 	/* Don't forget to increment the PC */
 	mcus->program_counter += mcus_instruction_data[opcode].size;
 
+update_and_exit:
+	mcus_simulation_update_ui ();
 	return TRUE;
 }
 
 static void
 update_single_ssd_output (void)
 {
-	/* TODO: Update display when the radio button is changed */
 	MCUSSevenSegmentDisplay *ssd = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd"));
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd_segment_option"))) == TRUE) {
@@ -210,6 +214,12 @@ update_single_ssd_output (void)
 
 		mcus_seven_segment_display_set_digit (ssd, digit);
 	}
+}
+
+G_MODULE_EXPORT void
+mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, gpointer user_data)
+{
+	update_single_ssd_output ();
 }
 
 static void
@@ -235,6 +245,46 @@ update_multi_ssd_output (void)
 			/* Blank the display */
 			mcus_seven_segment_display_set_segment_mask (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), 0);
 		}
+	}
+}
+
+static void
+update_outputs (void)
+{
+	guint i;
+
+	/* Only update outputs if they're visible */
+	switch (mcus->output_device) {
+	case OUTPUT_LED_DEVICE:
+		/* Update the LED outputs */
+		for (i = 0; i < 8; i++) {
+			gchar object_id[16];
+
+			g_sprintf (object_id, "mw_output_led_%u", i);
+			mcus_led_set_enabled (MCUS_LED (gtk_builder_get_object (mcus->builder, object_id)),
+					      mcus->output_port & (1 << i));
+		}
+		break;
+	case OUTPUT_SINGLE_SSD_DEVICE:
+		/* Update the single SSD output */
+		update_single_ssd_output ();
+		break;
+	case OUTPUT_DUAL_SSD_DEVICE:
+		/* Update the dual-SSD output */
+		i = mcus->output_port >> 4;
+		if (i > 9)
+			i = 0;
+		mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd1")), i);
+
+		i = mcus->output_port & 0x0F;
+		if (i > 9)
+			i = 0;
+		mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd0")), i);
+		break;
+	case OUTPUT_MULTIPLEXED_SSD_DEVICE:
+		/* Update the multi-SSD output */
+		update_multi_ssd_output ();
+		break;
 	}
 }
 
@@ -302,33 +352,7 @@ mcus_simulation_update_ui (void)
 	g_sprintf (byte_text, "%02X", mcus->stack_pointer);
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
 
-	/* TODO: Only update outputs if they're visible */
-
-	/* Update the LED outputs */
-	for (i = 0; i < 8; i++) {
-		gchar object_id[16];
-
-		g_sprintf (object_id, "mw_output_led_%u", i);
-		mcus_led_set_enabled (MCUS_LED (gtk_builder_get_object (mcus->builder, object_id)),
-				      mcus->output_port & (1 << i));
-	}
-
-	/* Update the single SSD output */
-	update_single_ssd_output ();
-
-	/* Update the dual-SSD output */
-	i = mcus->output_port >> 4;
-	if (i > 9)
-		i = 0;
-	mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd1")), i);
-
-	i = mcus->output_port & 0x0F;
-	if (i > 9)
-		i = 0;
-	mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd0")), i);
-
-	/* Update the multi-SSD output */
-	update_multi_ssd_output ();
+	update_outputs ();
 
 	/* Move the current line mark */
 	if (mcus->offset_map != NULL) {
@@ -339,4 +363,11 @@ mcus_simulation_update_ui (void)
 	}
 
 	mcus_print_debug_data ();
+}
+
+G_MODULE_EXPORT void
+mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data)
+{
+	mcus->output_device = page_num;
+	update_outputs ();
 }

@@ -1,3 +1,21 @@
+2008-08-17  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/compiler.c:
+	* src/instructions.h: Renamed the "END" instruction "HALT".
+	* data/mcus.ui:
+	* src/Makefile.am:
+	* src/analogue-input.c:
+	* src/analogue-input.h:
+	* src/input-port.c:
+	* src/input-port.h:
+	* src/interface.c:
+	* src/interface.h:
+	* src/main-window.c:
+	* src/main.h:
+	* src/simulation.c: Lots of refactoring of the simulation code as
+	regards the interface. Added more input and output devices, and hooked
+	them all up. Refactored error dialogues to use API more correctly.
+
 2008-06-15  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/compiler.c:

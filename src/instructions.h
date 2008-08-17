@@ -36,7 +36,7 @@ G_BEGIN_DECLS
 /* These are convenient enums for the instructions, their decimal opcodes for compilation,
  * and keys for looking the relevant data up in mcus_instruction_data. */
 typedef enum {
-	OPCODE_END = 0,	/* END		Extra instruction added by me to terminate simulation */
+	OPCODE_HALT = 0,/* HALT		Extra instruction added by me to terminate simulation */
 	OPCODE_MOVI,	/* MOVI Sd,n	Copy the byte n into register Sd */
 	OPCODE_MOV,	/* MOV Sd,Ss	Copy the byte from As to Sd */
 	OPCODE_ADD,	/* ADD Sd,Ss	Add the byte in Ss to the byte in Sd and store the result in Sd */

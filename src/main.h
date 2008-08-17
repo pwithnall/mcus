@@ -37,11 +37,24 @@ typedef struct {
 	guint length;
 } MCUSInstructionOffset;
 
+/* These correspond to the tabs in the UI */
+typedef enum {
+	ANALOGUE_INPUT_LINEAR_DEVICE = 0,
+	ANALOGUE_INPUT_FUNCTION_GENERATOR_DEVICE
+} MCUSAnalogueInputDevice;
+
+typedef enum {
+	OUTPUT_LED_DEVICE = 0,
+	OUTPUT_SINGLE_SSD_DEVICE,
+	OUTPUT_DUAL_SSD_DEVICE,
+	OUTPUT_MULTIPLEXED_SSD_DEVICE
+} MCUSOutputDevice;
+
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
 #define STACK_SIZE 64
 #define PROGRAM_START_ADDRESS 0
-/* This is also in the UI file */
+/* This is also in the UI file (in Volts) */
 #define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
 /* This is also in the UI file (in Hz) */
 #define DEFAULT_CLOCK_SPEED 1
@@ -50,6 +63,7 @@ typedef struct {
 	GtkWidget *main_window;
 	GtkBuilder *builder;
 
+	/* Microcontroller components */
 	guchar program_counter;
 	guchar stack_pointer;
 	gboolean zero_flag;
@@ -60,16 +74,27 @@ typedef struct {
 	guchar memory[MEMORY_SIZE];
 	guchar stack[STACK_SIZE];
 
+	/* Simulation state */
 	gulong clock_speed;
 	gboolean debug;
 	guint iteration;
 	MCUSSimulationState simulation_state;
 	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
+	MCUSAnalogueInputDevice analogue_input_device;
+	MCUSOutputDevice output_device;
 
+	/* Interface */
 	GtkTextTag *current_instruction_tag;
 	GtkTextTag *error_tag;
 	gchar *current_filename;
 	GtkSourceLanguageManager *language_manager;
+
+	/* Analogue input interface */
+	GtkAdjustment *analogue_input_adjustment;
+	GtkAdjustment *analogue_input_frequency_adjustment;
+	GtkAdjustment *analogue_input_amplitude_adjustment;
+	GtkAdjustment *analogue_input_offset_adjustment;
+	GtkAdjustment *analogue_input_phase_adjustment;
 } MCUS;
 
 MCUS *mcus;

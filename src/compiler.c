@@ -48,8 +48,8 @@ typedef struct {
 
 const MCUSInstructionData const mcus_instruction_data[] = {
 	/* Opcode,	name,		arity,	size (bytes),		operand types */
-	{ OPCODE_END,	"END",		0,	1,			{  },
-		N_("END — ends simulation of the program.") },
+	{ OPCODE_HALT,	"HALT",		0,	1,			{  },
+		N_("HALT — halts simulation of the program.") },
 	{ OPCODE_MOVI,	"MOVI",		2,	3,			{ OPERAND_REGISTER,	OPERAND_CONSTANT },
 		N_("MOVI Sx, 00 — move the second operand into the register specified by the first.") },
 	{ OPCODE_MOV,	"MOV",		2,	3,			{ OPERAND_REGISTER,	OPERAND_REGISTER },

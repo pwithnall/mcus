@@ -17,21 +17,25 @@
  * along with MCUS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtk/gtk.h>
 #include <glib.h>
 
-#ifndef MCUS_INTERFACE_H
-#define MCUS_INTERFACE_H
+#ifndef MCUS_INPUT_PORT_H
+#define MCUS_INPUT_PORT_H
 
 G_BEGIN_DECLS
 
-GtkWidget *mcus_create_interface (void);
-void mcus_interface_error (const gchar *message);
-void mcus_print_debug_data (void);
-void mcus_update_ui (void);
-void mcus_remove_tag (GtkTextTag *tag);
-void mcus_tag_range (GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
+#define MCUS_IO_ERROR (mcus_io_error_quark ())
+GQuark mcus_io_error_quark (void);
+
+enum {
+	MCUS_IO_ERROR_INPUT
+};
+
+gboolean mcus_input_port_read_entry (GError **error);
+void mcus_input_port_update_entry (void);
+void mcus_input_port_read_check_buttons (void);
+void mcus_input_port_update_check_buttons (void);
 
 G_END_DECLS
 
-#endif /* MCUS_INTERFACE_H */
+#endif /* !MCUS_INPUT_PORT_H */

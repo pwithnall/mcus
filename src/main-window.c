@@ -30,6 +30,7 @@
 #include "simulation.h"
 #include "interface.h"
 #include "config.h"
+#include "input-port.h"
 
 G_MODULE_EXPORT void
 notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
@@ -83,6 +84,13 @@ mcus_main_window_init (void)
 		"./data/",
 		NULL
 	};
+
+	/* Grab various widgets */
+	mcus->analogue_input_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_analogue_input_adjustment"));
+	mcus->analogue_input_frequency_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_frequency_adjustment"));
+	mcus->analogue_input_amplitude_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_amplitude_adjustment"));
+	mcus->analogue_input_offset_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_offset_adjustment"));
+	mcus->analogue_input_phase_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_phase_adjustment"));
 
 	mcus->simulation_state = SIMULATION_STOPPED;
 	mcus_update_ui ();
@@ -175,13 +183,9 @@ simulation_iterate_cb (gpointer user_data)
 	if (mcus->simulation_state != SIMULATION_RUNNING)
 		return FALSE;
 
-	mcus_read_analogue_input ();
-
-	if (mcus_read_input_port (&error) == FALSE ||
-	    mcus_simulation_iterate (&error) == FALSE) {
+	if (mcus_simulation_iterate (&error) == FALSE) {
 		/* Get out of simulation UI mode */
 		mcus->simulation_state = SIMULATION_STOPPED;
-		mcus_simulation_update_ui ();
 		mcus_update_ui ();
 
 		if (error != NULL) {
@@ -201,8 +205,6 @@ simulation_iterate_cb (gpointer user_data)
 
 		return FALSE;
 	}
-
-	mcus_simulation_update_ui ();
 
 	return TRUE;
 }
@@ -423,4 +425,19 @@ mw_print_activate_cb (GtkAction *self, gpointer user_data)
 
 	g_object_unref (source_compositor);
 	g_object_unref (operation);
+}
+
+G_MODULE_EXPORT void
+mw_input_check_button_toggled (GtkToggleButton *self, gpointer user_data)
+{
+	mcus_input_port_read_check_buttons ();
+	mcus_input_port_update_entry ();
+}
+
+G_MODULE_EXPORT void
+mw_input_entry_changed (GtkEntry *self, gpointer user_data)
+{
+	/* TODO: Do something on error? */
+	if (mcus_input_port_read_entry (NULL))
+		mcus_input_port_update_check_buttons ();
 }
