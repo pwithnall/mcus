@@ -88,12 +88,13 @@ mcus_input_port_read_check_buttons (void)
 	/* Clear the old value */
 	mcus->input_port = 0;
 
-	for (i = 0; i < 7; i++) {
+	/* 0 is LSB, 7 is MSB */
+	for (i = 0; i < 8; i++) {
 		GtkToggleButton *button;
 		gchar button_id[24];
 
-		/* Grab the control */
-		g_sprintf (button_id, "mw_input_check_button_%u", i);
+		/* Grab the control (have to take the inverse of i, since 7 is the MSB) */
+		g_sprintf (button_id, "mw_input_check_button_%u", 7 - i);
 		button = GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, button_id));
 
 		/* Shift the new bit in as the LSB */
@@ -106,7 +107,8 @@ mcus_input_port_update_check_buttons (void)
 {
 	guint i;
 
-	for (i = 0; i < 7; i++) {
+	/* 0 is LSB, 7 is MSB */
+	for (i = 0; i < 8; i++) {
 		GtkToggleButton *button;
 		gchar button_id[24];
 

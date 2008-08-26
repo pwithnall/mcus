@@ -1,3 +1,10 @@
+2008-08-26  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/mcus.ui:
+	* src/input-port.c:
+	* src/main-window.c: Fix some problems with the input devices connected
+	to the input port.
+
 2008-08-17  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/compiler.c:

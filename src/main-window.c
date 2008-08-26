@@ -18,6 +18,7 @@
  */
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksourceview.h>
@@ -31,6 +32,9 @@
 #include "interface.h"
 #include "config.h"
 #include "input-port.h"
+
+G_MODULE_EXPORT void mw_input_entry_changed (GtkEntry *self, gpointer user_data);
+G_MODULE_EXPORT void mw_input_check_button_toggled (GtkToggleButton *self, gpointer user_data);
 
 G_MODULE_EXPORT void
 notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
@@ -430,14 +434,45 @@ mw_print_activate_cb (GtkAction *self, gpointer user_data)
 G_MODULE_EXPORT void
 mw_input_check_button_toggled (GtkToggleButton *self, gpointer user_data)
 {
+	/* Signal fluff prevents race condition between this signal handler and the one below */
+	GObject *input_port_entry = gtk_builder_get_object (mcus->builder, "mw_input_port_entry");
+	g_signal_handlers_block_by_func (input_port_entry, mw_input_entry_changed, NULL);
+
 	mcus_input_port_read_check_buttons ();
 	mcus_input_port_update_entry ();
+
+	g_signal_handlers_unblock_by_func (input_port_entry, mw_input_entry_changed, NULL);
+}
+
+static void
+set_input_check_button_signal_state (gboolean blocked)
+{
+	guint i;
+
+	for (i = 0; i < 8; i++) {
+		GObject *button;
+		gchar button_id[24];
+
+		/* Grab the control */
+		g_sprintf (button_id, "mw_input_check_button_%u", i);
+		button = gtk_builder_get_object (mcus->builder, button_id);
+
+		/* Either block or unblock the signal as appropriate */
+		if (blocked == TRUE)
+			g_signal_handlers_block_by_func (button, mw_input_check_button_toggled, NULL);
+		else
+			g_signal_handlers_unblock_by_func (button, mw_input_check_button_toggled, NULL);
+	}
 }
 
 G_MODULE_EXPORT void
 mw_input_entry_changed (GtkEntry *self, gpointer user_data)
 {
+	set_input_check_button_signal_state (TRUE);
+
 	/* TODO: Do something on error? */
 	if (mcus_input_port_read_entry (NULL))
 		mcus_input_port_update_check_buttons ();
+
+	set_input_check_button_signal_state (FALSE);
 }
