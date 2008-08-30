@@ -1,3 +1,7 @@
+2008-08-30  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/compiler.c: Fix constant addressing for jump instructions.
+
 2008-08-26  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.ui:

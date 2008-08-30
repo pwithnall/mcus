@@ -673,7 +673,8 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 			break;
 		default:
 			for (f = 0; f < instruction_data->arity; f++) {
-				if (instruction_data->operand_types[f] == OPERAND_LABEL) {
+				if (instruction_data->operand_types[f] == OPERAND_LABEL &&
+				    instruction->operands[f].type == OPERAND_LABEL) {
 					GError *child_error = NULL;
 
 					/* We need to resolve the label first */
