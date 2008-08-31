@@ -37,6 +37,7 @@ GQuark mcus_simulation_error_quark (void);
 
 void mcus_simulation_init (void);
 gboolean mcus_simulation_iterate (GError **error);
+void mcus_simulation_finalise (void);
 void mcus_simulation_update_ui (void);
 
 G_END_DECLS

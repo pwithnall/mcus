@@ -21,6 +21,7 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
+#include <string.h>
 
 #include "main.h"
 #include "instructions.h"
@@ -48,16 +49,29 @@ mcus_simulation_init (void)
 
 	mcus->iteration = 0;
 	mcus->program_counter = PROGRAM_START_ADDRESS;
-	mcus->stack_pointer = 0;
 	mcus->zero_flag = 0;
 
 	for (i = 0; i < REGISTER_COUNT; i++)
 		mcus->registers[i] = 0;
-	for (i = 0; i < STACK_SIZE; i++)
-		mcus->stack[i] = 0;
+	mcus->stack = NULL;
 
 	/* Remove previous errors */
 	mcus_remove_tag (mcus->error_tag);
+}
+
+void
+mcus_simulation_finalise (void)
+{
+	MCUSStackFrame *stack_frame;
+
+	/* Free up any remaining frames on the stack */
+	stack_frame = mcus->stack;
+	while (stack_frame != NULL) {
+		MCUSStackFrame *prev_frame;
+		prev_frame = stack_frame->prev;
+		g_free (stack_frame);
+		stack_frame = prev_frame;
+	}
 }
 
 /* Returns FALSE on error or if the simulation's ended */
@@ -65,6 +79,7 @@ gboolean
 mcus_simulation_iterate (GError **error)
 {
 	guchar opcode, operand1, operand2;
+	MCUSStackFrame *stack_frame;
 
 	mcus_read_analogue_input ();
 
@@ -76,6 +91,7 @@ mcus_simulation_iterate (GError **error)
 		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
 			     _("The program counter overflowed available memory in simulation iteration %u."),
 			     mcus->iteration);
+		mcus_simulation_finalise ();
 		return FALSE;
 	}
 
@@ -85,6 +101,7 @@ mcus_simulation_iterate (GError **error)
 
 	switch (opcode) {
 	case OPCODE_HALT:
+		mcus_simulation_finalise ();
 		return FALSE;
 		break;
 	case OPCODE_MOVI:
@@ -139,27 +156,34 @@ mcus_simulation_iterate (GError **error)
 		}
 		break;
 	case OPCODE_RCALL:
-		/* Check for overflows */
-		if (mcus->stack_pointer == STACK_SIZE) {
-			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
-				     _("The stack pointer overflowed available stack space in simulation iteration %u."),
-				     mcus->iteration);
-			return FALSE;
-		}
+		/* Push the current state as a new frame onto the stack */
+		stack_frame = g_new (MCUSStackFrame, 1);
+		stack_frame->prev = mcus->stack;
+		stack_frame->program_counter = mcus->program_counter + mcus_instruction_data[opcode].size;
+		memcpy (stack_frame->registers, mcus->registers, sizeof (guchar) * REGISTER_COUNT);
 
-		mcus->stack[mcus->stack_pointer++] = mcus->program_counter;
+		mcus->stack = stack_frame;
+
+		/* Jump to the subroutine */
 		mcus->program_counter = operand1;
 		goto update_and_exit;
 	case OPCODE_RET:
 		/* Check for underflows */
-		if (mcus->stack_pointer == 0) {
+		if (mcus->stack == NULL) {
 			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
 				     _("The stack pointer underflowed available stack space in simulation iteration %u."),
 				     mcus->iteration);
+			mcus_simulation_finalise ();
 			return FALSE;
 		}
 
-		mcus->program_counter = mcus->memory[--mcus->stack_pointer];
+		/* Pop the old state off the stack */
+		stack_frame = mcus->stack;
+		mcus->stack = stack_frame->prev;
+		mcus->program_counter = stack_frame->program_counter;
+		memcpy (mcus->registers, stack_frame->registers, sizeof (guchar) * REGISTER_COUNT);
+		g_free (stack_frame);
+
 		goto update_and_exit;
 	case OPCODE_SHL:
 		mcus->registers[operand1] <<= 1;
@@ -186,6 +210,7 @@ mcus_simulation_iterate (GError **error)
 			     (guint)opcode,
 			     (guint)mcus->program_counter,
 			     mcus->iteration);
+		mcus_simulation_finalise ();
 		return FALSE;
 	}
 
@@ -298,10 +323,11 @@ mcus_simulation_update_ui (void)
 	/* 3 characters for each register as above */
 	gchar register_text[3 * REGISTER_COUNT];
 	/* 3 characters for each stack byte as above */
-	gchar stack_text[3 * STACK_SIZE];
+	gchar stack_text[3 * STACK_PREVIEW_SIZE];
 	/* 3 characters for one byte as above */
 	gchar byte_text[3];
 	gchar *f = memory_markup;
+	MCUSStackFrame *stack_frame;
 
 	/* Update the memory label */
 	for (i = 0; i < MEMORY_SIZE; i++) {
@@ -329,13 +355,20 @@ mcus_simulation_update_ui (void)
 
 	/* Update the stack label */
 	f = stack_text;
-	for (i = 0; i < STACK_SIZE; i++) {
-		g_sprintf (f, "%02X ", mcus->stack[i]);
+	i = 0;
+	stack_frame = mcus->stack;
+	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
+		g_sprintf (f, "%02X ", stack_frame->program_counter);
 		f += 3;
 
 		if (G_UNLIKELY (i % 16 == 15))
 			*(f - 1) = '\n';
+
+		i++;
+		stack_frame = stack_frame->prev;
 	}
+	if (i == 0)
+		g_sprintf (f, "(Empty)");
 	*(f - 1) = '\0';
 
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_label")), stack_text);
@@ -349,7 +382,7 @@ mcus_simulation_update_ui (void)
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_program_counter_label")), byte_text);
 
 	/* Update the stack pointer label */
-	g_sprintf (byte_text, "%02X", mcus->stack_pointer);
+	g_sprintf (byte_text, "%02X", (mcus->stack == NULL) ? 0 : mcus->stack->program_counter);
 	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
 
 	update_outputs ();

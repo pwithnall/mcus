@@ -97,14 +97,14 @@ void
 mcus_print_debug_data (void)
 {
 	guint i;
+	MCUSStackFrame *stack_frame;
 
 	if (mcus->debug == FALSE)
 		return;
 
 	/* General data */
-	g_printf ("Program counter: %02X\nStack pointer: %02X\nZero flag: %u\nClock speed: %lu\n",
+	g_printf ("Program counter: %02X\nZero flag: %u\nClock speed: %lu\n",
 		 (guint)mcus->program_counter,
-		 (guint)mcus->stack_pointer,
 		 (mcus->zero_flag == TRUE) ? 1 : 0,
 		 mcus->clock_speed);
 
@@ -116,12 +116,19 @@ mcus_print_debug_data (void)
 
 	/* Stack */
 	g_printf ("Stack:\n");
-	for (i = 0; i < STACK_SIZE; i++) {
-		g_printf (" %02X", (guint)mcus->stack[i]);
+	stack_frame = mcus->stack;
+	i = 0;
+	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
+		g_printf (" %02X", (guint)stack_frame->program_counter);
 
 		if (i % 16 == 15)
 			g_printf ("\n");
+
+		i++;
+		stack_frame = stack_frame->prev;
 	}
+	if (i == 0)
+		g_printf ("(Empty)");
 	g_printf ("\n");
 
 	/* Ports */

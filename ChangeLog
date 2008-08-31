@@ -1,3 +1,14 @@
+2008-08-31  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/mcus.ui:
+	* src/interface.c:
+	* src/main.c:
+	* src/main.h:
+	* src/simulation.c:
+	* src/simulation.h: Upgrade the stack to be dynamic, and ensure the
+	entire microcontroller state is stored in each stack frame, rather than
+	just a return address.
+
 2008-08-30  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/compiler.c: Fix constant addressing for jump instructions.

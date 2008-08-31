@@ -52,12 +52,21 @@ typedef enum {
 
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
-#define STACK_SIZE 64
+/* The number of stack frames to show */
+#define STACK_PREVIEW_SIZE 5
 #define PROGRAM_START_ADDRESS 0
 /* This is also in the UI file (in Volts) */
 #define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
 /* This is also in the UI file (in Hz) */
 #define DEFAULT_CLOCK_SPEED 1
+
+typedef struct _MCUSStackFrame MCUSStackFrame;
+
+struct _MCUSStackFrame {
+	guchar program_counter;
+	guchar registers[REGISTER_COUNT];
+	MCUSStackFrame *prev;
+};
 
 typedef struct {
 	GtkWidget *main_window;
@@ -65,14 +74,13 @@ typedef struct {
 
 	/* Microcontroller components */
 	guchar program_counter;
-	guchar stack_pointer;
 	gboolean zero_flag;
 	guchar registers[REGISTER_COUNT];
 	guchar input_port;
 	guchar output_port;
 	gdouble analogue_input;
 	guchar memory[MEMORY_SIZE];
-	guchar stack[STACK_SIZE];
+	MCUSStackFrame *stack;
 
 	/* Simulation state */
 	gulong clock_speed;

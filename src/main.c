@@ -48,7 +48,7 @@ mcus_save_changes (void)
 	GtkWidget *dialog;
 
 	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
-					 _("Save the changes to program before closing?"));
+					 _("Save changes to the program before closing?"));
 	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
 				_("Close without Saving"), GTK_RESPONSE_CLOSE,
 				"gtk-cancel", GTK_RESPONSE_CANCEL,
