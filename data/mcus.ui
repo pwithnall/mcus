@@ -1068,6 +1068,7 @@
 												<property name="n-rows">3</property>
 												<property name="n-columns">3</property>
 												<property name="column-spacing">5</property>
+												<property name="border-width">5</property>
 												<child>
 													<object class="GtkLabel" id="label6">
 														<property name="label" translatable="yes">&lt;b&gt;Program Counter&lt;/b&gt;</property>
@@ -1177,6 +1178,7 @@
 												<property name="n-rows">3</property>
 												<property name="n-columns">3</property>
 												<property name="column-spacing">5</property>
+												<property name="border-width">5</property>
 												<child>
 													<object class="GtkLabel" id="label4">
 														<property name="label" translatable="yes">&lt;b&gt;Input Port&lt;/b&gt;</property>
@@ -1285,6 +1287,8 @@
 											<object class="GtkLabel" id="mw_registers_label">
 												<property name="selectable">True</property>
 												<property name="label">00 00 00 00 00 00 00 00</property>
+												<property name="xpad">5</property>
+												<property name="ypad">5</property>
 											</object>
 										</child>
 									</object>
@@ -1320,6 +1324,8 @@
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</property>
+												<property name="xpad">5</property>
+												<property name="ypad">5</property>
 											</object>
 										</child>
 									</object>
@@ -1339,6 +1345,8 @@
 											<object class="GtkLabel" id="mw_stack_label">
 												<property name="selectable">True</property>
 												<property name="label">(Empty)</property>
+												<property name="xpad">5</property>
+												<property name="ypad">5</property>
 											</object>
 										</child>
 									</object>

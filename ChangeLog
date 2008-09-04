@@ -1,3 +1,13 @@
+2008-09-04  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* data/mcus.ui: Fixed some UI padding niggles.
+	* data/ocr-assembly.lang:
+	* src/compiler.c:
+	* src/compiler.h:
+	* src/instructions.h: Added support for a $SET preprocessor directive
+	to allow memory locations to be set to specific values, which is
+	useful for the readtable built-in subroutine.
+
 2008-08-31  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.ui:

@@ -27,6 +27,9 @@ G_BEGIN_DECLS
 /* Maximum opcode mnemonic length in characters */
 #define MAX_MNEMONIC_LENGTH 9
 
+/* Maximum directive name length in characters, *not* including the dollar sign */
+#define MAX_DIRECTIVE_NAME_LENGTH 3
+
 /* Maximum number of operands for an instruction */
 #define MAX_ARITY 2
 
@@ -62,6 +65,10 @@ typedef enum {
 } MCUSOpcode;
 
 typedef enum {
+	DIRECTIVE_SET = 0
+} MCUSDirective;
+
+typedef enum {
 	OPERAND_CONSTANT,
 	OPERAND_LABEL,
 	OPERAND_REGISTER,
@@ -79,6 +86,13 @@ typedef struct {
 } MCUSInstructionData;
 
 extern const MCUSInstructionData mcus_instruction_data[];
+
+typedef struct {
+	const MCUSDirective directive;
+	const gchar *directive_name;
+} MCUSDirectiveData;
+
+extern const MCUSDirectiveData mcus_directive_data[];
 
 G_END_DECLS
 

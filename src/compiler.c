@@ -91,6 +91,11 @@ const MCUSInstructionData const mcus_instruction_data[] = {
 	{ SUBROUTINE_READADC,	"readadc",	0,		1,			{  }, "" }
 };
 
+const MCUSDirectiveData const mcus_directive_data[] = {
+	/* Directive,		directive name */
+	{ DIRECTIVE_SET,	"SET" }
+};
+
 static void mcus_compiler_init (MCUSCompiler *self);
 static void mcus_compiler_finalize (GObject *object);
 static void reset_state (MCUSCompiler *self);
@@ -333,7 +338,7 @@ lex_label (MCUSCompiler *self, MCUSLabel *label, GError **error)
 		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 
-		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LABEL,
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LABEL_DELIMITATION,
 			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u before \"%s\"."),
 			     self->priv->line_number,
 			     following_section);
@@ -575,6 +580,145 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 	return TRUE;
 }
 
+static gboolean
+lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
+{
+	/* For the purposes of lexing the directive, it consists of the following lexemes:
+	 *  - directive_name: the human-readable name
+	 *  - (whitespace)
+	 *  - optional operand: the mnemonic form of the operand
+	 *  - (optional whitespace)
+	 *
+	 * In EBNF:
+	 * directive_name ::= "SET"
+	 * whitespace ::= " " | "\t"
+	 * directive ::= directive_name , { "," , whitespace , { whitespace } , operand } */
+
+	gchar name_string[MAX_DIRECTIVE_NAME_LENGTH+1] = { '\0', };
+	guint i, length = 0;
+	gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+	const MCUSDirectiveData *directive_data = NULL;
+	guchar *memory_address = NULL;
+
+	if (*(self->priv->i) != '$') {
+		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_DELIMITATION,
+			     _("An expected directive name was not delimited by a dollar sign around line %u before \"%s\"."),
+			     self->priv->line_number,
+			     following_section);
+		return FALSE;
+	}
+
+	/* Skip over the dollar sign */
+	self->priv->i++;
+
+	/* Grab the directive name */
+	while (g_ascii_isalnum (*(self->priv->i + length)) == TRUE &&
+	       length < MAX_DIRECTIVE_NAME_LENGTH) {
+		name_string[length] = *(self->priv->i + length);
+		length++;
+	}
+
+	/* If the name was zero-length or delimited by length, rather than a non-alphabetic
+	 * character, check that the next character is acceptable whitespace; if it isn't, this
+	 * name is invalid. This catches things like labels, which will either:
+	 *  - not have whitespace after them if they're shorter than the maximum name length, or
+	 *  - be longer than the maximum name length. */
+	if (length == 0 ||
+	    (*(self->priv->i + length) != ' ' &&
+	    *(self->priv->i + length) != '\t' &&
+	    *(self->priv->i + length) != '\n' &&
+	    *(self->priv->i + length) != ';' &&
+	    *(self->priv->i + length) != '\0')) {
+		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_NAME,
+			     _("An expected directive name had no length, or was not delimited by whitespace around line %u before \"%s\"."),
+			     self->priv->line_number,
+			     following_section);
+		return FALSE;
+	}
+
+	if (mcus->debug == TRUE)
+		g_debug ("Lexing suspected directive name \"%s\".", name_string);
+
+	/* Tokenise the mnemonic string to produce an MCUSDirective */
+	for (i = 0; i < G_N_ELEMENTS (mcus_directive_data); i++) {
+		if (strcasecmp (name_string, mcus_directive_data[i].directive_name) == 0) {
+			if (directive != NULL)
+				*directive = mcus_directive_data[i].directive;
+			directive_data = &(mcus_directive_data[i]);
+
+			/* Make sure to blank out the directive name in the code so it doesn't confuse the other lexers */
+			/* The -1 and +1 adjustments are so the dollar sign is included */
+			memset ((gchar *)self->priv->i - 1, ' ', length + 1);
+			self->priv->i += length;
+			break;
+		}
+	}
+
+	if (directive_data == NULL) {
+		/* Invalid directive name! */
+		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_NAME,
+			     _("A directive name (\"%s\") did not exist around line %u before \"%s\"."),
+			     name_string,
+			     self->priv->line_number,
+			     following_section);
+
+		return FALSE;
+	}
+
+	skip_whitespace (self, FALSE, FALSE);
+
+	/* Hard-code the operand code for the SET directive for now, since it's the only directive */
+	for (i = 0; i < 2; i++) {
+		MCUSOperand operand;
+		const gchar *old_i = self->priv->i;
+		GError *child_error = NULL;
+
+		if (lex_operand (self, &operand, &child_error) == TRUE) {
+			/* Check the operand's type is valid */
+			if (operand.type != OPERAND_CONSTANT) {
+				gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+				g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+
+				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
+					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\".\n\n%s"),
+					     operand_type_to_string (operand.type),
+					     operand_type_to_string (OPERAND_CONSTANT),
+					     self->priv->line_number,
+					     following_section,
+					     _("$SET 00 00 — set the memory address specified by the first operand to the value in the second."));
+
+				/* Restore i to before the operand so that error highlighting works correctly */
+				self->priv->i = old_i;
+
+				return FALSE;
+			}
+
+			/* Either set the memory address or its value */
+			if (i == 0)
+				memory_address = mcus->memory + operand.number;
+			else
+				*memory_address = operand.number;
+
+			/* Make sure to blank out the operands once done */
+			memset ((gchar *)old_i, ' ', self->priv->i - old_i);
+
+			skip_whitespace (self, FALSE, TRUE);
+		} else {
+			/* Throw the error */
+			g_propagate_error (error, child_error);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 gboolean
 mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 {
@@ -594,25 +738,45 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 	while (*(self->priv->i) != '\0') {
 		MCUSInstruction instruction;
 		MCUSLabel label;
+		MCUSDirective directive;
 		GError *child_error = NULL;
 
 		/* Are we finished? */
 		if (*(self->priv->i) == '\0')
 			break;
 
-		if (lex_label (self, &label, NULL) == TRUE) {
+		if (lex_directive (self, NULL, &child_error) == TRUE) {
+			/* Directive */
+			skip_whitespace (self, TRUE, FALSE);
+			continue;
+		} else if (g_error_matches (child_error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_DELIMITATION) == FALSE) {
+			goto throw_error;
+		} else {
+			g_clear_error (&child_error);
+		}
+
+		if (lex_label (self, &label, &child_error) == TRUE) {
 			/* Label */
 			store_label (self, &label);
 			skip_whitespace (self, TRUE, FALSE);
-		} else if (lex_instruction (self, &instruction, &child_error) == TRUE) {
+			continue;
+		} else if (g_error_matches (child_error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LABEL_DELIMITATION) == FALSE) {
+			goto throw_error;
+		} else {
+			g_clear_error (&child_error);
+		}
+
+		if (lex_instruction (self, &instruction, &child_error) == TRUE) {
 			/* Instruction */
 			store_instruction (self, &instruction);
 			skip_whitespace (self, TRUE, FALSE);
-		} else {
-			/* Throw the error */
-			g_propagate_error (error, child_error);
-			return FALSE;
+			continue;
 		}
+
+throw_error:
+		/* Throw the error */
+		g_propagate_error (error, child_error);
+		return FALSE;
 	}
 
 	return TRUE;

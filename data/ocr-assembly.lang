@@ -8,6 +8,7 @@
 	<styles>
 		<style id="comment" _name="Comment" map-to="def:comment"/>
 		<style id="instruction" _name="Instruction" map-to="def:keyword"/>
+		<style id="directive" _name="Directive" map-to="def:preprocessor"/>
 		<style id="subroutine" _name="Subroutine" map-to="def:preprocessor"/>
 		<style id="register" _name="Register" map-to="def:special-constant"/>
 		<style id="io-register" _name="I/O Register" map-to="def:special-constant"/>
@@ -43,6 +44,10 @@
 					<keyword>RET</keyword>
 					<keyword>SHL</keyword>
 					<keyword>SHR</keyword>
+				</context>
+				<context id="directive" style-ref="directive">
+					<prefix>^\$</prefix>
+					<keyword>SET</keyword>
 				</context>
 				<context id="subroutine" style-ref="subroutine">
 					<keyword>readtable</keyword>
