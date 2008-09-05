@@ -1,3 +1,8 @@
+2008-09-05  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* POTFILES.in: Added some missing files to the list of files to
+	translate.
+
 2008-05-18  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* LINGUAS: Removed non-existent translation.

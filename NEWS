@@ -2,4 +2,8 @@ Major new features in version...
 
 0.1:
 * Project created
-* TODO
+* Complete simulation support
+* Support for a variety of basic input/output devices
+* Support for a basic ADC
+* Step-through debugging support
+* Printing and syntax highlighting

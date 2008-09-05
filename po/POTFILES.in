@@ -1,5 +1,10 @@
 # List of source files containing translatable strings.
 [encoding: UTF-8]
-data/mcus.ui
+data/ocr-assembly.lang
+[type: gettext/glade]data/mcus.ui
+src/compiler.c
+src/input-port.c
 src/interface.c
 src/main.c
+src/main-window.c
+src/simulation.c

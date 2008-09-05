@@ -1,3 +1,11 @@
+============ Version 0.1.0
+
+2008-09-05  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* NEWS:
+	* README: Updated the documentation ready for release.
+	* src/compiler.c: Removed an unused variable.
+
 2008-09-04  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.ui: Fixed some UI padding niggles.

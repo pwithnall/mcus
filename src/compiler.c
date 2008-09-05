@@ -738,7 +738,6 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 	while (*(self->priv->i) != '\0') {
 		MCUSInstruction instruction;
 		MCUSLabel label;
-		MCUSDirective directive;
 		GError *child_error = NULL;
 
 		/* Are we finished? */
