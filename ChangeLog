@@ -1,3 +1,13 @@
+2008-10-20  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* config.h.in: Updated due to tool updates.
+	* data/mcus.ui: Re-oriented bottom tabs to prevent crash on Windows.
+	(Having them oriented vertically caused negative pixmap widths.)
+	* po/Makefile.in.in: Updated due to tool updates.
+	* src/interface.c: Fixed some potential security holes, where
+	unescaped strings were passed to printf-style functions as format
+	strings.
+
 ============ Version 0.1.0
 
 2008-09-05  Philip Withnall  <philip@tecnocode.co.uk>

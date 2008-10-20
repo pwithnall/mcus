@@ -295,7 +295,7 @@
 								</child>
 								<child>
 									<object class="GtkNotebook" id="notebook1">
-										<property name="tab-pos">GTK_POS_LEFT</property>
+										<!--<property name="tab-pos">GTK_POS_LEFT</property>-->
 										<child>
 											<object class="GtkAlignment" id="mw_input_alignment">
 												<property name="xalign">0.5</property>

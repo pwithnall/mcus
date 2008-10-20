@@ -49,7 +49,7 @@ mcus_create_interface (void)
 				GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK,
 				_("UI file \"%s/mcus/mcus.ui\" could not be loaded."), PACKAGE_DATA_DIR);
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), error->message);
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
 
@@ -82,13 +82,13 @@ mcus_interface_error (const gchar *message)
 {
 	GtkWidget *dialog;
 
-	g_warning (message);
+	g_warning ("%s", message);
 
 	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
 				GTK_DIALOG_MODAL,
 				GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK,
-				message);
+				"%s", message);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 }
