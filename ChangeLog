@@ -1,3 +1,10 @@
+============ Version 0.1.1
+
+2008-10-20  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* NEWS:
+	* configure.ac: Bump to version 0.1.1.
+
 2008-10-20  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* config.h.in: Updated due to tool updates.

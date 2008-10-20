@@ -1,5 +1,9 @@
 Major new features in version...
 
+0.1.1:
+* Fixed Windows build
+* Fixed three potential security holes
+
 0.1:
 * Project created
 * Complete simulation support
