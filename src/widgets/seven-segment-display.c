@@ -416,9 +416,9 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	segment_fill.red = 29555; /* Tango's medium "chameleon" */
 	segment_fill.green = 53970;
 	segment_fill.blue = 5654;
-	segment_stroke.red = 20046; /* Tango's darkest "chameleon" */
-	segment_stroke.green = 39578;
-	segment_stroke.blue = 1542;
+	segment_stroke.red = 34952; /* Tango's lightest "aluminium" --- 888a85 */
+	segment_stroke.green = 35466;
+	segment_stroke.blue = 34181;
 
 	/* Draw! */
 	cr = gdk_cairo_create (widget->window);

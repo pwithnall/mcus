@@ -206,12 +206,12 @@ mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	gdk_window_clear_area (widget->window, event->area.x, event->area.y, event->area.width, event->area.height);
 
 	/* Prepare our custom colours */
-	fill.red = 29555; /* Tango's medium "chameleon" */
+	fill.red = 29555; /* Tango's medium "chameleon" --- 73d216 */
 	fill.green = 53970;
 	fill.blue = 5654;
-	stroke.red = 20046; /* Tango's darkest "chameleon" */
-	stroke.green = 39578;
-	stroke.blue = 1542;
+	stroke.red = 34952; /* Tango's lightest "aluminium" --- 888a85 */
+	stroke.green = 35466;
+	stroke.blue = 34181;
 
 	/* Draw! */
 	cr = gdk_cairo_create (widget->window);

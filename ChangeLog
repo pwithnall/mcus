@@ -1,3 +1,9 @@
+2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/widgets/led.c:
+	* src/widgets/seven-segment-display.c: Change the LED and SSD colours
+	so there's better contrast between the on and off states.
+
 ============ Version 0.1.1
 
 2008-10-20  Philip Withnall  <philip@tecnocode.co.uk>
