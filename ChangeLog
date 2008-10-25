@@ -1,5 +1,10 @@
 2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/mcus.desktop.in:
+	* data/Makefile.am: Add a desktop file.
+
+2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/main-window.c: Keep the old GtkSourceView search paths when
 	adding our own to ensure source code highlighting always works
 	as expected.

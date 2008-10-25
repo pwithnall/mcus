@@ -1,0 +1,10 @@
+[Desktop Entry]
+_Name=MCUS Microcontroller Simulator
+_Comment=Simulator for the OCR A-level electronics specification.
+_GenericName=Microcontroller Simulator
+Exec=mcus
+Icon=mcus
+Terminal=false
+Type=Application
+Categories=GTK;Education;
+StartupNotify=true

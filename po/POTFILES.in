@@ -1,7 +1,8 @@
 # List of source files containing translatable strings.
 [encoding: UTF-8]
-data/ocr-assembly.lang
+data/mcus.desktop.in
 [type: gettext/glade]data/mcus.ui
+data/ocr-assembly.lang
 src/compiler.c
 src/input-port.c
 src/interface.c

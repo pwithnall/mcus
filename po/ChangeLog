@@ -1,3 +1,7 @@
+2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* POTFILES.in: Add a desktop file.
+
 2008-09-05  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* POTFILES.in: Added some missing files to the list of files to
