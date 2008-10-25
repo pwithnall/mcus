@@ -1,5 +1,11 @@
 2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/main-window.c: Keep the old GtkSourceView search paths when
+	adding our own to ensure source code highlighting always works
+	as expected.
+
+2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/widgets/led.c:
 	* src/widgets/seven-segment-display.c: Change the LED and SSD colours
 	so there's better contrast between the on and off states.

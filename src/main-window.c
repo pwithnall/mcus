@@ -83,11 +83,9 @@ mcus_main_window_init (void)
 {
 	GtkTextBuffer *text_buffer;
 	GtkSourceLanguage *language;
-	const gchar * const language_dirs[] = {
-		PACKAGE_DATA_DIR"/mcus/",
-		"./data/",
-		NULL
-	};
+	const gchar * const *old_language_dirs;
+	const gchar **language_dirs;
+	guint i = 0;
 
 	/* Grab various widgets */
 	mcus->analogue_input_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_analogue_input_adjustment"));
@@ -101,12 +99,10 @@ mcus_main_window_init (void)
 
 	/* Create the highlighting tags */
 	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-	mcus->current_instruction_tag = gtk_text_buffer_create_tag (text_buffer,
-								    "current-instruction",
+	mcus->current_instruction_tag = gtk_text_buffer_create_tag (text_buffer, "current-instruction",
 								    "weight", PANGO_WEIGHT_BOLD,
 								    NULL);
-	mcus->error_tag = gtk_text_buffer_create_tag (text_buffer,
-						      "error",
+	mcus->error_tag = gtk_text_buffer_create_tag (text_buffer, "error",
 						      "background", "pink",
 						      NULL);
 
@@ -121,7 +117,27 @@ mcus_main_window_init (void)
 
 	/* Set up the syntax highlighting */
 	mcus->language_manager = gtk_source_language_manager_new ();
+
+	/* Sort out the search paths so that our own are in there */
+	old_language_dirs = gtk_source_language_manager_get_search_path (mcus->language_manager);
+
+	while (old_language_dirs[i] != NULL)
+		i++;
+
+	language_dirs = g_malloc0 ((i + 3) * sizeof (gchar*));
+	language_dirs[0] = PACKAGE_DATA_DIR"/mcus/";
+	language_dirs[1] = "./data/";
+
+	i = 0;
+	while (old_language_dirs[i] != NULL) {
+		language_dirs[i + 2] = old_language_dirs[i];
+		i++;
+	}
+	language_dirs[i + 2] = NULL;
+
 	gtk_source_language_manager_set_search_path (mcus->language_manager, (gchar**)language_dirs);
+	g_free (language_dirs);
+
 	language = gtk_source_language_manager_get_language (mcus->language_manager, "ocr-assembly");
 
 	gtk_source_buffer_set_language (GTK_SOURCE_BUFFER (text_buffer), language);
