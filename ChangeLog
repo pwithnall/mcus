@@ -1,3 +1,7 @@
+2008-11-02  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* packaging/: Added Windows packaging infrastructure and NSIS script.
+
 2008-10-25  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* data/mcus.desktop.in:
