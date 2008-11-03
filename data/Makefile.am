@@ -1,3 +1,22 @@
+SUBDIRS = icons
+
+###############################################################################
+# Icons
+###############################################################################
+
+gtk_update_icon_cache = gtk-update-icon-cache -f -t $(datadir)/icons/hicolor
+
+install-data-hook: update-icon-cache
+uninstall-hook: update-icon-cache
+update-icon-cache:
+	@-if test -z "$(DESTDIR)"; then \
+		echo "Updating GTK+ icon cache."; \
+		$(gtk_update_icon_cache); \
+	else \
+		echo "*** Icon cache not updated.  After (un)install, run this:"; \
+		echo "***   $(gtk_update_icon_cache)"; \
+	fi
+
 ###############################################################################
 # UI file
 ###############################################################################
@@ -14,13 +33,13 @@ ui_DATA = \
 @INTLTOOL_DESKTOP_RULE@
 
 if WIN32
-	desktop_in_files = 
-	desktopdir = 
-	desktop_DATA = 
+desktop_in_files = 
+desktopdir = 
+desktop_DATA = 
 else
-	desktop_in_files = mcus.desktop.in
-	desktopdir = $(datadir)/applications
-	desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
+desktop_in_files = mcus.desktop.in
+desktopdir = $(datadir)/applications
+desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 endif
 
 ###############################################################################

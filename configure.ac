@@ -8,6 +8,7 @@ AC_ISC_POSIX
 AC_PROG_CC
 AM_PROG_CC_STDC
 AC_HEADER_STDC
+AC_OBJEXT
 
 dnl ***************************************************************************
 dnl Options
@@ -33,6 +34,10 @@ case "${host}" in
 esac
 AM_CONDITIONAL([WIN32], test "$WIN32" = "yes")
 
+dnl Look for windres to build a Windows icon resource
+AC_CHECK_TOOL([WINDRES], [windres], [no])
+AM_CONDITIONAL([WITH_WIN_ICON], [test "$WINDRES" != "no"])
+
 dnl ***************************************************************************
 dnl Internationalisation
 dnl ***************************************************************************
@@ -54,4 +59,9 @@ Makefile
 src/Makefile
 po/Makefile.in
 data/Makefile
+data/icons/Makefile
+data/icons/16x16/Makefile
+data/icons/22x22/Makefile
+data/icons/32x32/Makefile
+data/icons/48x48/Makefile
 ])

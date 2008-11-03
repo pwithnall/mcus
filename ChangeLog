@@ -1,3 +1,17 @@
+2008-11-03  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* configure.ac:
+	* data/icons/:
+	* data/Makefile.am: Added icon and sources, based off the GNOME CPU
+	Frequency Scaling Monitor applet icon.
+	* src/mcus_win_icon.rc:
+	* src/mcus_win_icon_16x16.ico:
+	* src/mcus_win_icon_32x32.ico:
+	* src/mcus_win_icon_48x48.ico:
+	* src/mcus_win_icon_64x64.ico
+	* src/Makefile.am: Added Windows icons and code to package them into
+	the built binary.
+
 2008-11-02  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* packaging/: Added Windows packaging infrastructure and NSIS script.
