@@ -1,3 +1,8 @@
+2008-11-06  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* packaging/windows.sh: Fixed a problem where the script didn't change
+	back to the correct directory after building for Windows.
+
 2008-11-03  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* configure.ac:

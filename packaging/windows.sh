@@ -15,6 +15,8 @@ cp src/.libs/mcus.exe packaging/GTK2-Runtime/lib
 cp data/mcus.ui packaging/GTK2-Runtime/lib/data
 cp data/ocr-assembly.lang packaging/GTK2-Runtime/lib/data
 
+cd packaging
+
 # Building zip archive
 zip -r mcus-$version.zip GTK2-Runtime
 
