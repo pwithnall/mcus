@@ -86,10 +86,7 @@ mcus_new_program (void)
 void
 mcus_open_program (void)
 {
-	GIOChannel *channel;
 	GtkWidget *dialog;
-	gchar *file_contents = NULL;
-	GError *error = NULL;
 	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
 
 	/* Ask to save old files */
@@ -104,33 +101,11 @@ mcus_open_program (void)
 
 		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 		{
-			mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-			channel = g_io_channel_new_file (mcus->current_filename, "r", &error);
-			if (error != NULL)
-				goto file_error;
-
-			g_io_channel_read_to_end (channel, &file_contents, NULL, &error);
-			if (error != NULL)
-				goto file_error;
-
-			gtk_text_buffer_set_text (text_buffer, file_contents, -1);
-			gtk_text_buffer_set_modified (text_buffer, FALSE);
-			g_free (file_contents);
-
-			g_io_channel_shutdown (channel, FALSE, NULL);
-			g_io_channel_unref (channel);
+			gchar *filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+			mcus_open_file (filename);
 		}
 		gtk_widget_destroy (dialog);
 	}
-
-	return;
-
-file_error:
-	mcus_interface_error (error->message);
-	g_io_channel_unref (channel);
-	gtk_widget_destroy (dialog);
-	if (file_contents != NULL)
-		g_free (file_contents);
 }
 
 void
@@ -204,6 +179,41 @@ mcus_save_program_as (void)
 	gtk_widget_destroy (dialog);
 }
 
+/* Takes ownership of filename */
+void
+mcus_open_file (gchar *filename)
+{
+	GIOChannel *channel;
+	gchar *file_contents = NULL;
+	GError *error = NULL;
+	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
+
+	channel = g_io_channel_new_file (filename, "r", &error);
+	if (error != NULL)
+		goto file_error;
+
+	g_io_channel_read_to_end (channel, &file_contents, NULL, &error);
+	if (error != NULL)
+		goto file_error;
+
+	gtk_text_buffer_set_text (text_buffer, file_contents, -1);
+	gtk_text_buffer_set_modified (text_buffer, FALSE);
+	g_free (file_contents);
+
+	g_io_channel_shutdown (channel, FALSE, NULL);
+	g_io_channel_unref (channel);
+
+	g_free (mcus->current_filename);
+	mcus->current_filename = filename;
+
+	return;
+
+file_error:
+	mcus_interface_error (error->message);
+	g_io_channel_unref (channel);
+	g_free (file_contents);
+}
+
 void
 mcus_quit (void)
 {
@@ -242,9 +252,11 @@ main (int argc, char *argv[])
 	GOptionContext *context;
 	GError *error = NULL;
 	gboolean debug = FALSE;
+	gchar **filenames = NULL;
 
 	const GOptionEntry options[] = {
 		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, N_("Enable debug mode"), NULL },
+		{ G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &filenames, NULL, N_("[FILE]") },
 		{ NULL }
 	};
 
@@ -289,6 +301,10 @@ main (int argc, char *argv[])
 	/* Create and show the interface */
 	mcus_create_interface ();
 	gtk_widget_show_all (mcus->main_window);
+
+	/* See if a file to load has been specified on the command line */
+	if (filenames != NULL && filenames[0] != NULL)
+		mcus_open_file (filenames[0]);
 
 	gtk_main ();
 	return 0;

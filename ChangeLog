@@ -1,5 +1,11 @@
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/main.c:
+	* src/main.h: Added a command line parameter to allow a file to be
+	opened from the command line.
+
+2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/compiler.c:
 	* src/compiler.h:
 	* src/main-window.c: Clean up error highlighting to be more consistent
