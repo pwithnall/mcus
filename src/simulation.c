@@ -96,8 +96,8 @@ mcus_simulation_iterate (GError **error)
 	}
 
 	opcode = mcus->memory[mcus->program_counter];
-	operand1 = (mcus->program_counter + 1 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+1] : 0;
-	operand2 = (mcus->program_counter + 2 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter+2] : 0;
+	operand1 = (mcus->program_counter + 1 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter + 1] : 0;
+	operand2 = (mcus->program_counter + 2 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter + 2] : 0;
 
 	switch (opcode) {
 	case OPCODE_HALT:
@@ -156,7 +156,24 @@ mcus_simulation_iterate (GError **error)
 		}
 		break;
 	case OPCODE_RCALL:
-		/* Push the current state as a new frame onto the stack */
+		/* Check for calling the built-in subroutines */
+		if (operand1 == mcus->program_counter) {
+			/* readtable */
+			/* TODO: Is this correct? */
+			mcus->registers[0] = mcus->memory[mcus->registers[7]];
+			break;
+		} else if (operand1 == mcus->program_counter + 1) {
+			/* wait1ms */
+			g_usleep (1000);
+			break;
+		} else if (operand1 == mcus->program_counter + 2) {
+			/* readadc */
+			mcus->registers[0] = 255.0 * mcus->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;
+			break;
+		}
+
+		/* If we're just calling a normal subroutine, push the
+		 * current state as a new frame onto the stack */
 		stack_frame = g_new (MCUSStackFrame, 1);
 		stack_frame->prev = mcus->stack;
 		stack_frame->program_counter = mcus->program_counter + mcus_instruction_data[opcode].size;
@@ -192,16 +209,6 @@ mcus_simulation_iterate (GError **error)
 	case OPCODE_SHR:
 		mcus->registers[operand1] >>= 1;
 		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case SUBROUTINE_READTABLE:
-		/* TODO: Is this correct? */
-		mcus->registers[0] = mcus->memory[mcus->registers[7]];
-		break;
-	case SUBROUTINE_WAIT1MS:
-		g_usleep (1000);
-		break;
-	case SUBROUTINE_READADC:
-		mcus->registers[0] = 255.0 * mcus->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;
 		break;
 	default:
 		/* We've encountered some data? */

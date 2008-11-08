@@ -1,5 +1,16 @@
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* data/mcus.ui:
+	* src/interface.c: Tidied up the code for using custom widgets a
+	little.
+	* src/compiler.c:
+	* src/instructions.h:
+	* src/simulation.c: Changed the compilation and interpretation code to
+	treat built-in subroutines as special labels, rather than instructions
+	by themselves, so that they can be, and only be, used with RCALL.
+
+2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* .bzrignore: Updated the ignore list.
 
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>

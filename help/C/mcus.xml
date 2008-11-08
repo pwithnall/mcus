@@ -162,25 +162,6 @@
 	<sect1 id="mcus-usage">
 		<title>Usage</title>
 
-		<para>You can use &app; to perform the following tasks:</para>
-		<itemizedlist>
-			<listitem>
-				<para><xref linkend="mcus-edit-program"/></para>
-			</listitem>
-			<listitem>
-				<para><xref linkend="mcus-simulate-program"/></para>
-			</listitem>
-			<listitem>
-				<para><xref linkend="mcus-use-inputs"/></para>
-			</listitem>
-			<listitem>
-				<para><xref linkend="mcus-use-outputs"/></para>
-			</listitem>
-			<listitem>
-				<para><xref linkend="mcus-use-adc"/></para>
-			</listitem>
-		</itemizedlist>
-
 		<sect2 id="mcus-edit-program">
 			<title>Editing a Program</title>
 
@@ -318,18 +299,6 @@
 
 	<sect1 id="mcus-reference">
 		<title>Assembly Reference</title>
-
-		<itemizedlist>
-			<listitem>
-				<para><xref linkend="mcus-syntax"/></para>
-			</listitem>
-			<listitem>
-				<para><xref linkend="mcus-instructions"/></para>
-			</listitem>
-			<listitem>
-				<para><xref linkend="mcus-subroutines"/></para>
-			</listitem>
-		</itemizedlist>
 
 		<sect2 id="mcus-syntax">
 			<title>Syntax</title>
@@ -543,9 +512,21 @@
 		<sect2 id="mcus-subroutines">
 			<title>Subroutines</title>
 
-			<para>The OCR specification also gives three built-in subroutines, to be called slightly differently to other subroutines (they're called as if they were instructions themselves), due to their special nature.</para>
+			<para>The OCR specification also gives three built-in subroutines, to be called with <function>RCALL</function> as if they were any normal subroutine.</para>
 			<warning>
-				<para>The OCR specification does not give this as the correct way to use these three subroutines, but does not give any alternatives either.</para>
+				<para>Due to the fact that the subroutines have no simulated in-memory representation, the operand for the <function>RCALL</function> instruction is set a little differently when using any of these three subroutines.</para>
+				<itemizedlist>
+					<listitem>
+						<para>For the <function>readtable</function> subroutine, the operand is set to the address of the <function>RCALL</function> opcode instance.</para>
+					</listitem>
+					<listitem>
+						<para>For the <function>wait1ms</function> subroutine, the operand is set to the address of the operand itself.</para>
+					</listitem>
+					<listitem>
+						<para>For the <function>readadc</function> subroutine, the operand is set to the address of the opcode following the <function>RCALL</function> instruction.</para>
+						<para>This is the only case where different legitimate code could produce the same in-memory representation. However, any code which would produce this sequence of operands and opcodes would be useless as part of a program anyway.</para>
+					</listitem>
+				</itemizedlist>
 			</warning>
 			<variablelist>
 				<varlistentry>
@@ -553,24 +534,21 @@
 					<listitem>
 						<para>Copies the byte in the lookup table pointed at by <parameter>S7</parameter> into <parameter>S0</parameter>. The lookup table is a labelled table: when <parameter>S7</parameter> is <literal>0</literal> the first byte from the table is returned in <parameter>S0</parameter>.</para>
 						<para>In the absense of further guidance, <function>readtable</function> reads from memory, and is designed to work with the <function>$SET</function> directive, which allows lookup tables to be built easily.</para>
-						<para>Opcode: <literal>12</literal></para>
-						<para>Example: <function>readtable</function></para>
+						<para>Example: <function>RCALL</function> <function>readtable</function></para>
 					</listitem>
 				</varlistentry>
 				<varlistentry>
 					<term><function>wait1ms</function></term>
 					<listitem>
 						<para>Waits 1ms before returning.</para>
-						<para>Opcode: <literal>13</literal></para>
-						<para>Example: <function>wait1ms</function></para>
+						<para>Example: <function>RCALL</function> <function>wait1ms</function></para>
 					</listitem>
 				</varlistentry>
 				<varlistentry>
 					<term><function>readadc</function></term>
 					<listitem>
 						<para>Returns a byte in <parameter>S0</parameter> proportional to the voltage at the ADC. The ADC input can vary from 0V to 5V, which are given values of <literal>00</literal> and <literal>FF</literal> respectively.</para>
-						<para>Opcode: <literal>14</literal></para>
-						<para>Example: <function>readadc</function></para>
+						<para>Example: <function>RCALL</function> <function>readadc</function></para>
 					</listitem>
 				</varlistentry>
 			</variablelist>

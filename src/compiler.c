@@ -83,12 +83,7 @@ const MCUSInstructionData const mcus_instruction_data[] = {
 	{ OPCODE_SHL,	"SHL",		1,	2,			{ OPERAND_REGISTER, },
 		N_("SHL Sx — logically shift the bits in the register left one place.") },
 	{ OPCODE_SHR,	"SHR",		1,	2,			{ OPERAND_REGISTER, },
-		N_("SHR Sx — logically shift the bits in the register right one place.") },
-
-	/* Subroutines */
-	{ SUBROUTINE_READTABLE,	"readtable",	0,		1,			{  }, "" },
-	{ SUBROUTINE_WAIT1MS,	"wait1ms",	0,		1,			{  }, "" },
-	{ SUBROUTINE_READADC,	"readadc",	0,		1,			{  }, "" }
+		N_("SHR Sx — logically shift the bits in the register right one place.") }
 };
 
 const MCUSDirectiveData const mcus_directive_data[] = {
@@ -237,6 +232,28 @@ resolve_label (MCUSCompiler *self, guint instruction_number, const gchar *label_
 	if (mcus->debug == TRUE)
 		g_debug ("Resolving label \"%s\".", label_string);
 
+	/* Resolve labels for the built-in subroutines to some special (hacky) locations:
+	 *  * readtable: Copies the byte in the lookup table pointed at by S7 into S0. The lookup table is
+	 *		 labelled table: when S7=0 the first byte from the table is returned in S0.
+	 *
+	 *		 Location: the address where the RCALL opcode is stored.
+	 *  * wait1ms:   Waits 1 ms before returning.
+	 *
+	 *		 Location: the address where the RCALL instruction's operand is stored.
+	 *  * readadc:   Returns a byte in S0 proportional to the voltage at ADC.
+	 *
+	 *		 Location: the address of the opcode after the RCALL instruction. This is the most hacky,
+	 *		 as there is legitimate code which would produce this in-memory representation. However,
+	 *		 such code would be stupid and not work as part of a program regardless.
+	 */
+	if (strcmp (label_string, "readtable") == 0)
+		return self->priv->compiled_size - 1;
+	else if (strcmp (label_string, "wait1ms") == 0)
+		return self->priv->compiled_size;
+	else if (strcmp (label_string, "readadc") == 0)
+		return self->priv->compiled_size + 1;
+
+	/* Otherwise, just go through our list of labels */
 	for (i = 0; i < self->priv->label_count; i++) {
 		if (strcmp (label_string, self->priv->labels[i].label) == 0)
 			return self->priv->labels[i].address;

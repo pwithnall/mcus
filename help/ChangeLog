@@ -1,3 +1,9 @@
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* C/mcus.xml: Updated the documentation to explain about the new way
+	to use built-in subroutines; with RCALL instead of as instructions by
+	themselves.
+
+2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
+
 	Added documentation.

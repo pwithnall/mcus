@@ -36,9 +36,6 @@ mcus_create_interface (void)
 {
 	GError *error = NULL;
 
-	mcus_seven_segment_display_get_type (); /* TODO: Remove me! */
-	mcus_led_get_type ();
-
 	mcus->builder = gtk_builder_new ();
 
 	if (gtk_builder_add_from_file (mcus->builder, PACKAGE_DATA_DIR"/mcus/mcus.ui", &error) == FALSE &&

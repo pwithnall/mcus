@@ -57,11 +57,6 @@ typedef enum {
 	OPCODE_RET,	/* RET		Pop the program counter from the stack to return to the place the subroutine was called from */
 	OPCODE_SHL,	/* SHL Sd	Shift the byte in Sd one bit left putting a 0 into the lsb */
 	OPCODE_SHR,	/* SHR Sd	Shift the byte in Sd one bit right putting a 0 into the msb */
-
-	SUBROUTINE_READTABLE,	/* Copies the byte in the lookup table pointed at by S7 into S0. The lookup table is
-				 * labelled table: when S7=0 the first byte from the table is returned in S0. */
-	SUBROUTINE_WAIT1MS,	/* Waits 1 ms before returning. */
-	SUBROUTINE_READADC	/* Returns a byte in S0 proportional to the voltage at ADC. */
 } MCUSOpcode;
 
 typedef enum {
