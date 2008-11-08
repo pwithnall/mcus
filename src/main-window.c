@@ -206,6 +206,7 @@ simulation_iterate_cb (gpointer user_data)
 	if (mcus_simulation_iterate (&error) == FALSE) {
 		/* Get out of simulation UI mode */
 		mcus->simulation_state = SIMULATION_STOPPED;
+		mcus_simulation_finalise ();
 		mcus_update_ui ();
 
 		if (error != NULL) {
@@ -302,6 +303,7 @@ G_MODULE_EXPORT void
 mw_stop_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus->simulation_state = SIMULATION_STOPPED;
+	mcus_simulation_finalise ();
 	mcus_update_ui ();
 }
 

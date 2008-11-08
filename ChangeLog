@@ -1,5 +1,10 @@
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/main-window.c: Ensure the stack is freed when stopping the
+	simulation.
+
+2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/mcus.ui:
 	* src/interface.c: Tidied up the code for using custom widgets a
 	little.
