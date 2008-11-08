@@ -97,6 +97,7 @@ static void reset_state (MCUSCompiler *self);
 
 #define LABEL_BLOCK_SIZE 5
 #define INSTRUCTION_BLOCK_SIZE 10
+#define COMPILER_ERROR_CONTEXT_LENGTH 4
 
 struct _MCUSCompilerPrivate {
 	MCUSLabel *labels;
@@ -110,6 +111,7 @@ struct _MCUSCompilerPrivate {
 
 	guchar compiled_size;
 	guint line_number;
+	guint error_length;
 	gboolean dirty;
 };
 
@@ -259,6 +261,7 @@ resolve_label (MCUSCompiler *self, guint instruction_number, const gchar *label_
 			return self->priv->labels[i].address;
 	}
 
+	self->priv->error_length = strlen (label_string);
 	g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_UNRESOLVABLE_LABEL,
 		     _("A label (\"%s\") could not be resolved to an address for instruction %u."),
 		     label_string,
@@ -354,6 +357,7 @@ lex_label (MCUSCompiler *self, MCUSLabel *label, GError **error)
 	if (length == 0 || *(self->priv->i + length - 1) != ':') {
 		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LABEL_DELIMITATION,
 			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u before \"%s\"."),
@@ -403,6 +407,7 @@ lex_operand (MCUSCompiler *self, MCUSOperand *operand, GError **error)
 	if (length == 0) {
 		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = 0;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND,
 			     _("A required operand had no length around line %u before \"%s\"."),
@@ -514,6 +519,7 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 	    *(self->priv->i + length) != ';' &&
 	    *(self->priv->i + length) != '\0')) {
 		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_MNEMONIC,
 			     _("An expected mnemonic had no length, or was not delimited by whitespace around line %u before \"%s\"."),
@@ -539,6 +545,7 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 	if (instruction_data == NULL) {
 		/* Invalid mnemonic! */
 		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_MNEMONIC,
 			     _("A mnemonic (\"%s\") did not exist around line %u before \"%s\"."),
@@ -559,13 +566,24 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 
 		if (lex_operand (self, &operand, &child_error) == TRUE) {
 			/* Check the operand's type is valid */
-			if ((instruction_data->operand_types[i] == OPERAND_LABEL &&
-			    operand.type != OPERAND_CONSTANT &&
-			    operand.type != OPERAND_LABEL) ||
-			    (instruction_data->operand_types[i] != OPERAND_LABEL &&
-			    operand.type != instruction_data->operand_types[i])) {
+			if ((instruction_data->operand_types[i] == OPERAND_LABEL && operand.type != OPERAND_CONSTANT && operand.type != OPERAND_LABEL) ||
+			    (instruction_data->operand_types[i] != OPERAND_LABEL && operand.type != instruction_data->operand_types[i])) {
 				gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 				g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+
+				switch (operand.type) {
+				case OPERAND_CONSTANT:
+				case OPERAND_REGISTER:
+					self->priv->error_length = 2;
+					break;
+				case OPERAND_INPUT:
+				case OPERAND_OUTPUT:
+					self->priv->error_length = 1;
+					break;
+				default:
+					self->priv->error_length = strlen (operand.label);
+					break;
+				}
 
 				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
 					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\".\n\n%s"),
@@ -620,6 +638,10 @@ lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
 	if (*(self->priv->i) != '$') {
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 
+		self->priv->error_length = 0;
+		while (g_ascii_isalnum (*(self->priv->i + self->priv->error_length)) == TRUE)
+			self->priv->error_length++;
+
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_DELIMITATION,
 			     _("An expected directive name was not delimited by a dollar sign around line %u before \"%s\"."),
 			     self->priv->line_number,
@@ -649,6 +671,7 @@ lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
 	    *(self->priv->i + length) != ';' &&
 	    *(self->priv->i + length) != '\0')) {
 		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_NAME,
 			     _("An expected directive name had no length, or was not delimited by whitespace around line %u before \"%s\"."),
@@ -678,6 +701,7 @@ lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
 	if (directive_data == NULL) {
 		/* Invalid directive name! */
 		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_DIRECTIVE_NAME,
 			     _("A directive name (\"%s\") did not exist around line %u before \"%s\"."),
@@ -702,13 +726,27 @@ lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
 				gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 				g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 
+				switch (operand.type) {
+				case OPERAND_CONSTANT:
+				case OPERAND_REGISTER:
+					self->priv->error_length = 2;
+					break;
+				case OPERAND_INPUT:
+				case OPERAND_OUTPUT:
+					self->priv->error_length = 1;
+					break;
+				default:
+					self->priv->error_length = strlen (operand.label);
+					break;
+				}
+
 				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
 					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\".\n\n%s"),
 					     operand_type_to_string (operand.type),
 					     operand_type_to_string (OPERAND_CONSTANT),
 					     self->priv->line_number,
 					     following_section,
-					     _("$SET 00 00 — set the memory address specified by the first operand to the value in the second."));
+					     _("$SET 00, 00 — set the memory address specified by the first operand to the value in the second."));
 
 				/* Restore i to before the operand so that error highlighting works correctly */
 				self->priv->i = old_i;
@@ -829,6 +867,7 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 		projected_size = self->priv->compiled_size + instruction_data->size;
 
 		if (projected_size >= MEMORY_SIZE) {
+			self->priv->error_length = strlen (instruction_data->mnemonic);
 			g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_MEMORY_OVERFLOW,
 				     _("Instruction %u overflows the microcontroller memory."),
 				     i);
@@ -888,3 +927,11 @@ mcus_compiler_get_offset (MCUSCompiler *self)
 	return self->priv->i - self->priv->code;
 }
 
+void
+mcus_compiler_get_error_location (MCUSCompiler *self, guint *start, guint *end)
+{
+	if (start != NULL)
+		*start = mcus_compiler_get_offset (self);
+	if (end != NULL)
+		*end = mcus_compiler_get_offset (self) + self->priv->error_length;
+}

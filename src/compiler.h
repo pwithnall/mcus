@@ -33,7 +33,6 @@ G_BEGIN_DECLS
 #define MCUS_COMPILER_GET_CLASS(o)	(G_TYPE_INSTANCE_GET_CLASS ((o), MCUS_TYPE_COMPILER, MCUSCompilerClass))
 
 #define MCUS_COMPILER_ERROR		(mcus_compiler_error_quark ())
-#define COMPILER_ERROR_CONTEXT_LENGTH	4
 
 enum {
 	MCUS_COMPILER_ERROR_INVALID_LABEL,
@@ -65,6 +64,7 @@ MCUSCompiler *mcus_compiler_new (void);
 gboolean mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error);
 gboolean mcus_compiler_compile (MCUSCompiler *self, GError **error);
 guint mcus_compiler_get_offset (MCUSCompiler *self);
+void mcus_compiler_get_error_location (MCUSCompiler *self, guint *start, guint *end);
 
 G_END_DECLS
 

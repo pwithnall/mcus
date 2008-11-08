@@ -237,6 +237,7 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 	GtkTextBuffer *code_buffer;
 	GtkTextIter start_iter, end_iter;
 	gchar *code;
+	guint error_start, error_end;
 	GError *error = NULL;
 
 	/* Remove previous errors */
@@ -281,10 +282,8 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 
 compiler_error:
 	/* Highlight the offending line */
-	mcus_tag_range (mcus->error_tag,
-			mcus_compiler_get_offset (compiler),
-			mcus_compiler_get_offset (compiler) + COMPILER_ERROR_CONTEXT_LENGTH,
-			FALSE);
+	mcus_compiler_get_error_location (compiler, &error_start, &error_end);
+	mcus_tag_range (mcus->error_tag, error_start, error_end, FALSE);
 
 	/* Display an error message */
 	mcus_interface_error (error->message);
