@@ -1,0 +1,591 @@
+<?xml version="1.0"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+	<!ENTITY appname "MCUS">
+	<!ENTITY app "<application>MCUS</application>">
+	<!ENTITY appversion "0.1.1">
+	<!ENTITY manrevision  "0.1.1">
+	<!ENTITY date "November 2008">
+]>
+
+<!--
+	(Do not remove this comment block.)
+	Maintained by the GNOME Documentation Project
+	http://live.gnome.org/DocumentationProject
+	Template version: 3.0 beta
+	Template last modified 2006-11-21
+-->
+
+<article id="index" lang="en">
+	<articleinfo>
+		<title>&app; Manual</title>
+		<abstract role="description">
+			<para>&app; is a microcontroller simulator designed to the OCR microcontroller specifications for the AS electronics syllabus, first taught in 2008. It is designed to completely follow the specification, and provide a helpful interface to introduce students to programming in the language.</para>
+		</abstract>
+		<copyright>
+			<year>2008</year>
+			<holder>Philip Withnall</holder>
+		</copyright>
+		<publisher role="maintainer">
+			<publishername>Philip Withnall</publishername>
+		</publisher>
+
+		<xi:include href="legal.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+		<authorgroup>
+			<author>
+				<firstname>Philip</firstname>
+				<surname>Withnall</surname>
+				<affiliation>
+					<address><email>philip@tecnocode.co.uk</email></address>
+				</affiliation>
+			</author>
+		</authorgroup>
+
+		<!--
+		According to GNU FDL, revision history is mandatory if you are
+		modifying/reusing someone else's document.  If not, you can omit it.
+		Remember to remove the &manrevision; entity from the revision entries other
+		than the current revision.
+		The revision numbering system for GNOME manuals is as follows:
+		 * the revision number consists of two components
+		 * the first component of the revision number reflects the release version of the GNOME desktop.
+		 * the second component of the revision number is a decimal unit that is incremented with each revision of the manual.
+		For example, if the GNOME desktop release is V2.x, the first version of the manual that
+		is written in that desktop timeframe is V2.0, the second version of the manual is V2.1, etc.
+		When the desktop release version changes to V3.x, the revision number of the manual changes
+		to V3.0, and so on.
+		-->
+
+		<revhistory>
+			<revision>
+				<revnumber>&appname; Manual V&manrevision;</revnumber>
+				<date>&date;</date>
+				<revdescription><para role="author">Philip Withnall <email>philip@tecnocode.co.uk</email></para></revdescription>
+			</revision>
+		</revhistory>
+
+		<releaseinfo>This manual describes version &appversion; of &appname;.</releaseinfo>
+		<legalnotice>
+			<title>Feedback</title>
+			<para>To report a bug or make a suggestion regarding the &app; application or this manual, follow the directions on the
+			<ulink url="http://tecnocode.co.uk/projects/mcus" type="http">&app; Web page</ulink>.</para>
+			<!-- Translators may also add here feedback address for translations -->
+		</legalnotice>
+	</articleinfo>
+
+	<indexterm zone="index">
+		<primary>&appname;</primary>
+	</indexterm>
+	<indexterm zone="index">
+		<primary>mcus</primary>
+	</indexterm>
+
+	<sect1 id="mcus-introduction">
+		<title>Introduction</title>
+
+		<para>Use &app; to develop and simulate programs in OCR assembly, using a variety of simulated hardware. It has the following features:</para>
+		<itemizedlist>
+			<listitem><para>Full support for OCR assembly.</para></listitem>
+			<listitem><para>Input hardware: hexadecimal input and bit-level switches.</para></listitem>
+			<listitem><para>Output hardware: hexadecimal output, bit-level LEDs, multiplexed SSDs, BCD-encoded SSDs and other encoded SSDs.</para></listitem>
+			<listitem><para>Context-sensitive programming help.</para></listitem>
+			<listitem><para>Step-through debugging and variable-speed simulation.</para></listitem>
+			<listitem><para>Full memory, stack and register listings.</para></listitem>
+		</itemizedlist>
+	</sect1>
+
+	<sect1 id="mcus-getting-started">
+		<title>Getting Started</title>
+
+		<sect2 id="mcus-start">
+			<title>Starting &app;</title>
+
+			<para>You can start &app; in the following ways:</para>
+			<variablelist>
+				<varlistentry>
+					<term><guimenu>Applications</guimenu> menu</term>
+					<listitem>
+						<para>Choose <menuchoice><guisubmenu>Education</guisubmenu><guimenuitem>MCUS Microcontroller Simulator</guimenuitem></menuchoice>.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Command line</term>
+					<listitem>
+						<para>To start &app; from a command line, type the following command, then press <keycap>Return</keycap>:</para>
+						<para><command>mcus</command></para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</sect2>
+
+		<sect2 id="mcus-when-start">
+			<title>When You Start &app;</title>
+
+			<para>When you start &app;, the following window is displayed.</para>
+			<figure id="mainwindow-fig">
+				<title>&app; Main Window</title>
+
+				<screenshot>
+					<mediaobject>
+						<imageobject><imagedata fileref="figures/mcus_main_window.png" format="PNG"/></imageobject>
+						<textobject>
+							<phrase>Shows &app; main window, containing the editing area, simulation panel, and hardware panel.</phrase>
+						</textobject>
+					</mediaobject>
+				</screenshot>
+			</figure>
+
+			<para>The &app; window contains the following elements:</para>
+			<variablelist>
+				<varlistentry>
+					<term>Editing area. </term>
+					<listitem>
+						<para>The editing area is where all the code for an assembly program is written. It features syntax highlighting, and also highlights the currently-executing line when a simulation is running.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Simulation panel. </term>
+					<listitem>
+						<para>The simulation panel (on the right-hand side of the window) contains data from and controls for the simulation, including listings of memory, the registers and stack; as well as hexadecimal controls for the input, output and analogue ports.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Hardware panel. </term>
+					<listitem>
+						<para>The hardware panel displays all the available input and output hardware. All the inputs are linked together, so changing one type of input will be reflected in the others.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</sect2>
+	</sect1>
+
+	<sect1 id="mcus-usage">
+		<title>Usage</title>
+
+		<para>You can use &app; to perform the following tasks:</para>
+		<itemizedlist>
+			<listitem>
+				<para><xref linkend="mcus-edit-program"/></para>
+			</listitem>
+			<listitem>
+				<para><xref linkend="mcus-simulate-program"/></para>
+			</listitem>
+			<listitem>
+				<para><xref linkend="mcus-use-inputs"/></para>
+			</listitem>
+			<listitem>
+				<para><xref linkend="mcus-use-outputs"/></para>
+			</listitem>
+			<listitem>
+				<para><xref linkend="mcus-use-adc"/></para>
+			</listitem>
+		</itemizedlist>
+
+		<sect2 id="mcus-edit-program">
+			<title>Editing a Program</title>
+
+			<para>To open a program, choose <menuchoice><guimenu>File</guimenu><guimenuitem>Open</guimenuitem></menuchoice>, then select the <filename>*.asm</filename> you'd like to open.</para>
+			<para>To save a program, choose <menuchoice><guimenu>File</guimenu><guimenuitem>Save</guimenuitem></menuchoice> or <menuchoice><guimenu>File</guimenu><guimenuitem>Save As</guimenuitem></menuchoice>, then select where you wish to save the file.</para>
+			<para>Files written by &app; are editable in a text editor, and the file only stores plain assembly code.</para>
+			<para>To edit the program, simply type in the editing area. It is a good idea to put each new instruction on a new line, though this is not required. For a reference to the mnemonics and syntax accepted by &app;, see <xref linkend="mcus-reference"/>.</para>
+		</sect2>
+
+	 	<sect2 id="mcus-simulate-program">
+			<title>Simulating a Program</title>
+
+			<para>Once a program is ready to be simulated, press the <guibutton>Run</guibutton> button on the toolbar, choose <menuchoice><guimenu>Program</guimenu><guimenuitem>Run</guimenuitem></menuchoice> or press <keycap>F5</keycap>.</para>
+			<para>The program will step through at the <guilabel>Clock Speed</guilabel> set in the simulation panel, with the current execution being highlighted in the editing area. Hardware outputs in the hardware panel and simulation displays in the simulation panel will be updated as the program executes.</para>
+			<para>While the program is running, most of the &app; interface will be disabled. To pause the program and allow controls to be used, press the <guibutton>Pause</guibutton> button on the toolbar, choose <menuchoice><guimenu>Program</guimenu><guimenuitem>Pause</guimenuitem></menuchoice> or press <keycap>F6</keycap>.</para>
+			<para>When paused, the program can also be stepped-through, instruction by instruction, to see exactly what's going on. To do this, press <guibutton>Step Forward</guibutton> on the toolbar, choose <menuchoice><guimenu>Program</guimenu><guimenuitem>Step Forward</guimenuitem></menuchoice> or press <keycap>F8</keycap>.</para>
+			<para>To stop simulation of the program at any time, press <guibutton>Stop</guibutton> on the toolbar, choose <menuchoice><guimenu>Program</guimenu><guimenuitem>Stop</guimenuitem></menuchoice> or press <keycap>F7</keycap>.</para>
+		</sect2>
+
+		<sect2 id="mcus-use-inputs">
+			<title>Using Inputs</title>
+
+			<para>There are two ways to set the data on the simulated input port in &app;:</para>
+			<variablelist>
+				<varlistentry>
+					<term>The <guilabel>Input Port</guilabel> entry in the simulation panel. </term>
+					<listitem>
+						<para>This accepts a hexadecimal value from <literal>00</literal> to <literal>FF</literal> to set the one-byte input port.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>The switches on the <guilabel>Inputs</guilabel> page of the hardware panel. </term>
+					<listitem>
+						<para>These allow individual bits of the input byte to be toggled. The most-significant bit is on the left, and the least-significant is on the right.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+			<para>To read data from the input port in a program, use the <function>IN</function> instruction; see <xref linkend="mcus-reference"/>.</para>
+		</sect2>
+
+		<sect2 id="mcus-use-outputs">
+			<title>Using Outputs</title>
+
+			<para>There are several different ways to visualise data put on the output port by an assembly program:</para>
+			<variablelist>
+				<varlistentry>
+					<term>The <guilabel>Output Port</guilabel> entry in the simulation panel. </term>
+					<listitem>
+						<para>This displays a hexadecimal value from <literal>00</literal> to <literal>FF</literal> from the output port.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>The LEDs on the <guilabel>LEDs</guilabel> page of the <guilabel>Outputs</guilabel> of the hardware panel. </term>
+					<listitem>
+						<para>These display each bit of the output port, with the most-significant on the left, and the least-significant on the right.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>The SSD on the <guilabel>Single SSD</guilabel> page of the <guilabel>Outputs</guilabel> of the hardware panel. </term>
+					<listitem>
+						<para>This displays a value decoded according to the option on the left.</para>
+						<para>If <guilabel>Segments</guilabel> is selected, segment A is controlled by the least-significant output bit, with segments B to G being controlled by progressively more significant bits. The decimal point is controlled by the most-significant bit.</para>
+						<para>If <guilabel>BCD</guilabel> is selected, the SSD will display the least-significant binary coded decimal digit in the output (i.e. the lower four bits of the output). If the BCD is invalid, <literal>0</literal> will be displayed.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>The SSDs on the <guilabel>Dual SSDs</guilabel> page of the <guilabel>Outputs</guilabel> of the hardware panel. </term>
+					<listitem>
+						<para>These display two digits as represented as binary coded decimals in the output. The left-hand SSD displays the most significant BCD. If a BCD is invalid, <literal>0</literal> will be displayed.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>The SSDs on the <guilabel>Multiplexed SSDs</guilabel> page of the <guilabel>Outputs</guilabel> of the hardware panel. </term>
+					<listitem>
+						<para>These display digits as decoded from the output. The most-significant nibble of the output specifies which SSD to set, and the least-significant nibble gives a BCD to use as its value. Invalid BCDs set an SSD to <literal>0</literal>.</para>
+						<para>All SSDs apart from the one specified in the most-significant nibble of the output are blanked every time the matrix of SSDs is updated.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</sect2>
+
+		<sect2 id="mcus-use-adc">
+			<title>Using the ADC</title>
+
+			<para>The ADC (Analogue-to-Digital Converter) acts as another input to the simulated hardware, digitising a generated analogue signal, and making it available via the <function>readadc</function> built-in subroutine.</para>
+			<para>There are two different ways the ADC can be set up to generate a signal, and both can be found on the <guilabel>ADC</guilabel> page of the hardware panel:</para>
+			<variablelist>
+				<varlistentry>
+					<term><guilabel>Constant Signal</guilabel>. </term>
+					<listitem>
+						<para>This allows a constant analogue signal between 0V and 5V to be set, which would provide a constant digital reading from <function>readadc</function>.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><guilabel>Function Generator</guilabel>. </term>
+					<listitem>
+						<para>This allows the analogue signal to be produced by a function, whose parameters are set up on this page:</para>
+						<variablelist>
+							<varlistentry>
+								<term><guilabel>Waveform</guilabel></term>
+								<listitem>
+									<para>The shape of the analogue waveform. Choose from: <guilabel>Sine Wave</guilabel>, <guilabel>Square Wave</guilabel>, <guilabel>Triangle Wave</guilabel> and <guilabel>Sawtooth Wave</guilabel>.</para>
+								</listitem>
+							</varlistentry>
+							<varlistentry>
+								<term><guilabel>Frequency</guilabel></term>
+								<listitem>
+									<para>The frequency of the waveform, in Hertz. Be wary of setting it as a multiple of the simulation clock speed, as if they're in phase, only one point on the wave will ever be seen by the program.</para>
+								</listitem>
+							</varlistentry>
+							<varlistentry>
+								<term><guilabel>Amplitude</guilabel></term>
+								<listitem>
+									<para>The amplitude of the waveform, in Volts from 0V to 5V.</para>
+								</listitem>
+							</varlistentry>
+							<varlistentry>
+								<term><guilabel>Offset</guilabel></term>
+								<listitem>
+									<para>The offset of the waveform from 0V, in Volts from 0V to 5V. To allow the maximum amplitude of 2.5V without clipping, set the offset to 2.5V.</para>
+								</listitem>
+							</varlistentry>
+							<varlistentry>
+								<term><guilabel>Phase</guilabel></term>
+								<listitem>
+									<para>The phase of the waveform in rads.</para>
+								</listitem>
+							</varlistentry>
+						</variablelist>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</sect2>
+	</sect1>
+
+	<sect1 id="mcus-reference">
+		<title>Assembly Reference</title>
+
+		<itemizedlist>
+			<listitem>
+				<para><xref linkend="mcus-syntax"/></para>
+			</listitem>
+			<listitem>
+				<para><xref linkend="mcus-instructions"/></para>
+			</listitem>
+			<listitem>
+				<para><xref linkend="mcus-subroutines"/></para>
+			</listitem>
+		</itemizedlist>
+
+		<sect2 id="mcus-syntax">
+			<title>Syntax</title>
+
+			<para>Instructions consist of a mnemonic, followed by zero or more parameters. Mnemonics are not case-sensitive, and a space separates the mnemonic and its parameters. Instructions are separated by any whitespace, although it's clearest to put each instruction on a new line.</para>
+			<para>Label declarations consist of the label name followed immediately by a <literal>:</literal>. They do not operate at a block level, and merely provide a convenient way to reference a particular location in a program, typically for jumping to it.</para>
+			<para>The rest of a line can be marked as a comment (and consequently ignored by the compiler) by using a <literal>;</literal>. It is important to document code using such comments.</para>
+			<para>Parameters can be of the following types, and each instruction is strict as to what it accepts. Parameters are separated by whitespace and an optional comma:</para>
+			<variablelist>
+				<varlistentry>
+					<term>Register: Sn</term>
+					<listitem>
+						<para>A case-insensitive <literal>S</literal>, followed by a register number from <literal>0</literal> to <literal>7</literal>. This type of parameter specifies a register from which data should be read, or to which data should be written (depending on the instruction in question).</para>
+						<para>Examples: <literal>S0</literal>, <literal>S5</literal></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Constant</term>
+					<listitem>
+						<para>A two-digit hexadecimal constant which would either be treated as a number, or could be treated as a memory address by some instructions, and can be passed in place of a label to any instruction.</para>
+						<para>Examples: <literal>05</literal>, <literal>7F</literal></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Label</term>
+					<listitem>
+						<para>A case-sensitive reference to a label defined elsewhere in the program, consisting of letters, digits and underscores. Labels do not have to be declared before they're used, but compilation of a program will fail if a non-existent label is referenced.</para>
+						<para>Note that if a label is of the same form as a hexadecimal constant, it will be mistaken for the memory address given by that constant, rather than treated as a label.</para>
+						<para>Examples: <literal>foobar3</literal>, <literal>main_loop</literal></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Input</term>
+					<listitem>
+						<para>A case-insensitive <literal>I</literal>, which refers to the only input port available in the simulation.</para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>Output</term>
+					<listitem>
+						<para>A case-insensitive <literal>Q</literal>, which refers to the only output port available in the simulation.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+
+			<para>&app; introduces the concept of <emphasis>directives</emphasis> to the OCR assembly specification, adding a <symbol>SET</symbol> directive, to allow memory locations to be pre-set to specific values on compilation.</para>
+			<para>Directives take the form of a <literal>$</literal> followed immediately by the case-insensitive directive name, followed by its parameters as if it were a normal instruction. Directives will be acted upon by the compiler, but then removed, and not added to the compiled code or executed when the program's simulated.</para>
+			<warning>
+				<para>The addition of directives is non-standard, and has not been discussed with OCR. Although they are not on the specification, their addition was deemed necessary to make the <function>readtable</function> subroutine useful.</para>
+			</warning>
+		</sect2>
+
+		<sect2 id="mcus-instructions">
+			<title>Instructions</title>
+
+			<para>&app; supports the full list of instructions in the OCR specification, plus one extra implicit <function>HALT</function> instruction, which has an opcode of <literal>00</literal>, and is thus executed as soon as uninitialised memory is encountered (i.e. the end of the program is reached).</para>
+			<warning>
+				<para>The <function>HALT</function> instruction, while designed to be implicit, can be used explicitly just as a normal instruction. None of this is on the specification, and is an extension specific to &app;</para>
+			</warning>
+			<variablelist>
+				<varlistentry>
+					<term><function>HALT</function></term>
+					<listitem>
+						<para>Terminate the simulation.</para>
+						<para>Opcode: <literal>00</literal></para>
+						<para>Example: <function>HALT</function></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>MOVI</function> <parameter>Sd</parameter>, <parameter>n</parameter></term>
+					<listitem>
+						<para>Copy the byte <parameter>n</parameter> into register <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>01</literal></para>
+						<para>Example: <function>MOVI</function> <parameter>S0</parameter>, <parameter>5F</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>MOV</function> <parameter>Sd</parameter>, <parameter>Ss</parameter></term>
+					<listitem>
+						<para>Copy the byte from <parameter>Ss</parameter> to <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>02</literal></para>
+						<para>Example: <function>MOV</function> <parameter>S3</parameter>, <parameter>S6</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>ADD</function> <parameter>Sd</parameter>, <parameter>Ss</parameter></term>
+					<listitem>
+						<para>Add the byte in <parameter>Ss</parameter> to the byte in <parameter>Sd</parameter> and store the result in <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>03</literal></para>
+						<para>Example: <function>ADD</function> <parameter>S2</parameter>, <parameter>S4</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>SUB</function> <parameter>Sd</parameter>, <parameter>Ss</parameter></term>
+					<listitem>
+						<para>Subtract the byte in <parameter>Ss</parameter> from the byte in <parameter>Sd</parameter> and store the result in <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>04</literal></para>
+						<para>Example: <function>SUB</function> <parameter>S4</parameter>, <parameter>S2</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>AND</function> <parameter>Sd</parameter>, <parameter>Ss</parameter></term>
+					<listitem>
+						<para>Logical AND the byte in <parameter>Ss</parameter> with the byte in <parameter>Sd</parameter> and store the result in <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>05</literal></para>
+						<para>Example: <function>AND</function> <parameter>S0</parameter>, <parameter>S3</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>EOR</function> <parameter>Sd</parameter>, <parameter>Ss</parameter></term>
+					<listitem>
+						<para>Logical EOR the byte in <parameter>Ss</parameter> with the byte in <parameter>Sd</parameter> and store the result in <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>06</literal></para>
+						<para>Example: <function>EOR</function> <parameter>S1</parameter>, <parameter>S6</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>INC</function> <parameter>Sd</parameter></term>
+					<listitem>
+						<para>Add 1 to <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>07</literal></para>
+						<para>Example: <function>INC</function> <parameter>S0</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>DEC</function> <parameter>Sd</parameter></term>
+					<listitem>
+						<para>Subtract 1 from <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>08</literal></para>
+						<para>Example: <function>DEC</function> <parameter>S4</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>IN</function> <parameter>Sd</parameter>, <parameter>I</parameter></term>
+					<listitem>
+						<para>Copy the byte at the input port into <parameter>Sd</parameter>.</para>
+						<para>Opcode: <literal>09</literal></para>
+						<para>Example: <function>IN</function> <parameter>S0</parameter>, <parameter>I</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>OUT</function> <parameter>Q</parameter>, <parameter>Ss</parameter></term>
+					<listitem>
+						<para>Copy the byte in <parameter>Ss</parameter> to the output port.</para>
+						<para>Opcode: <literal>0A</literal></para>
+						<para>Example: <function>OUT</function> <parameter>Q</parameter>, <parameter>S5</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>JP</function> <parameter>e</parameter></term>
+					<listitem>
+						<para>Jump to label <parameter>e</parameter>.</para>
+						<para>Opcode: <literal>0B</literal></para>
+						<para>Example: <function>JP</function> <parameter>main_loop</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>JZ</function> <parameter>e</parameter></term>
+					<listitem>
+						<para>Jump to label <parameter>e</parameter> if the result of the last <function>ADD</function>, <function>SUB</function>, <function>AND</function>, <function>EOR</function>, <function>INC</function>, <function>DEC</function>, <function>SHL</function> or <function>SHR</function> was zero.</para>
+						<para>Opcode: <literal>0C</literal></para>
+						<para>Example: <function>JZ</function> <parameter>if_zero_branch</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>JNZ</function> <parameter>e</parameter></term>
+					<listitem>
+						<para>Jump to label <parameter>e</parameter> if the result of the last <function>ADD</function>, <function>SUB</function>, <function>AND</function>, <function>EOR</function>, <function>INC</function>, <function>DEC</function>, <function>SHL</function> or <function>SHR</function> was not zero.</para>
+						<para>Opcode: <literal>0D</literal></para>
+						<para>Example: <function>JNZ</function> <parameter>if_non_zero_branch</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>RCALL</function> <parameter>s</parameter></term>
+					<listitem>
+						<para>Push the program counter onto the stack to store the return address and then jump to label <parameter>s</parameter>.</para>
+						<para>Opcode: <literal>0E</literal></para>
+						<para>Example: <function>RCALL</function> <parameter>summing_routine</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>RET</function></term>
+					<listitem>
+						<para>Pop the program counter from the stack to return to the place from which the subroutine was called.</para>
+						<para>Opcode: <literal>0F</literal></para>
+						<para>Example: <function>RET</function></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>SHL</function> <parameter>Sd</parameter></term>
+					<listitem>
+						<para>Shift the byte in <parameter>Sd</parameter> one bit left, putting a <literal>0</literal> into the least-significant bit.</para>
+						<para>Opcode: <literal>10</literal></para>
+						<para>Example: <function>SHL</function> <parameter>S2</parameter></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>SHR</function> <parameter>Sd</parameter></term>
+					<listitem>
+						<para>Shift the byte in <parameter>Sd</parameter> one bit right, putting a <literal>0</literal> into the most-significant bit.</para>
+						<para>Opcode: <literal>11</literal></para>
+						<para>Example: <function>SHR</function> <parameter>S7</parameter></para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+			<tip>
+				<para>A good way to remember the order of parameters to instructions is to remember that the destination parameter always comes before the source parameter.</para>
+			</tip>
+		</sect2>
+
+		<sect2 id="mcus-subroutines">
+			<title>Subroutines</title>
+
+			<para>The OCR specification also gives three built-in subroutines, to be called slightly differently to other subroutines (they're called as if they were instructions themselves), due to their special nature.</para>
+			<warning>
+				<para>The OCR specification does not give this as the correct way to use these three subroutines, but does not give any alternatives either.</para>
+			</warning>
+			<variablelist>
+				<varlistentry>
+					<term><function>readtable</function></term>
+					<listitem>
+						<para>Copies the byte in the lookup table pointed at by <parameter>S7</parameter> into <parameter>S0</parameter>. The lookup table is a labelled table: when <parameter>S7</parameter> is <literal>0</literal> the first byte from the table is returned in <parameter>S0</parameter>.</para>
+						<para>In the absense of further guidance, <function>readtable</function> reads from memory, and is designed to work with the <function>$SET</function> directive, which allows lookup tables to be built easily.</para>
+						<para>Opcode: <literal>12</literal></para>
+						<para>Example: <function>readtable</function></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>wait1ms</function></term>
+					<listitem>
+						<para>Waits 1ms before returning.</para>
+						<para>Opcode: <literal>13</literal></para>
+						<para>Example: <function>wait1ms</function></para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term><function>readadc</function></term>
+					<listitem>
+						<para>Returns a byte in <parameter>S0</parameter> proportional to the voltage at the ADC. The ADC input can vary from 0V to 5V, which are given values of <literal>00</literal> and <literal>FF</literal> respectively.</para>
+						<para>Opcode: <literal>14</literal></para>
+						<para>Example: <function>readadc</function></para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</sect2>
+	</sect1>
+
+	<sect1 id="mcus-about">
+		<title>About &app;</title>
+
+		<para>&app; was written by Philip Withnall (<email>philip@tecnocode.co.uk</email>). To find more information about &app;,
+		report a bug or make a suggestion about the application or this manual, please visit the
+		<ulink url="http://tecnocode.co.uk/projects/mcus" type="http">&app; Web page</ulink>.</para>
+		<para>This program is distributed under the terms of the GNU General Public license as published by the Free Software
+		Foundation; either version 3 of the License, or (at your option) any later version. A
+		<ulink url="ghelp:gpl" type="help">copy of this license</ulink> is included with this documentation; another can be found
+		in the file COPYING included with the source code of this program.</para>
+	</sect1>
+</article>

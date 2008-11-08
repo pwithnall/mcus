@@ -9,6 +9,7 @@ AC_PROG_CC
 AM_PROG_CC_STDC
 AC_HEADER_STDC
 AC_OBJEXT
+AM_PROG_LIBTOOL
 
 dnl ***************************************************************************
 dnl Options
@@ -48,7 +49,15 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [GETTEXT package name])
 AM_GLIB_GNU_GETTEXT
 IT_PROG_INTLTOOL([0.35.0])
 
-AM_PROG_LIBTOOL
+dnl ***************************************************************************
+dnl Documentation
+dnl ***************************************************************************
+
+GNOME_DOC_INIT
+
+dnl ***************************************************************************
+dnl Compilation
+dnl ***************************************************************************
 
 PKG_CHECK_MODULES(STANDARD, glib-2.0 gtk+-2.0 >= 2.12 gmodule-2.0 gtksourceview-2.0 gthread-2.0)
 AC_SUBST(STANDARD_CFLAGS)
@@ -64,4 +73,5 @@ data/icons/16x16/Makefile
 data/icons/22x22/Makefile
 data/icons/32x32/Makefile
 data/icons/48x48/Makefile
+help/Makefile
 ])

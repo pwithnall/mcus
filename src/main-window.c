@@ -320,6 +320,24 @@ mw_clock_speed_spin_button_value_changed_cb (GtkSpinButton *self, gpointer user_
 }
 
 G_MODULE_EXPORT void
+mw_contents_activate_cb (GtkAction *self, gpointer user_data)
+{
+	GError *error = NULL;
+#ifdef WIN32
+	const gchar *uri = "data/help.pdf";
+#else
+	const gchar *uri = "ghelp:mcus";
+#endif /* WIN32 */
+
+	if (gtk_show_uri (gtk_widget_get_screen (mcus->main_window), uri, gtk_get_current_event_time (), &error) == FALSE) {
+		gchar *error_message = g_strdup_printf (_("There was an error displaying the help: %s"), error->message);
+		mcus_interface_error (error_message);
+		g_free (error_message);
+		g_error_free (error);
+	}
+}
+
+G_MODULE_EXPORT void
 mw_about_activate_cb (GtkAction *self, gpointer user_data)
 {
 	gchar *license;

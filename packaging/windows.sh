@@ -14,6 +14,7 @@ make
 cp src/.libs/mcus.exe packaging/GTK2-Runtime/lib
 cp data/mcus.ui packaging/GTK2-Runtime/lib/data
 cp data/ocr-assembly.lang packaging/GTK2-Runtime/lib/data
+cp help/pdf/mcus-pdf.pdf packaging/GTK2-Runtime/lib/data/help.pdf
 
 cd packaging
 

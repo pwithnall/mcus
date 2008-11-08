@@ -161,6 +161,13 @@
 					</object>
 				</child>
 				<child>
+					<object class="GtkAction" id="mcus_contents_action">
+						<property name="stock-id">gtk-help</property>
+						<property name="name">help-contents</property>
+						<signal name="activate" handler="mw_contents_activate_cb"/>
+					</object>
+				</child>
+				<child>
 					<object class="GtkAction" id="mcus_about_action">
 						<property name="stock-id">gtk-about</property>
 						<property name="name">help-about</property>
@@ -198,6 +205,7 @@
 					<menuitem action="mcus_step_forward_action"/>
 				</menu>
 				<menu action="mcus_help_action">
+					<menuitem action="mcus_contents_action"/>
 					<menuitem action="mcus_about_action"/>
 				</menu>
 			</menubar>
@@ -951,6 +959,18 @@
 																				<property name="bottom-attach">2</property>
 																				<property name="left-attach">1</property>
 																				<property name="right-attach">2</property>
+																			</packing>
+																		</child>
+																		<child>
+																			<object class="GtkLabel" id="label99">
+																				<property name="label" translatable="yes">V</property>
+																				<property name="xalign">0</property>
+																			</object>
+																			<packing>
+																				<property name="top-attach">1</property>
+																				<property name="bottom-attach">2</property>
+																				<property name="left-attach">2</property>
+																				<property name="right-attach">3</property>
 																			</packing>
 																		</child>
 																		<child>

@@ -1,3 +1,17 @@
+2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* configure.ac:
+	* gnome-doc-utils.make:
+	* Makefile.am:
+	* packaging/windows.sh:
+	* src/main-window.c:
+	* help/: Added documentation for Windows and Linux.
+	* data/mcus.ui: Added Help menu entry, and a missing label.
+	* data/ocr-assembly.lang: Fixed highlighting of comments.
+	* src/analogue-input.c: Ensure the analogue input voltage is clamped
+	to 0--5V.
+	* src/instructions.h: Fix some comments.
+
 2008-11-06  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* packaging/windows.sh: Fixed a problem where the script didn't change

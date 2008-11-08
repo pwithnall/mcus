@@ -56,6 +56,12 @@ mcus_read_analogue_input (void)
 			mcus->analogue_input = amplitude * 2.0 * (t - floor (t + 0.5)) + offset;
 		}
 
+		/* Clamp the value to 0--5V */
+		if (mcus->analogue_input > 5.0)
+			mcus->analogue_input = 5.0;
+		else if (mcus->analogue_input < 0.0)
+			mcus->analogue_input = 0.0;
+
 		if (mcus->debug == TRUE)
 			g_debug ("Analogue input: %f", mcus->analogue_input);
 

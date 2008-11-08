@@ -18,9 +18,8 @@
 	<definitions>
 		<context id="ocr-assembly">
 			<include>
-				<context id="comment" style-ref="comment">
+				<context id="comment" style-ref="comment" end-at-line-end="true">
 					<start>;</start>
-					<end>$</end>
 					<include>
 						<context ref="def:in-comment"/>
 					</include>

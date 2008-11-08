@@ -1,24 +1,24 @@
-SUBDIRS = src po data
-
-mcusdocdir = ${prefix}/doc/mcus
-mcusdoc_DATA = \
-	README		\
-	COPYING		\
-	AUTHORS		\
-	INSTALL		\
-	NEWS
+SUBDIRS = src po data help
 
 EXTRA_DIST =			\
 	autogen.sh		\
 	intltool-extract.in	\
 	intltool-merge.in	\
 	intltool-update.in	\
-	$(mcusdoc_DATA)
+	gnome-doc-utils.make	\
+	README			\
+	COPYING			\
+	AUTHORS			\
+	INSTALL			\
+	NEWS
 
 DISTCLEANFILES = \
 	intltool-extract	\
 	intltool-merge		\
-	intltool-update
+	intltool-update		\
+	gnome-doc-utils.make
+
+DISTCHECK_CONFIGURE_FLAGS = --disable-scrollkeeper
 
 # Copy all the spec files. Of cource, only one is actually used.
 dist-hook:

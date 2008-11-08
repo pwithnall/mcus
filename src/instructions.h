@@ -41,7 +41,7 @@ G_BEGIN_DECLS
 typedef enum {
 	OPCODE_HALT = 0,/* HALT		Extra instruction added by me to terminate simulation */
 	OPCODE_MOVI,	/* MOVI Sd,n	Copy the byte n into register Sd */
-	OPCODE_MOV,	/* MOV Sd,Ss	Copy the byte from As to Sd */
+	OPCODE_MOV,	/* MOV Sd,Ss	Copy the byte from Ss to Sd */
 	OPCODE_ADD,	/* ADD Sd,Ss	Add the byte in Ss to the byte in Sd and store the result in Sd */
 	OPCODE_SUB,	/* SUB Sd,Ss	Subtract the byte in Ss from the byte in Sd and store the result in Sd */
 	OPCODE_AND,	/* AND Sd,Ss	Logical AND the byte in Ss with the byte in Sd and store the result in Sd */
@@ -52,7 +52,7 @@ typedef enum {
 	OPCODE_OUT,	/* OUT Q,Ss	Copy the byte in Ss to the output port */
 	OPCODE_JP,	/* JP e		Jump to label e */
 	OPCODE_JZ,	/* JZ e		Jump to label e if the result of the last ADD, SUB, AND, EOR, INC, DEC, SHL or SHR was zero */
-	OPCODE_JNZ,	/* JNZ e	Jump to label e if the result of the last ADD, SUB, AND, EOR, INC, DEC SHL or SHR was not zero */
+	OPCODE_JNZ,	/* JNZ e	Jump to label e if the result of the last ADD, SUB, AND, EOR, INC, DEC, SHL or SHR was not zero */
 	OPCODE_RCALL,	/* RCALL s	Push the program counter onto the stack to store the return address and then jump to label s */
 	OPCODE_RET,	/* RET		Pop the program counter from the stack to return to the place the subroutine was called from */
 	OPCODE_SHL,	/* SHL Sd	Shift the byte in Sd one bit left putting a 0 into the lsb */
