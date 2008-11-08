@@ -1,5 +1,9 @@
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* .bzrignore: Updated the ignore list.
+
+2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* configure.ac:
 	* gnome-doc-utils.make:
 	* Makefile.am:
