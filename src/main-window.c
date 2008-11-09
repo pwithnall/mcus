@@ -26,6 +26,10 @@
 #include <gtksourceview/gtksourcelanguagemanager.h>
 #include <pango/pango.h>
 
+#ifdef G_OS_WIN32
+#include <gio/gio.h>
+#endif
+
 #include "compiler.h"
 #include "main.h"
 #include "simulation.h"
@@ -125,8 +129,8 @@ mcus_main_window_init (void)
 		i++;
 
 	language_dirs = g_malloc0 ((i + 3) * sizeof (gchar*));
-	language_dirs[0] = PACKAGE_DATA_DIR"/mcus/";
-	language_dirs[1] = "./data/";
+	language_dirs[0] = mcus_get_data_directory ();
+	language_dirs[1] = "data/";
 
 	i = 0;
 	while (old_language_dirs[i] != NULL) {
@@ -135,12 +139,30 @@ mcus_main_window_init (void)
 	}
 	language_dirs[i + 2] = NULL;
 
+	if (mcus->debug) {
+		g_debug ("Current language manager search path:");
+		for (i = 0; language_dirs[i] != NULL; i++)
+			g_debug ("\t%s", language_dirs[i]);
+	}
+
 	gtk_source_language_manager_set_search_path (mcus->language_manager, (gchar**)language_dirs);
 	g_free (language_dirs);
 
+	if (mcus->debug) {
+		const gchar **language_ids = gtk_source_language_manager_get_language_ids (mcus->language_manager);
+
+		g_debug ("Languages installed:");
+		for (i = 0; language_ids[i] != NULL; i++)
+			g_debug ("\t%s", language_ids[i]);
+	}
+
 	language = gtk_source_language_manager_get_language (mcus->language_manager, "ocr-assembly");
+	if (language == NULL)
+		g_warning ("Could not load syntax highlighting file.");
 
 	gtk_source_buffer_set_language (GTK_SOURCE_BUFFER (text_buffer), language);
+	if (gtk_source_buffer_get_style_scheme (GTK_SOURCE_BUFFER (text_buffer)) == NULL)
+		g_debug ("NULL style scheme");
 }
 
 G_MODULE_EXPORT gboolean
@@ -342,23 +364,47 @@ G_MODULE_EXPORT void
 mw_contents_activate_cb (GtkAction *self, gpointer user_data)
 {
 	GError *error = NULL;
-#ifdef WIN32
-	const gchar *uri = "data/help.pdf";
-#else
-	const gchar *uri = "ghelp:mcus";
-#endif /* WIN32 */
+#ifdef G_OS_WIN32
+	GFile *file;
+	GAppInfo *app_info;
+	GList list;
+	gchar *path;
 
-	if (gtk_show_uri (gtk_widget_get_screen (mcus->main_window), uri, gtk_get_current_event_time (), &error) == FALSE) {
+	path = g_build_filename (mcus_get_data_directory (), "help.pdf", NULL);
+	file = g_file_new_for_path (path);
+	g_free (path);
+
+	list.data = file;
+	list.next = list.prev = NULL;
+
+	app_info = g_app_info_get_default_for_type (".pdf", FALSE);
+
+	if (app_info == NULL || g_app_info_launch (app_info, &list, NULL, &error) == FALSE) {
+#else /* !G_OS_WIN32 */
+	if (gtk_show_uri (gtk_widget_get_screen (mcus->main_window), "ghelp:mcus", gtk_get_current_event_time (), &error) == FALSE) {
+#endif /* !G_OS_WIN32 */
 		GtkWidget *dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
 							    GTK_DIALOG_MODAL,
 							    GTK_MESSAGE_ERROR,
 							    GTK_BUTTONS_OK,
 							    _("Error displaying help"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+		if (error == NULL)
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("Couldn't find a program to open .pdf files."));
+		else
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
-		g_error_free (error);
+
+		if (error != NULL)
+			g_error_free (error);
 	}
+
+#ifdef G_OS_WIN32
+	g_object_unref (file);
+	if (app_info != NULL)
+		g_object_unref (app_info);
+#endif
 }
 
 G_MODULE_EXPORT void

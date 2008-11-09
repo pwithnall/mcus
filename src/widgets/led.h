@@ -44,7 +44,7 @@ typedef struct {
 	GtkWidgetClass parent;
 } MCUSLEDClass;
 
-GType mcus_led_get_type (void);
+G_MODULE_EXPORT GType mcus_led_get_type (void);
 MCUSLED *mcus_led_new (void);
 
 gboolean mcus_led_get_enabled (MCUSLED *self);

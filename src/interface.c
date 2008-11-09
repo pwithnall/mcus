@@ -35,20 +35,11 @@ GtkWidget *
 mcus_create_interface (void)
 {
 	GError *error = NULL;
-#ifdef WIN32
-	const gchar *filename = "data/mcus.ui";
-#else
-	const gchar *filename = PACKAGE_DATA_DIR"/mcus/mcus.ui";
-#endif /* WIN32 */
+	gchar *filename = g_build_filename (mcus_get_data_directory (), "mcus.ui", NULL);
 
 	mcus->builder = gtk_builder_new ();
 
-#ifdef WIN32
 	if (gtk_builder_add_from_file (mcus->builder, filename, &error) == FALSE) {
-#else
-	if (gtk_builder_add_from_file (mcus->builder, filename, &error) == FALSE &&
-	    gtk_builder_add_from_file (mcus->builder, "data/mcus.ui", NULL) == FALSE) {
-#endif /* WIN32 */
 		/* Show an error */
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
 							    GTK_DIALOG_MODAL,
@@ -60,10 +51,13 @@ mcus_create_interface (void)
 		gtk_widget_destroy (dialog);
 
 		g_error_free (error);
+		g_free (filename);
 		mcus_quit ();
 
 		return NULL;
 	}
+
+	g_free (filename);
 
 	gtk_builder_set_translation_domain (mcus->builder, GETTEXT_PACKAGE);
 	gtk_builder_connect_signals (mcus->builder, NULL);

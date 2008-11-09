@@ -56,7 +56,7 @@ typedef struct {
 	GtkWidgetClass parent;
 } MCUSSevenSegmentDisplayClass;
 
-GType mcus_seven_segment_display_get_type (void);
+G_MODULE_EXPORT GType mcus_seven_segment_display_get_type (void);
 MCUSSevenSegmentDisplay *mcus_seven_segment_display_new (void);
 
 guint8 mcus_seven_segment_display_get_segment_mask (MCUSSevenSegmentDisplay *self);

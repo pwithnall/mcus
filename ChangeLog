@@ -1,5 +1,34 @@
 2008-11-09  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* packaging/GTK2-Runtime/gtk2-runtime/gtk2r-env.bat:
+	* packaging/GTK2-Runtime/lib/libxml2.lib:
+	* packaging/GTK2-Runtime/lib/libxml2_a.lib:
+	* packaging/GTK2-Runtime/lib/libxml2_a_dll.lib:
+	* packaging/GTK2-Runtime/lib/xmlparse.dll:
+	* packaging/GTK2-Runtime/lib/xmltok.dll: Removed some unnecessary
+	files from the Windows package.
+	* packaging/GTK2-Runtime/share/gtksourceview-2.0/styles/tango.xml
+	* packaging/GTK2-Runtime/share/gtksourceview-2.0/styles/classic.xml:
+	Replaced the Tango GtkSourceView style with the Classic style, as
+	that's the default.
+	* packaging/GTK2-Runtime/lib/data/:
+	* packaging/GTK2-Runtime/share/icons/:
+	* packaging/GTK2-Runtime/share/mcus/:
+	* packaging/mcus.nsi:
+	* packaging/windows.sh: Move the icons and other program-specific data
+	around to better locations when installing on Windows.
+	* src/interface.c:
+	* src/main-window.c:
+	* src/main.c:
+	* src/main.h: Tidy up path usage on Windows, so that the about dialogue
+	icon, syntax highlighting and the UI now work on Windows, independently
+	of where everything's installed.
+	* src/widgets/led.h:
+	* src/widgets/seven-segment-display.h: Expose the _get_type() functions
+	on Windows so that the UI can load the custom widgets.
+
+2008-11-09  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* src/interface.c: Improved code to load interface so that it will
 	report errors properly on Windows.
 	* src/interface.h:

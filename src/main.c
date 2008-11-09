@@ -23,6 +23,11 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
+#ifdef G_OS_WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include "main.h"
 #include "interface.h"
 
@@ -266,6 +271,124 @@ mcus_quit (void)
 	exit (0);
 }
 
+#ifdef G_OS_WIN32
+static void
+get_installation_directories (const gchar **top_directory, const gchar **bin_directory)
+{
+	static gchar *exe_folder_utf8 = NULL;
+	static gchar *top_folder_utf8 = NULL;
+
+	if (exe_folder_utf8 == NULL) {
+		/* Get the path of the dir above that containing mcus.exe */
+		wchar_t exe_filename[MAX_PATH];
+		wchar_t *p;
+
+		GetModuleFileNameW (NULL, exe_filename, G_N_ELEMENTS (exe_filename));
+
+		p = wcsrchr (exe_filename, L'\\');
+		g_assert (p != NULL);
+
+		*p = L'\0';
+		exe_folder_utf8 = g_utf16_to_utf8 (exe_filename, -1, NULL, NULL, NULL);
+
+		p = wcsrchr (exe_filename, L'\\');
+		g_assert (p != NULL);
+
+		*p = L'\0';
+		top_folder_utf8 = g_utf16_to_utf8 (exe_filename, -1, NULL, NULL, NULL);
+	}
+
+	if (top_directory != NULL)
+		*top_directory = top_folder_utf8;
+	if (bin_directory != NULL)
+		*bin_directory = exe_folder_utf8;
+}
+
+static void
+set_paths (void)
+{
+	gchar *path;
+	const gchar *bin_directory;
+
+	get_installation_directories (NULL, &bin_directory);
+	path = g_build_path (";",
+			     bin_directory,
+			     g_getenv ("PATH"),
+			     NULL);
+
+	if (g_setenv ("PATH", path, TRUE) == FALSE)
+		g_warning ("Could not set PATH for MCUS.");
+	else if (mcus->debug)
+		g_debug ("Setting PATH as \"%s\".", path);
+
+	g_free (path);
+}
+
+static void
+set_icon_paths (void)
+{
+	GtkIconTheme *icon_theme;
+	gchar *path;
+	const gchar *top_directory;
+
+	icon_theme = gtk_icon_theme_get_default ();
+	get_installation_directories (&top_directory, NULL);
+	path = g_build_filename (top_directory,
+				 "icons",
+				 NULL);
+
+	if (mcus->debug)
+		g_debug ("Appending \"%s\" to icon theme search path.", path);
+
+	gtk_icon_theme_append_search_path (icon_theme, path);
+
+	if (mcus->debug) {
+		gchar **paths;
+		gint path_count;
+		guint i;
+
+		gtk_icon_theme_get_search_path (icon_theme, &paths, &path_count);
+
+		g_debug ("Current icon theme search path:");
+		for (i = 0; i < path_count; i++)
+			g_debug ("\t%s", paths[i]);
+
+		g_strfreev (paths);
+	}
+
+	g_free (path);
+}
+#endif
+
+const gchar *
+mcus_get_data_directory (void)
+{
+	static gchar *path = NULL;
+
+	if (path == NULL) {
+#ifdef G_OS_WIN32
+		const gchar *top_directory;
+
+		get_installation_directories (&top_directory, NULL);
+		path = g_build_filename (top_directory,
+					 "share",
+					 "mcus",
+					 NULL);
+#else /* G_OS_WIN32 */
+		/* Support loading while in the source tree, iff we've been called with --debug */
+		if (mcus->debug == TRUE && g_file_test ("data/", G_FILE_TEST_IS_DIR) == TRUE)
+			path = "data/";
+		else
+			path = PACKAGE_DATA_DIR"/mcus/";
+#endif /* !G_OS_WIN32 */
+
+		if (mcus->debug)
+			g_debug ("Setting data directory as \"%s\".", path);
+	}
+
+	return path;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -290,7 +413,6 @@ main (int argc, char *argv[])
 	g_thread_init (NULL);
 	gtk_init (&argc, &argv);
 	g_set_application_name (_("Microcontroller Simulator"));
-	gtk_window_set_default_icon_name ("mcus");
 
 	/* Options */
 	context = g_option_context_new (_("- Simulate the 2008 OCR A-level electronics microcontroller"));
@@ -318,6 +440,12 @@ main (int argc, char *argv[])
 	mcus = g_new0 (MCUS, 1);
 	mcus->debug = debug;
 	mcus->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
+
+#ifdef G_OS_WIN32
+	set_paths ();
+	set_icon_paths ();
+#endif
+	gtk_window_set_default_icon_name ("mcus");
 
 	/* Create and show the interface */
 	mcus_create_interface ();

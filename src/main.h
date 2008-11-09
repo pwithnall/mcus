@@ -113,6 +113,7 @@ void mcus_open_program (void);
 void mcus_save_program (void);
 void mcus_save_program_as (void);
 void mcus_open_file (gchar *filename);
+const gchar *mcus_get_data_directory (void);
 void mcus_quit (void);
 
 G_END_DECLS
