@@ -210,6 +210,8 @@ simulation_iterate_cb (gpointer user_data)
 		mcus_update_ui ();
 
 		if (error != NULL) {
+			GtkWidget *dialog;
+
 			/* Highlight the offending line */
 			mcus_tag_range (mcus->error_tag,
 					mcus->offset_map[mcus->program_counter].offset,
@@ -217,7 +219,14 @@ simulation_iterate_cb (gpointer user_data)
 					FALSE);
 
 			/* Display an error message */
-			mcus_interface_error (error->message);
+			dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
+							 GTK_DIALOG_MODAL,
+							 GTK_MESSAGE_ERROR,
+							 GTK_BUTTONS_OK,
+							 _("Error iterating simulation"));
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+			gtk_dialog_run (GTK_DIALOG (dialog));
+			gtk_widget_destroy (dialog);
 			g_error_free (error);
 		} else {
 			/* If we're finished, remove the current instruction tag */
@@ -238,6 +247,7 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 	GtkTextIter start_iter, end_iter;
 	gchar *code;
 	guint error_start, error_end;
+	GtkWidget *dialog;
 	GError *error = NULL;
 
 	/* Remove previous errors */
@@ -286,7 +296,15 @@ compiler_error:
 	mcus_tag_range (mcus->error_tag, error_start, error_end, FALSE);
 
 	/* Display an error message */
-	mcus_interface_error (error->message);
+	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
+					 GTK_DIALOG_MODAL,
+					 GTK_MESSAGE_ERROR,
+					 GTK_BUTTONS_OK,
+					 _("Error compiling program"));
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+
+	gtk_widget_destroy (dialog);
 	g_error_free (error);
 	g_object_unref (compiler);
 }
@@ -331,9 +349,14 @@ mw_contents_activate_cb (GtkAction *self, gpointer user_data)
 #endif /* WIN32 */
 
 	if (gtk_show_uri (gtk_widget_get_screen (mcus->main_window), uri, gtk_get_current_event_time (), &error) == FALSE) {
-		gchar *error_message = g_strdup_printf (_("There was an error displaying the help: %s"), error->message);
-		mcus_interface_error (error_message);
-		g_free (error_message);
+		GtkWidget *dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
+							    GTK_DIALOG_MODAL,
+							    GTK_MESSAGE_ERROR,
+							    GTK_BUTTONS_OK,
+							    _("Error displaying help"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
 		g_error_free (error);
 	}
 }

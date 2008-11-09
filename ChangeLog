@@ -1,3 +1,11 @@
+2008-11-09  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* src/interface.c: Improved code to load interface so that it will
+	report errors properly on Windows.
+	* src/interface.h:
+	* src/main-window.c:
+	* src/main.c: Standardised error dialogues.
+
 2008-11-08  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* src/main.c:

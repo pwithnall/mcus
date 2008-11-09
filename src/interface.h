@@ -26,7 +26,6 @@
 G_BEGIN_DECLS
 
 GtkWidget *mcus_create_interface (void);
-void mcus_interface_error (const gchar *message);
 void mcus_print_debug_data (void);
 void mcus_update_ui (void);
 void mcus_remove_tag (GtkTextTag *tag);

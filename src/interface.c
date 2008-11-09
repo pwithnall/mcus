@@ -35,17 +35,26 @@ GtkWidget *
 mcus_create_interface (void)
 {
 	GError *error = NULL;
+#ifdef WIN32
+	const gchar *filename = "data/mcus.ui";
+#else
+	const gchar *filename = PACKAGE_DATA_DIR"/mcus/mcus.ui";
+#endif /* WIN32 */
 
 	mcus->builder = gtk_builder_new ();
 
-	if (gtk_builder_add_from_file (mcus->builder, PACKAGE_DATA_DIR"/mcus/mcus.ui", &error) == FALSE &&
-	    gtk_builder_add_from_file (mcus->builder, "./data/mcus.ui", NULL) == FALSE) {
+#ifdef WIN32
+	if (gtk_builder_add_from_file (mcus->builder, filename, &error) == FALSE) {
+#else
+	if (gtk_builder_add_from_file (mcus->builder, filename, &error) == FALSE &&
+	    gtk_builder_add_from_file (mcus->builder, "data/mcus.ui", NULL) == FALSE) {
+#endif /* WIN32 */
 		/* Show an error */
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
-				GTK_DIALOG_MODAL,
-				GTK_MESSAGE_ERROR,
-				GTK_BUTTONS_OK,
-				_("UI file \"%s/mcus/mcus.ui\" could not be loaded."), PACKAGE_DATA_DIR);
+							    GTK_DIALOG_MODAL,
+							    GTK_MESSAGE_ERROR,
+							    GTK_BUTTONS_OK,
+							    _("UI file \"%s\" could not be loaded"), filename);
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
@@ -64,30 +73,6 @@ mcus_create_interface (void)
 	mcus_main_window_init ();
 
 	return mcus->main_window;
-}
-
-/**
- * mcus_interface_error:
- * @message: Error message
- * @parent_window: The error dialog's parent window
- *
- * Display an error message and print the message to
- * the console.
- **/
-void
-mcus_interface_error (const gchar *message)
-{
-	GtkWidget *dialog;
-
-	g_warning ("%s", message);
-
-	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
-				GTK_DIALOG_MODAL,
-				GTK_MESSAGE_ERROR,
-				GTK_BUTTONS_OK,
-				"%s", message);
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
 }
 
 void

@@ -114,6 +114,7 @@ mcus_save_program (void)
 	GtkTextIter start_iter, end_iter;
 	GtkTextBuffer *text_buffer;
 	GIOChannel *channel;
+	GtkWidget *dialog;
 	gchar *file_contents = NULL;
 	GError *error = NULL;
 
@@ -142,7 +143,16 @@ mcus_save_program (void)
 	return;
 
 file_error:
-	mcus_interface_error (error->message);
+	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
+					 GTK_DIALOG_MODAL,
+					 GTK_MESSAGE_ERROR,
+					 GTK_BUTTONS_OK,
+					 _("Program could not be saved to \"%s\""), mcus->current_filename);
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+
+	g_error_free (error);
 	g_io_channel_unref (channel);
 	if (file_contents != NULL)
 		g_free (file_contents);
@@ -184,6 +194,7 @@ void
 mcus_open_file (gchar *filename)
 {
 	GIOChannel *channel;
+	GtkWidget *dialog;
 	gchar *file_contents = NULL;
 	GError *error = NULL;
 	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
@@ -209,7 +220,16 @@ mcus_open_file (gchar *filename)
 	return;
 
 file_error:
-	mcus_interface_error (error->message);
+	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
+					 GTK_DIALOG_MODAL,
+					 GTK_MESSAGE_ERROR,
+					 GTK_BUTTONS_OK,
+					 _("Program could not be opened from \"%s\""), filename);
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+
+	g_error_free (error);
 	g_io_channel_unref (channel);
 	g_free (file_contents);
 }
@@ -280,10 +300,11 @@ main (int argc, char *argv[])
 	if (g_option_context_parse (context, &argc, &argv, &error) == FALSE) {
 		/* Show an error */
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
-				GTK_DIALOG_MODAL,
-				GTK_MESSAGE_ERROR,
-				GTK_BUTTONS_OK,
-				_("Command-line options could not be parsed. Error: %s"), error->message);
+							    GTK_DIALOG_MODAL,
+							    GTK_MESSAGE_ERROR,
+							    GTK_BUTTONS_OK,
+							    _("Command-line options could not be parsed"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
 
