@@ -28,7 +28,7 @@ cd packaging
 
 # Building zip archive
 mv GTK2-Runtime mcus-$version
-zip -r mcus-$version.zip mcus-$version -x \*~ || exit 1
+zip -r mcus-$version.zip mcus-$version windows.reg README.txt -x \*~ || exit 1
 mv mcus-$version GTK2-Runtime
 
 # Building NSIS installer

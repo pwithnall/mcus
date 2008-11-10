@@ -1,3 +1,11 @@
+2008-11-10  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* packaging/README.txt:
+	* packaging/windows.reg
+	* packaging/windows.sh: Add a README and manual registry file for the
+	zip package for Windows.
+	* .bzrignore: Updated the ignore list.
+
 ============ Version 0.2.0
 
 2008-11-10  Philip Withnall  <philip@tecnocode.co.uk>

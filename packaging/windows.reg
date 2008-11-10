@@ -1,0 +1,25 @@
+REGEDIT4
+
+[HKEY_CLASSES_ROOT\.asm]
+@="OCR Assembly Code"
+"backup_val"="OCR Assembly Code"
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code]
+@="OCR Assembly Code"
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code\DefaultIcon]
+@="c:\\Program Files\\MCUS\\lib\\mcus.exe,0"
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code\shell]
+@="open"
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code\shell\edit]
+@="Edit OCR Assembly Code"
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code\shell\edit\command]
+@="c:\\Program Files\\MCUS\\lib\\mcus.exe \"%1\""
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code\shell\open]
+
+[HKEY_CLASSES_ROOT\OCR Assembly Code\shell\open\command]
+@="c:\\Program Files\\MCUS\\lib\\mcus.exe \"%1\""
