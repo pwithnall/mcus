@@ -19,10 +19,10 @@
 	!define LONG_NAME "Microcontroller Simulator"
 	!define AUTHOR "Philip Withnall"
 	!define WEBSITE "http://mcus.tecnocode.co.uk/"
-	!define VERSION "0.2.0"
+	!define VERSION "0.2.1"
 	!define VERSION_MAJOR "0"
 	!define VERSION_MINOR "2"
-	!define VERSION_REVISION "0"
+	!define VERSION_REVISION "1"
 
 	;Name and file
 	Name "${SHORT_NAME}"

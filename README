@@ -12,8 +12,8 @@ See NEWS file.
 Dependencies
 ============
 
-GNOME 2.22 development platform
-	http://www.gnome.org
+GTK+ 2.14: http://gtk.org/
+GtkSourceView 2.0: http://projects.gnome.org/gtksourceview/
 
 Copyright
 =========
@@ -33,4 +33,4 @@ Contact
 =======
 
 Philip Withnall <philip@tecnocode.co.uk>
-http://tecnocode.co.uk/projects/mcus
+http://tecnocode.co.uk/projects/mcus/

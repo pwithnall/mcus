@@ -1,4 +1,4 @@
-AC_INIT(mcus, 0.2.0)
+AC_INIT(mcus, 0.2.1)
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
@@ -59,7 +59,7 @@ dnl ***************************************************************************
 dnl Compilation
 dnl ***************************************************************************
 
-PKG_CHECK_MODULES(STANDARD, glib-2.0 gtk+-2.0 >= 2.12 gmodule-2.0 gtksourceview-2.0 gthread-2.0)
+PKG_CHECK_MODULES(STANDARD, glib-2.0 gtk+-2.0 >= 2.14 gmodule-2.0 gtksourceview-2.0 gthread-2.0)
 AC_SUBST(STANDARD_CFLAGS)
 AC_SUBST(STANDARD_LIBS)
 

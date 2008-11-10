@@ -2,8 +2,8 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
 	<!ENTITY appname "MCUS">
 	<!ENTITY app "<application>MCUS</application>">
-	<!ENTITY appversion "0.2.0">
-	<!ENTITY manrevision "0.2.0">
+	<!ENTITY appversion "0.2.1">
+	<!ENTITY manrevision "0.2.1">
 	<!ENTITY date "November 2008">
 ]>
 

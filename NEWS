@@ -1,5 +1,9 @@
 Major new features in version...
 
+0.2.1:
+* Fix the GTK+ requirement (should be 2.14, rather than 2.12)
+* Include manual registry file and README for Windows zip package
+
 0.2.0:
 * Change the LED and SSD colours for better contrast
 * Add a desktop file and icon
