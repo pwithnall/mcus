@@ -1,3 +1,7 @@
+2008-11-10  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* .bzrignore: Updated the ignore list.
+
 2008-11-09  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* packaging/GTK2-Runtime/gtk2-runtime/gtk2r-env.bat:

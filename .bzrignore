@@ -43,3 +43,10 @@ data/mcus.desktop
 help/html
 help/pdf
 help/mcus-C.omf
+packaging/GTK2-Runtime/share/icons/hicolor/16x16/apps/mcus.png
+packaging/GTK2-Runtime/share/icons/hicolor/22x22/apps/mcus.png
+packaging/GTK2-Runtime/share/icons/hicolor/32x32/apps/mcus.png
+packaging/GTK2-Runtime/share/icons/hicolor/48x48/apps/mcus.png
+packaging/GTK2-Runtime/share/mcus/help.pdf
+packaging/GTK2-Runtime/share/mcus/mcus.ui
+packaging/GTK2-Runtime/share/mcus/ocr-assembly.lang
