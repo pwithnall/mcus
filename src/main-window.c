@@ -149,7 +149,7 @@ mcus_main_window_init (void)
 	g_free (language_dirs);
 
 	if (mcus->debug) {
-		const gchar **language_ids = gtk_source_language_manager_get_language_ids (mcus->language_manager);
+		const gchar * const *language_ids = gtk_source_language_manager_get_language_ids (mcus->language_manager);
 
 		g_debug ("Languages installed:");
 		for (i = 0; language_ids[i] != NULL; i++)

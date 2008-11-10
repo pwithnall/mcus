@@ -1,5 +1,13 @@
 Major new features in version...
 
+0.2.0:
+* Change the LED and SSD colours for better contrast
+* Add a desktop file and icon
+* Add Windows packaging infrastructure and NSIS script, and fix lots of problems when running on Windows
+* Add a manual
+* Various UI, syntax and error highlighting improvements
+* Force built-in subroutines to be used with RCALL
+
 0.1.1:
 * Fixed Windows build
 * Fixed three potential security holes

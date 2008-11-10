@@ -1,14 +1,18 @@
 #!/bin/sh
 
 # Get version
-print "Please enter the MCUS version (e.g. 0.1.1):"
+echo "Please enter the MCUS version (e.g. 0.1.1):"
 read version
 
 # Build for Windows
 cd ..
-./configure --host=i586-mingw32msvc
+./configure --host=i586-mingw32msvc || exit 1
 make clean
-make
+make || exit 1
+
+# Remove the old packages
+rm -f mcus-$version.zip
+rm -f mcus-$version.exe
 
 # Copy the compiled files into our Windows directory tree
 cp src/.libs/mcus.exe packaging/GTK2-Runtime/lib
@@ -23,7 +27,9 @@ cp data/icons/48x48/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/48x48/ap
 cd packaging
 
 # Building zip archive
-zip -r mcus-$version.zip GTK2-Runtime
+mv GTK2-Runtime mcus-$version
+zip -r mcus-$version.zip mcus-$version -x \*~ || exit 1
+mv mcus-$version GTK2-Runtime
 
 # Building NSIS installer
-makensis mcus.nsi
+makensis mcus.nsi || exit 1

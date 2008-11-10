@@ -1,3 +1,16 @@
+============ Version 0.2.0
+
+2008-11-10  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* NEWS:
+	* configure.ac
+	* packaging/mcus.nsi: Bump to version 0.2.0.
+	* packaging/windows.sh: Some error reporting and general packaging
+	fixes.
+	* src/main-window.c: Fix a compilation warning.
+	* help/Makefile.am: Makefile fixes to ensure files are deleted
+	properly and at the correct times.
+
 2008-11-10  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* .bzrignore: Updated the ignore list.
