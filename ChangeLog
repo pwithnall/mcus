@@ -1,5 +1,10 @@
 2008-11-14  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* src/compiler.c: Don't stop parsing a comment if a comma is
+	encountered.
+
+2008-11-14  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* data/ocr-assembly.lang: Ensure the HALT instruction is highlighted.
 
 ============ Version 0.2.1

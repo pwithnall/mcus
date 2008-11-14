@@ -319,7 +319,7 @@ skip_whitespace (MCUSCompiler *self, gboolean skip_newlines, gboolean skip_comma
 			}
 			return;
 		case ',':
-			if (skip_commas == TRUE) {
+			if (skip_commas == TRUE || in_comment == TRUE) {
 				self->priv->i++;
 				break;
 			}
