@@ -1,5 +1,9 @@
 2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* configure.ac: Use AC_HELP_STRING.
+
+2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* examples/:
 	* Makefile.am: Include some example programs.
 
