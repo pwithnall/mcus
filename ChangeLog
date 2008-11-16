@@ -1,5 +1,9 @@
 2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* examples/Makefile.am: Add a file missing from the previous commit.
+
+2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* packaging/GTK2-Runtime/share/mcus/examples/:
 	* Makefile.am:
 	* README:
