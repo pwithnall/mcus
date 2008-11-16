@@ -1,5 +1,10 @@
 Major new features in version...
 
+0.2.2:
+* Fix highlighting the HALT instruction
+* Allow commas in comments
+* Add some example programs
+
 0.2.1:
 * Fix the GTK+ requirement (should be 2.14, rather than 2.12)
 * Include manual registry file and README for Windows zip package

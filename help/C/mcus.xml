@@ -2,8 +2,8 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
 	<!ENTITY appname "MCUS">
 	<!ENTITY app "<application>MCUS</application>">
-	<!ENTITY appversion "0.2.1">
-	<!ENTITY manrevision "0.2.1">
+	<!ENTITY appversion "0.2.2">
+	<!ENTITY manrevision "0.2.2">
 	<!ENTITY date "November 2008">
 ]>
 
@@ -169,6 +169,7 @@
 			<para>To save a program, choose <menuchoice><guimenu>File</guimenu><guimenuitem>Save</guimenuitem></menuchoice> or <menuchoice><guimenu>File</guimenu><guimenuitem>Save As</guimenuitem></menuchoice>, then select where you wish to save the file.</para>
 			<para>Files written by &app; are editable in a text editor, and the file only stores plain assembly code.</para>
 			<para>To edit the program, simply type in the editing area. It is a good idea to put each new instruction on a new line, though this is not required. For a reference to the mnemonics and syntax accepted by &app;, see <xref linkend="mcus-reference"/>.</para>
+			<para>Example programs can be found in the <filename class="directory">mcus/examples</filename> directory under the installed data directory on Linux, or in the <filename class="directory">share\mcus\examples</filename> folder under the installation folder on Windows.</para>
 		</sect2>
 
 	 	<sect2 id="mcus-simulate-program">

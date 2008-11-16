@@ -1,3 +1,14 @@
+============ Version 0.2.2
+
+2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
+
+	* NEWS:
+	* configure.ac:
+	* help/C/mcus.xml:
+	* packaging/mcus.nsi: Bump to version 0.2.2.
+	* examples/Makefile.am: Fix a distcheck error with the wildcard file
+	selector.
+
 2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
 
 	* examples/Makefile.am: Add a file missing from the previous commit.
