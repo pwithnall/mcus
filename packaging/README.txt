@@ -6,3 +6,8 @@ Installation
 3) Double-click windows.reg to install the registry entries which will associate ".asm" files with MCUS.
 
 Note that an automated Windows installer is available, and is recommended to be used unless installing on a network or via disk images.
+
+Example programs
+================
+
+Example programs can be found in the share\mcus\examples folder under the installation path.

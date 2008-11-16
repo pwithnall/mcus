@@ -23,6 +23,7 @@ cp data/icons/16x16/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/16x16/ap
 cp data/icons/22x22/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/22x22/apps
 cp data/icons/32x32/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/32x32/apps
 cp data/icons/48x48/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/48x48/apps
+cp examples/*.asm packaging/GTK2-Runtime/share/mcus/examples/
 
 cd packaging
 

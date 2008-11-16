@@ -1,5 +1,15 @@
 2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
 
+	* packaging/GTK2-Runtime/share/mcus/examples/:
+	* Makefile.am:
+	* README:
+	* configure.ac:
+	* packaging/README.txt:
+	* packaging/windows.sh: Ensure the examples are installed, and
+	mention them in the documentation for Windows and Linux.
+
+2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>
+
 	* configure.ac: Use AC_HELP_STRING.
 
 2008-11-16  Philip Withnall  <philip@tecnocode.co.uk>

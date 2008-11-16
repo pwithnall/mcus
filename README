@@ -4,6 +4,9 @@ MCUS
 MCUS (Microcontroller Simulator) is a small cross-platform GTK+ application to simulate the microcontroller
 specification in the 2008 OCR electronics AS-/A-level specification.
 
+Example programs to get you started can be found in the examples folder in the tarball, or in the mcus/examples
+folder in the installed data directory.
+
 News
 ====
 
@@ -20,7 +23,7 @@ Copyright
 
 Philip Withnall <philip@tecnocode.co.uk>
 
-BUGS
+Bugs
 ====
 
 Bugs should be sent to me:

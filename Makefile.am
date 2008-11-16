@@ -1,4 +1,4 @@
-SUBDIRS = src po data help
+SUBDIRS = src po data examples help
 
 EXTRA_DIST =			\
 	autogen.sh		\
@@ -10,8 +10,7 @@ EXTRA_DIST =			\
 	COPYING			\
 	AUTHORS			\
 	INSTALL			\
-	NEWS			\
-	examples/*.asm
+	NEWS
 
 DISTCLEANFILES = \
 	intltool-extract	\
