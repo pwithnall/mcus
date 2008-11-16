@@ -10,7 +10,8 @@ EXTRA_DIST =			\
 	COPYING			\
 	AUTHORS			\
 	INSTALL			\
-	NEWS
+	NEWS			\
+	examples/*.asm
 
 DISTCLEANFILES = \
 	intltool-extract	\
