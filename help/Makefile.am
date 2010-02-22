@@ -22,9 +22,9 @@ C/mcus-pdf.xml: C/mcus.xml
 
 pdf/mcus-pdf.pdf: C/mcus-pdf.xml
 	$(DB2PDF) --output pdf $<
- 	
+
 pdf: pdf/mcus-pdf.pdf
- 	
+
 doc-clean:
 	-rm -f C/mcus-pdf.xml
 	-rm -rf html
@@ -33,3 +33,5 @@ doc-clean:
 all-local: pdf
 
 .PHONY: doc-clean
+
+-include $(top_srcdir)/git.mk

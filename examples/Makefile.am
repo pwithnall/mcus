@@ -6,3 +6,5 @@ example_DATA = \
 	ssd_tester.asm
 
 EXTRA_DIST = $(example_DATA)
+
+-include $(top_srcdir)/git.mk

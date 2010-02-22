@@ -73,3 +73,5 @@ mcus_win_icon.$(OBJEXT): mcus_win_icon.rc
 	  --input-format rc --input $< \
 	  --output-format coff --output $@
 endif
+
+-include $(top_srcdir)/git.mk

@@ -1,23 +1,27 @@
 SUBDIRS = src po data examples help
 
-EXTRA_DIST =			\
+EXTRA_DIST = \
 	autogen.sh		\
-	intltool-extract.in	\
-	intltool-merge.in	\
-	intltool-update.in	\
 	gnome-doc-utils.make	\
-	README			\
-	COPYING			\
-	AUTHORS			\
-	INSTALL			\
-	NEWS			\
+	mcus.doap		\
 	ChangeLog.pre-git
 
 DISTCLEANFILES = \
-	intltool-extract	\
-	intltool-merge		\
-	intltool-update		\
 	gnome-doc-utils.make
+
+MAINTAINERCLEANFILES = \
+	INSTALL		\
+	aclocal.m4	\
+	compile		\
+	config.guess	\
+	config.h.in	\
+	config.sub	\
+	depcomp		\
+	install-sh	\
+	ltmain.sh	\
+	missing		\
+	mkinstalldirs	\
+	`find "$(srcdir)" -type f -name Makefile.in -print`
 
 DISTCHECK_CONFIGURE_FLAGS = --disable-scrollkeeper
 
@@ -39,4 +43,6 @@ $(srcdir)/ChangeLog:
 	fi
 .PHONY: $(srcdir)/ChangeLog
 
-MAINTAINERCLEANFILES = $(srcdir)/ChangeLog
+MAINTAINERCLEANFILES += $(srcdir)/ChangeLog
+
+-include $(top_srcdir)/git.mk
