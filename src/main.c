@@ -255,10 +255,13 @@ mcus_quit (void)
 
 	/*g_object_unref (mcus->current_instruction_tag);
 	g_object_unref (mcus->error_tag);*/
-	g_object_unref (mcus->language_manager);
+	if (mcus->language_manager != NULL)
+		g_object_unref (mcus->language_manager);
 
-	g_object_unref (mcus->builder);
-	gtk_widget_destroy (mcus->main_window);
+	if (mcus->builder != NULL)
+		g_object_unref (mcus->builder);
+	if (mcus->main_window != NULL)
+		gtk_widget_destroy (mcus->main_window);
 
 	g_free (mcus->offset_map);
 	g_free (mcus->current_filename);

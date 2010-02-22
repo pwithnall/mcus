@@ -311,7 +311,7 @@
 												<property name="xscale">0</property>
 												<property name="yscale">0</property>
 												<child>
-													<object class="GtkTable" id="table2">
+													<object class="GtkTable" id="mw_input_table">
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<child>
@@ -441,7 +441,7 @@
 											<object class="GtkNotebook" id="mw_output_notebook">
 												<signal name="switch-page" handler="mw_output_notebook_switch_page_cb"/>
 												<child>
-													<object class="GtkTable" id="table2">
+													<object class="GtkTable" id="mw_output_table">
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<child>
@@ -545,21 +545,21 @@
 													</object>
 												</child>
 												<child type="tab">
-													<object class="GtkLabel" id="label10">
+													<object class="GtkLabel" id="mw_leds_label">
 														<property name="label" translatable="yes">LEDs</property>
 													</object>
 												</child>
 												<child>
 													<object class="GtkHBox" id="hbox2">
 														<child>
-															<object class="GtkFrame" id="frame1">
+															<object class="GtkFrame" id="mw_decoder_frame">
 																<child type="label">
 																	<object class="GtkLabel" id="label18">
 																		<property name="label" translatable="yes">Decoder</property>
 																	</object>
 																</child>
 																<child>
-																	<object class="GtkVBox" id="vbox3">
+																	<object class="GtkVBox" id="mw_decoder_vbox">
 																		<property name="border-width">5</property>
 																		<property name="spacing">5</property>
 																		<child>
@@ -832,7 +832,7 @@
 													<object class="GtkHBox" id="mw_adc_hbox">
 														<property name="spacing">5</property>
 														<child>
-															<object class="GtkFrame" id="frame2">
+															<object class="GtkFrame" id="mw_waveform_frame">
 																<child type="label">
 																	<object class="GtkLabel" id="label24">
 																		<property name="label" translatable="yes">&lt;b&gt;Waveform&lt;/b&gt;</property>
@@ -883,7 +883,7 @@
 															</object>
 														</child>
 														<child>
-															<object class="GtkFrame" id="frame3">
+															<object class="GtkFrame" id="mw_wave_options_frame">
 																<child type="label">
 																	<object class="GtkLabel" id="label25">
 																		<property name="label" translatable="yes">&lt;b&gt;Wave Options&lt;/b&gt;</property>
@@ -1040,7 +1040,7 @@
 																			</packing>
 																		</child>
 																		<child>
-																			<object class="GtkLabel" id="label30">
+																			<object class="GtkLabel" id="label32">
 																				<property name="label" translatable="yes">rads</property>
 																				<property name="xalign">0</property>
 																			</object>
@@ -1074,7 +1074,7 @@
 							</object>
 						</child>
 						<child>
-							<object class="GtkVBox" id="vbox3">
+							<object class="GtkVBox" id="mw_options_vbox">
 								<child>
 									<object class="GtkFrame" id="frame0">
 										<child type="label">
@@ -1186,7 +1186,7 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkFrame" id="frame1">
+									<object class="GtkFrame" id="mw_io_frame">
 										<child type="label">
 											<object class="GtkLabel" id="label1">
 												<property name="label" translatable="yes">&lt;b&gt;Inputs/Outputs&lt;/b&gt;</property>
@@ -1200,7 +1200,7 @@
 												<property name="column-spacing">5</property>
 												<property name="border-width">5</property>
 												<child>
-													<object class="GtkLabel" id="label4">
+													<object class="GtkLabel" id="mw_input_port_label">
 														<property name="label" translatable="yes">&lt;b&gt;Input Port&lt;/b&gt;</property>
 														<property name="use-markup">True</property>
 														<property name="xalign">1</property>
@@ -1227,7 +1227,7 @@
 													</packing>
 												</child>
 												<child>
-													<object class="GtkLabel" id="label4">
+													<object class="GtkLabel" id="mw_output_port_label2">
 														<property name="label" translatable="yes">&lt;b&gt;Output Port&lt;/b&gt;</property>
 														<property name="use-markup">True</property>
 														<property name="xalign">1</property>
@@ -1252,7 +1252,7 @@
 													</packing>
 												</child>
 												<child>
-													<object class="GtkLabel" id="label4">
+													<object class="GtkLabel" id="mw_analogue_input_label">
 														<property name="label" translatable="yes">&lt;b&gt;Analogue Input&lt;/b&gt;</property>
 														<property name="use-markup">True</property>
 														<property name="xalign">1</property>
@@ -1296,7 +1296,7 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkFrame" id="frame2">
+									<object class="GtkFrame" id="mw_registers_frame">
 										<child type="label">
 											<object class="GtkLabel" id="label2">
 												<property name="label" translatable="yes">&lt;b&gt;Registers&lt;/b&gt;</property>
@@ -1317,7 +1317,7 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkFrame" id="frame3">
+									<object class="GtkFrame" id="mw_memory_frame">
 										<child type="label">
 											<object class="GtkLabel" id="label3">
 												<property name="label" translatable="yes">&lt;b&gt;Memory&lt;/b&gt;</property>
@@ -1356,7 +1356,7 @@
 								<child>
 									<object class="GtkFrame" id="frame4">
 										<child type="label">
-											<object class="GtkLabel" id="label10">
+											<object class="GtkLabel" id="mw_stack_label2">
 												<property name="label" translatable="yes">&lt;b&gt;Stack&lt;/b&gt;</property>
 												<property name="use-markup">True</property>
 											</object>
