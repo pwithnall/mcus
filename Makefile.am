@@ -10,7 +10,8 @@ EXTRA_DIST =			\
 	COPYING			\
 	AUTHORS			\
 	INSTALL			\
-	NEWS
+	NEWS			\
+	ChangeLog.pre-git
 
 DISTCLEANFILES = \
 	intltool-extract	\
@@ -20,11 +21,22 @@ DISTCLEANFILES = \
 
 DISTCHECK_CONFIGURE_FLAGS = --disable-scrollkeeper
 
-# Copy all the spec files. Of cource, only one is actually used.
-dist-hook:
-	for specfile in *.spec; do \
-		if test -f $$specfile; then \
-			cp -p $$specfile $(distdir); \
-		fi \
-	done
+# ChangeLog
+ChangeLog: $(srcdir)/ChangeLog
+$(srcdir)/ChangeLog:
+	@echo Creating $@
+	@if test -d "$(srcdir)/.git"; then \
+	  (GIT_DIR=$(top_srcdir)/.git ./missing --run \
+	   git log --stat --after="Sun Nov 16 15:58:17 2008 +0000") | fmt --split-only > $@.tmp \
+	  && mv -f $@.tmp $@ \
+	  || ($(RM) $@.tmp; \
+	      echo Failed to generate ChangeLog, your ChangeLog may be outdated >&2; \
+	      (test -f $@ || echo git-log is required to generate this file >> $@)); \
+	else \
+	  test -f $@ || \
+	  (echo A git checkout and git-log is required to generate ChangeLog >&2 && \
+	  echo A git checkout and git-log is required to generate this file >> $@); \
+	fi
+.PHONY: $(srcdir)/ChangeLog
 
+MAINTAINERCLEANFILES = $(srcdir)/ChangeLog
