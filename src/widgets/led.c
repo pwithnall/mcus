@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 #define MINIMUM_SIZE 30
 
-static void mcus_led_init (MCUSLED *self);
 static void mcus_led_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_led_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void mcus_led_realize (GtkWidget *widget);

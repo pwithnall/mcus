@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,7 +91,6 @@ const MCUSDirectiveData const mcus_directive_data[] = {
 	{ DIRECTIVE_SET,	"SET" }
 };
 
-static void mcus_compiler_init (MCUSCompiler *self);
 static void mcus_compiler_finalize (GObject *object);
 static void reset_state (MCUSCompiler *self);
 
@@ -568,7 +567,6 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 			/* Check the operand's type is valid */
 			if ((instruction_data->operand_types[i] == OPERAND_LABEL && operand.type != OPERAND_CONSTANT && operand.type != OPERAND_LABEL) ||
 			    (instruction_data->operand_types[i] != OPERAND_LABEL && operand.type != instruction_data->operand_types[i])) {
-				gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 				g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 
 				switch (operand.type) {
@@ -580,9 +578,11 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 				case OPERAND_OUTPUT:
 					self->priv->error_length = 1;
 					break;
-				default:
+				case OPERAND_LABEL:
 					self->priv->error_length = strlen (operand.label);
 					break;
+				default:
+					g_assert_not_reached ();
 				}
 
 				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
@@ -723,7 +723,6 @@ lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
 		if (lex_operand (self, &operand, &child_error) == TRUE) {
 			/* Check the operand's type is valid */
 			if (operand.type != OPERAND_CONSTANT) {
-				gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 				g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 
 				switch (operand.type) {
@@ -735,9 +734,11 @@ lex_directive (MCUSCompiler *self, MCUSDirective *directive, GError **error)
 				case OPERAND_OUTPUT:
 					self->priv->error_length = 1;
 					break;
-				default:
+				case OPERAND_LABEL:
 					self->priv->error_length = strlen (operand.label);
 					break;
+				default:
+					g_assert_not_reached ();
 				}
 
 				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
@@ -890,7 +891,22 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 		case OPCODE_OUT:
 			mcus->memory[self->priv->compiled_size++] = instruction->operands[1].number;
 			break;
-		default:
+		case OPCODE_HALT:
+		case OPCODE_MOVI:
+		case OPCODE_MOV:
+		case OPCODE_ADD:
+		case OPCODE_SUB:
+		case OPCODE_AND:
+		case OPCODE_EOR:
+		case OPCODE_INC:
+		case OPCODE_DEC:
+		case OPCODE_JP:
+		case OPCODE_JZ:
+		case OPCODE_JNZ:
+		case OPCODE_RCALL:
+		case OPCODE_RET:
+		case OPCODE_SHL:
+		case OPCODE_SHR:
 			for (f = 0; f < instruction_data->arity; f++) {
 				if (instruction_data->operand_types[f] == OPERAND_LABEL &&
 				    instruction->operands[f].type == OPERAND_LABEL) {
@@ -909,6 +925,9 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 					mcus->memory[self->priv->compiled_size++] = instruction->operands[f].number;
 				}
 			}
+			break;
+		default:
+			g_assert_not_reached ();
 		}
 	}
 

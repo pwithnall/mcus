@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,9 @@
 #include "analogue-input.h"
 #include "widgets/led.h"
 #include "widgets/seven-segment-display.h"
+
+G_MODULE_EXPORT void mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, gpointer user_data);
+G_MODULE_EXPORT void mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data);
 
 GQuark
 mcus_simulation_error_quark (void)
@@ -317,6 +320,8 @@ update_outputs (void)
 		/* Update the multi-SSD output */
 		update_multi_ssd_output ();
 		break;
+	default:
+		g_assert_not_reached ();
 	}
 }
 

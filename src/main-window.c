@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,9 +36,34 @@
 #include "interface.h"
 #include "config.h"
 #include "input-port.h"
+#include "main-window.h"
 
 G_MODULE_EXPORT void mw_input_entry_changed (GtkEntry *self, gpointer user_data);
 G_MODULE_EXPORT void mw_input_check_button_toggled (GtkToggleButton *self, gpointer user_data);
+G_MODULE_EXPORT void notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
+G_MODULE_EXPORT void notify_can_redo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
+G_MODULE_EXPORT void notify_has_selection_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
+G_MODULE_EXPORT void buffer_modified_changed_cb (GtkTextBuffer *self, gpointer user_data);
+G_MODULE_EXPORT gboolean mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data);
+G_MODULE_EXPORT void mw_quit_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_undo_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_redo_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_cut_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_copy_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_paste_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_delete_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_run_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_pause_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_stop_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_step_forward_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_clock_speed_spin_button_value_changed_cb (GtkSpinButton *self, gpointer user_data);
+G_MODULE_EXPORT void mw_contents_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_about_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_new_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_open_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_save_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_save_as_activate_cb (GtkAction *self, gpointer user_data);
+G_MODULE_EXPORT void mw_print_activate_cb (GtkAction *self, gpointer user_data);
 
 G_MODULE_EXPORT void
 notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)

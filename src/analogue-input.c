@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@
 #include <math.h>
 
 #include "main.h"
+#include "analogue-input.h"
+
+G_MODULE_EXPORT void mw_analogue_input_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data);
 
 void
 mcus_read_analogue_input (void)
@@ -66,6 +69,8 @@ mcus_read_analogue_input (void)
 			g_debug ("Analogue input: %f", mcus->analogue_input);
 
 		break;
+	default:
+		g_assert_not_reached ();
 	}
 
 	gtk_adjustment_set_value (mcus->analogue_input_adjustment, mcus->analogue_input);

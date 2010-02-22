@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,7 +77,6 @@ static const guint8 segment_digit_map[10] = {
 	ALL_SEGMENTS_ACTIVE ^ SEGMENT_E_ACTIVE ^ POINT_ACTIVE						/* "9" */
 };
 
-static void mcus_seven_segment_display_init (MCUSSevenSegmentDisplay *self);
 static void mcus_seven_segment_display_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_seven_segment_display_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void mcus_seven_segment_display_realize (GtkWidget *widget);
@@ -530,7 +529,7 @@ mcus_seven_segment_display_get_digit (MCUSSevenSegmentDisplay *self)
 void
 mcus_seven_segment_display_set_digit (MCUSSevenSegmentDisplay *self, guint digit)
 {
-	g_return_if_fail (digit >= 0 && digit <= 9);
+	g_return_if_fail (/*digit >= 0 && */digit <= 9);
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self));
 

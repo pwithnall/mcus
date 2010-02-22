@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  * 
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -363,7 +363,7 @@ set_icon_paths (void)
 const gchar *
 mcus_get_data_directory (void)
 {
-	static gchar *path = NULL;
+	static const gchar *path = NULL;
 
 	if (path == NULL) {
 #ifdef G_OS_WIN32
