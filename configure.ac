@@ -60,7 +60,7 @@ dnl ***************************************************************************
 dnl Compilation
 dnl ***************************************************************************
 
-PKG_CHECK_MODULES(STANDARD, glib-2.0 gtk+-2.0 >= 2.14 gmodule-2.0 gtksourceview-2.0 gthread-2.0)
+PKG_CHECK_MODULES(STANDARD, glib-2.0 >= 2.16 gtk+-2.0 >= 2.14 gmodule-2.0 gtksourceview-2.0 gthread-2.0)
 AC_SUBST(STANDARD_CFLAGS)
 AC_SUBST(STANDARD_LIBS)
 
