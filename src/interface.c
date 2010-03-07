@@ -147,7 +147,7 @@ mcus_update_ui (void)
 
 	SET_SENSITIVITY ("mcus_new_action", sensitive)
 	SET_SENSITIVITY ("mcus_open_action", sensitive)
-	SET_SENSITIVITY ("mcus_save_action", sensitive && gtk_text_buffer_get_modified (GTK_TEXT_BUFFER (source_buffer)))
+	SET_SENSITIVITY ("mcus_save_action", sensitive)
 	SET_SENSITIVITY ("mcus_save_as_action", sensitive)
 	SET_SENSITIVITY ("mcus_print_action", sensitive)
 	SET_SENSITIVITY ("mcus_undo_action", sensitive && gtk_source_buffer_can_undo (source_buffer))
