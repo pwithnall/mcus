@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <interface>
+	<requires lib="gtk+" version="2.16"/>
 	<object class="GtkUIManager" id="mcus_ui_manager">
 		<child>
 			<object class="GtkActionGroup" id="actiongroup1">
@@ -553,35 +554,44 @@
 													<object class="GtkHBox" id="hbox2">
 														<child>
 															<object class="GtkFrame" id="mw_decoder_frame">
+																<property name="shadow-type">GTK_SHADOW_NONE</property>
 																<child type="label">
 																	<object class="GtkLabel" id="label18">
 																		<property name="label" translatable="yes">Decoder</property>
+																		<attributes>
+																			<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+																		</attributes>
 																	</object>
 																</child>
 																<child>
-																	<object class="GtkVBox" id="mw_decoder_vbox">
-																		<property name="border-width">5</property>
-																		<property name="spacing">5</property>
+																	<object class="GtkAlignment" id="mw_decoder_alignment">
+																		<property name="left-padding">12</property>
 																		<child>
-																			<object class="GtkRadioButton" id="mw_output_single_ssd_segment_option">
-																				<property name="label" translatable="yes">Segments</property>
-																				<property name="tooltip-text" translatable="yes">Bits in the output correspond to segments on the SSD, lighting them when high. The MSB corresponds to the point, bit 6 corresponds to segment G, all the way down to bit 0, which corresponds to segment A.</property>
-																				<signal name="toggled" handler="mw_output_single_ssd_option_changed_cb" />
+																			<object class="GtkVBox" id="mw_decoder_vbox">
+																				<property name="border-width">5</property>
+																				<property name="spacing">5</property>
+																				<child>
+																					<object class="GtkRadioButton" id="mw_output_single_ssd_segment_option">
+																						<property name="label" translatable="yes">Segments</property>
+																						<property name="tooltip-text" translatable="yes">Bits in the output correspond to segments on the SSD, lighting them when high. The MSB corresponds to the point, bit 6 corresponds to segment G, all the way down to bit 0, which corresponds to segment A.</property>
+																						<signal name="toggled" handler="mw_output_single_ssd_option_changed_cb" />
+																					</object>
+																					<packing>
+																						<property name="expand">False</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkRadioButton" id="mw_output_single_ssd_bcd_option">
+																						<property name="label" translatable="yes">BCD</property>
+																						<property name="tooltip-text" translatable="yes">The first four bits of the output are treated as a binary-coded decimal, and decoded to set the SSD.</property>
+																						<property name="group">mw_output_single_ssd_segment_option</property>
+																						<signal name="toggled" handler="mw_output_single_ssd_option_changed_cb" />
+																					</object>
+																					<packing>
+																						<property name="expand">False</property>
+																					</packing>
+																				</child>
 																			</object>
-																			<packing>
-																				<property name="expand">False</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkRadioButton" id="mw_output_single_ssd_bcd_option">
-																				<property name="label" translatable="yes">BCD</property>
-																				<property name="tooltip-text" translatable="yes">The first four bits of the output are treated as a binary-coded decimal, and decoded to set the SSD.</property>
-																				<property name="group">mw_output_single_ssd_segment_option</property>
-																				<signal name="toggled" handler="mw_output_single_ssd_option_changed_cb" />
-																			</object>
-																			<packing>
-																				<property name="expand">False</property>
-																			</packing>
 																		</child>
 																	</object>
 																</child>
@@ -833,50 +843,58 @@
 														<property name="spacing">5</property>
 														<child>
 															<object class="GtkFrame" id="mw_waveform_frame">
+																<property name="shadow-type">GTK_SHADOW_NONE</property>
 																<child type="label">
 																	<object class="GtkLabel" id="label24">
-																		<property name="label" translatable="yes">&lt;b&gt;Waveform&lt;/b&gt;</property>
-																		<property name="use-markup">True</property>
+																		<property name="label" translatable="yes">Waveform</property>
+																		<attributes>
+																			<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+																		</attributes>
 																	</object>
 																</child>
 																<child>
-																	<object class="GtkVBox" id="vbox5">
-																		<property name="border-width">5</property>
-																		<property name="spacing">5</property>
+																	<object class="GtkAlignment" id="mw_waveform_alignment">
+																		<property name="left-padding">12</property>
 																		<child>
-																			<object class="GtkRadioButton" id="mw_adc_sine_wave_option">
-																				<property name="label" translatable="yes">Sine Wave</property>
+																			<object class="GtkVBox" id="mw_waveform_vbox">
+																				<property name="border-width">5</property>
+																				<property name="spacing">5</property>
+																				<child>
+																					<object class="GtkRadioButton" id="mw_adc_sine_wave_option">
+																						<property name="label" translatable="yes">Sine wave</property>
+																					</object>
+																					<packing>
+																						<property name="expand">False</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkRadioButton" id="mw_adc_square_wave_option">
+																						<property name="label" translatable="yes">Square wave</property>
+																						<property name="group">mw_adc_sine_wave_option</property>
+																					</object>
+																					<packing>
+																						<property name="expand">False</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkRadioButton" id="mw_adc_triangle_wave_option">
+																						<property name="label" translatable="yes">Triangle wave</property>
+																						<property name="group">mw_adc_sine_wave_option</property>
+																					</object>
+																					<packing>
+																						<property name="expand">False</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkRadioButton" id="mw_adc_sawtooth_wave_option">
+																						<property name="label" translatable="yes">Sawtooth wave</property>
+																						<property name="group">mw_adc_sine_wave_option</property>
+																					</object>
+																					<packing>
+																						<property name="expand">False</property>
+																					</packing>
+																				</child>
 																			</object>
-																			<packing>
-																				<property name="expand">False</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkRadioButton" id="mw_adc_square_wave_option">
-																				<property name="label" translatable="yes">Square Wave</property>
-																				<property name="group">mw_adc_sine_wave_option</property>
-																			</object>
-																			<packing>
-																				<property name="expand">False</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkRadioButton" id="mw_adc_triangle_wave_option">
-																				<property name="label" translatable="yes">Triangle Wave</property>
-																				<property name="group">mw_adc_sine_wave_option</property>
-																			</object>
-																			<packing>
-																				<property name="expand">False</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkRadioButton" id="mw_adc_sawtooth_wave_option">
-																				<property name="label" translatable="yes">Sawtooth Wave</property>
-																				<property name="group">mw_adc_sine_wave_option</property>
-																			</object>
-																			<packing>
-																				<property name="expand">False</property>
-																			</packing>
 																		</child>
 																	</object>
 																</child>
@@ -884,172 +902,176 @@
 														</child>
 														<child>
 															<object class="GtkFrame" id="mw_wave_options_frame">
+																<property name="shadow-type">GTK_SHADOW_NONE</property>
 																<child type="label">
 																	<object class="GtkLabel" id="label25">
-																		<property name="label" translatable="yes">&lt;b&gt;Wave Options&lt;/b&gt;</property>
-																		<property name="use-markup">True</property>
+																		<property name="label" translatable="yes">Wave Options</property>
+																		<attributes>
+																			<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+																		</attributes>
 																	</object>
 																</child>
 																<child>
-																	<object class="GtkTable" id="table4">
-																		<property name="n-rows">4</property>
-																		<property name="n-columns">3</property>
-																		<property name="column-spacing">5</property>
+																	<object class="GtkAlignment" id="mw_wave_options_alignment">
+																		<property name="left-padding">12</property>
 																		<child>
-																			<object class="GtkLabel" id="label26">
-																				<property name="label" translatable="yes">&lt;b&gt;Frequency&lt;/b&gt;</property>
-																				<property name="use-markup">True</property>
-																				<property name="xalign">1</property>
+																			<object class="GtkTable" id="mw_wave_options_table">
+																				<property name="n-rows">4</property>
+																				<property name="n-columns">3</property>
+																				<property name="column-spacing">5</property>
+																				<child>
+																					<object class="GtkLabel" id="label26">
+																						<property name="label" translatable="yes">Frequency:</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">0</property>
+																						<property name="bottom-attach">1</property>
+																						<property name="left-attach">0</property>
+																						<property name="right-attach">1</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkSpinButton" id="mw_adc_frequency_spin_button">
+																						<property name="adjustment">mw_adc_frequency_adjustment</property>
+																						<property name="digits">1</property>
+																						<property name="value">1</property>
+																						<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
+																					</object>
+																					<packing>
+																						<property name="top-attach">0</property>
+																						<property name="bottom-attach">1</property>
+																						<property name="left-attach">1</property>
+																						<property name="right-attach">2</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label30">
+																						<property name="label" translatable="yes">Hz</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">0</property>
+																						<property name="bottom-attach">1</property>
+																						<property name="left-attach">2</property>
+																						<property name="right-attach">3</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label27">
+																						<property name="label" translatable="yes">Amplitude:</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">1</property>
+																						<property name="bottom-attach">2</property>
+																						<property name="left-attach">0</property>
+																						<property name="right-attach">1</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkSpinButton" id="mw_adc_amplitude_spin_button">
+																						<property name="adjustment">mw_adc_amplitude_adjustment</property>
+																						<property name="digits">1</property>
+																						<property name="value">1</property>
+																						<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
+																					</object>
+																					<packing>
+																						<property name="top-attach">1</property>
+																						<property name="bottom-attach">2</property>
+																						<property name="left-attach">1</property>
+																						<property name="right-attach">2</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label99">
+																						<property name="label" translatable="yes">V</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">1</property>
+																						<property name="bottom-attach">2</property>
+																						<property name="left-attach">2</property>
+																						<property name="right-attach">3</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label28">
+																						<property name="label" translatable="yes">Offset:</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">2</property>
+																						<property name="bottom-attach">3</property>
+																						<property name="left-attach">0</property>
+																						<property name="right-attach">1</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkSpinButton" id="mw_adc_offset_spin_button">
+																						<property name="adjustment">mw_adc_offset_adjustment</property>
+																						<property name="digits">1</property>
+																						<property name="value">1</property>
+																						<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
+																					</object>
+																					<packing>
+																						<property name="top-attach">2</property>
+																						<property name="bottom-attach">3</property>
+																						<property name="left-attach">1</property>
+																						<property name="right-attach">2</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label31">
+																						<property name="label" translatable="yes">V</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">2</property>
+																						<property name="bottom-attach">3</property>
+																						<property name="left-attach">2</property>
+																						<property name="right-attach">3</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label29">
+																						<property name="label" translatable="yes">Phase:</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">3</property>
+																						<property name="bottom-attach">4</property>
+																						<property name="left-attach">0</property>
+																						<property name="right-attach">1</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkSpinButton" id="mw_adc_phase_spin_button">
+																						<property name="adjustment">mw_adc_phase_adjustment</property>
+																						<property name="digits">1</property>
+																						<property name="value">1</property>
+																						<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
+																					</object>
+																					<packing>
+																						<property name="top-attach">3</property>
+																						<property name="bottom-attach">4</property>
+																						<property name="left-attach">1</property>
+																						<property name="right-attach">2</property>
+																					</packing>
+																				</child>
+																				<child>
+																					<object class="GtkLabel" id="label32">
+																						<property name="label" translatable="yes">rad</property>
+																						<property name="xalign">0</property>
+																					</object>
+																					<packing>
+																						<property name="top-attach">3</property>
+																						<property name="bottom-attach">4</property>
+																						<property name="left-attach">2</property>
+																						<property name="right-attach">3</property>
+																					</packing>
+																				</child>
 																			</object>
-																			<packing>
-																				<property name="top-attach">0</property>
-																				<property name="bottom-attach">1</property>
-																				<property name="left-attach">0</property>
-																				<property name="right-attach">1</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkSpinButton" id="mw_adc_frequency_spin_button">
-																				<property name="adjustment">mw_adc_frequency_adjustment</property>
-																				<property name="digits">1</property>
-																				<property name="value">1</property>
-																				<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
-																			</object>
-																			<packing>
-																				<property name="top-attach">0</property>
-																				<property name="bottom-attach">1</property>
-																				<property name="left-attach">1</property>
-																				<property name="right-attach">2</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label30">
-																				<property name="label" translatable="yes">Hz</property>
-																				<property name="xalign">0</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">0</property>
-																				<property name="bottom-attach">1</property>
-																				<property name="left-attach">2</property>
-																				<property name="right-attach">3</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label27">
-																				<property name="label" translatable="yes">&lt;b&gt;Amplitude&lt;/b&gt;</property>
-																				<property name="use-markup">True</property>
-																				<property name="xalign">1</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">1</property>
-																				<property name="bottom-attach">2</property>
-																				<property name="left-attach">0</property>
-																				<property name="right-attach">1</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkSpinButton" id="mw_adc_amplitude_spin_button">
-																				<property name="adjustment">mw_adc_amplitude_adjustment</property>
-																				<property name="digits">1</property>
-																				<property name="value">1</property>
-																				<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
-																			</object>
-																			<packing>
-																				<property name="top-attach">1</property>
-																				<property name="bottom-attach">2</property>
-																				<property name="left-attach">1</property>
-																				<property name="right-attach">2</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label99">
-																				<property name="label" translatable="yes">V</property>
-																				<property name="xalign">0</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">1</property>
-																				<property name="bottom-attach">2</property>
-																				<property name="left-attach">2</property>
-																				<property name="right-attach">3</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label28">
-																				<property name="label" translatable="yes">&lt;b&gt;Offset&lt;/b&gt;</property>
-																				<property name="use-markup">True</property>
-																				<property name="xalign">1</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">2</property>
-																				<property name="bottom-attach">3</property>
-																				<property name="left-attach">0</property>
-																				<property name="right-attach">1</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkSpinButton" id="mw_adc_offset_spin_button">
-																				<property name="adjustment">mw_adc_offset_adjustment</property>
-																				<property name="digits">1</property>
-																				<property name="value">1</property>
-																				<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
-																			</object>
-																			<packing>
-																				<property name="top-attach">2</property>
-																				<property name="bottom-attach">3</property>
-																				<property name="left-attach">1</property>
-																				<property name="right-attach">2</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label31">
-																				<property name="label" translatable="yes">V</property>
-																				<property name="xalign">0</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">2</property>
-																				<property name="bottom-attach">3</property>
-																				<property name="left-attach">2</property>
-																				<property name="right-attach">3</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label29">
-																				<property name="label" translatable="yes">&lt;b&gt;Phase&lt;/b&gt;</property>
-																				<property name="use-markup">True</property>
-																				<property name="xalign">1</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">3</property>
-																				<property name="bottom-attach">4</property>
-																				<property name="left-attach">0</property>
-																				<property name="right-attach">1</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkSpinButton" id="mw_adc_phase_spin_button">
-																				<property name="adjustment">mw_adc_phase_adjustment</property>
-																				<property name="digits">1</property>
-																				<property name="value">1</property>
-																				<!--<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>-->
-																			</object>
-																			<packing>
-																				<property name="top-attach">3</property>
-																				<property name="bottom-attach">4</property>
-																				<property name="left-attach">1</property>
-																				<property name="right-attach">2</property>
-																			</packing>
-																		</child>
-																		<child>
-																			<object class="GtkLabel" id="label32">
-																				<property name="label" translatable="yes">rads</property>
-																				<property name="xalign">0</property>
-																			</object>
-																			<packing>
-																				<property name="top-attach">3</property>
-																				<property name="bottom-attach">4</property>
-																				<property name="left-attach">2</property>
-																				<property name="right-attach">3</property>
-																			</packing>
 																		</child>
 																	</object>
 																</child>
@@ -1076,107 +1098,112 @@
 						<child>
 							<object class="GtkVBox" id="mw_options_vbox">
 								<child>
-									<object class="GtkFrame" id="frame0">
+									<object class="GtkFrame" id="mw_general_frame">
+										<property name="shadow-type">GTK_SHADOW_NONE</property>
 										<child type="label">
 											<object class="GtkLabel" id="label0">
-												<property name="label" translatable="yes">&lt;b&gt;General&lt;/b&gt;</property>
-												<property name="use-markup">True</property>
+												<property name="label" translatable="yes">General</property>
+												<attributes>
+													<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+												</attributes>
 											</object>
 										</child>
 										<child>
-											<object class="GtkTable" id="table0">
-												<property name="n-rows">3</property>
-												<property name="n-columns">3</property>
-												<property name="column-spacing">5</property>
-												<property name="border-width">5</property>
+											<object class="GtkAlignment" id="mw_general_alignment">
+												<property name="left-padding">12</property>
 												<child>
-													<object class="GtkLabel" id="label6">
-														<property name="label" translatable="yes">&lt;b&gt;Program Counter&lt;/b&gt;</property>
-														<property name="use-markup">True</property>
-														<property name="xalign">1</property>
+													<object class="GtkTable" id="mw_general_table">
+														<property name="n-rows">3</property>
+														<property name="n-columns">3</property>
+														<property name="column-spacing">5</property>
+														<property name="border-width">5</property>
+														<child>
+															<object class="GtkLabel" id="label6">
+																<property name="label" translatable="yes">Program counter:</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="mw_program_counter_label">
+																<property name="label">00</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="label7">
+																<property name="label" translatable="yes">Stack pointer:</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="mw_stack_pointer_label">
+																<property name="label">00</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="label8">
+																<property name="label" translatable="yes">Clock speed:</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkSpinButton" id="mw_clock_speed_spin_button">
+																<property name="adjustment">mw_clock_speed_adjustment</property>
+																<property name="digits">1</property>
+																<property name="value">1</property>
+																<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">2</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="label9">
+																<property name="label" translatable="yes">Hz</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">2</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
 													</object>
-													<packing>
-														<property name="top-attach">0</property>
-														<property name="bottom-attach">1</property>
-														<property name="left-attach">0</property>
-														<property name="right-attach">1</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="mw_program_counter_label">
-														<property name="label">00</property>
-														<property name="xalign">0</property>
-													</object>
-													<packing>
-														<property name="top-attach">0</property>
-														<property name="bottom-attach">1</property>
-														<property name="left-attach">1</property>
-														<property name="right-attach">3</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="label7">
-														<property name="label" translatable="yes">&lt;b&gt;Stack Pointer&lt;/b&gt;</property>
-														<property name="use-markup">True</property>
-														<property name="xalign">1</property>
-													</object>
-													<packing>
-														<property name="top-attach">1</property>
-														<property name="bottom-attach">2</property>
-														<property name="left-attach">0</property>
-														<property name="right-attach">1</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="mw_stack_pointer_label">
-														<property name="label">00</property>
-														<property name="xalign">0</property>
-													</object>
-													<packing>
-														<property name="top-attach">1</property>
-														<property name="bottom-attach">2</property>
-														<property name="left-attach">1</property>
-														<property name="right-attach">3</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="label8">
-														<property name="label" translatable="yes">&lt;b&gt;Clock Speed&lt;/b&gt;</property>
-														<property name="use-markup">True</property>
-														<property name="xalign">1</property>
-													</object>
-													<packing>
-														<property name="top-attach">2</property>
-														<property name="bottom-attach">3</property>
-														<property name="left-attach">0</property>
-														<property name="right-attach">1</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkSpinButton" id="mw_clock_speed_spin_button">
-														<property name="adjustment">mw_clock_speed_adjustment</property>
-														<property name="digits">1</property>
-														<property name="value">1</property>
-														<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>
-													</object>
-													<packing>
-														<property name="top-attach">2</property>
-														<property name="bottom-attach">3</property>
-														<property name="left-attach">1</property>
-														<property name="right-attach">2</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="label9">
-														<property name="label" translatable="yes">Hz</property>
-														<property name="xalign">0</property>
-													</object>
-													<packing>
-														<property name="top-attach">2</property>
-														<property name="bottom-attach">3</property>
-														<property name="left-attach">2</property>
-														<property name="right-attach">3</property>
-													</packing>
 												</child>
 											</object>
 										</child>
@@ -1187,106 +1214,112 @@
 								</child>
 								<child>
 									<object class="GtkFrame" id="mw_io_frame">
+										<property name="shadow-type">GTK_SHADOW_NONE</property>
 										<child type="label">
 											<object class="GtkLabel" id="label1">
-												<property name="label" translatable="yes">&lt;b&gt;Inputs/Outputs&lt;/b&gt;</property>
-												<property name="use-markup">True</property>
+												<property name="label" translatable="yes">Inputs/Outputs</property>
+												<attributes>
+													<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+												</attributes>
 											</object>
 										</child>
 										<child>
-											<object class="GtkTable" id="table1">
-												<property name="n-rows">3</property>
-												<property name="n-columns">3</property>
-												<property name="column-spacing">5</property>
-												<property name="border-width">5</property>
+											<object class="GtkAlignment" id="mw_io_alignment">
+												<property name="left-padding">12</property>
 												<child>
-													<object class="GtkLabel" id="mw_input_port_label">
-														<property name="label" translatable="yes">&lt;b&gt;Input Port&lt;/b&gt;</property>
-														<property name="use-markup">True</property>
-														<property name="xalign">1</property>
+													<object class="GtkTable" id="mw_io_table">
+														<property name="n-rows">3</property>
+														<property name="n-columns">3</property>
+														<property name="column-spacing">5</property>
+														<property name="border-width">5</property>
+														<child>
+															<object class="GtkLabel" id="mw_input_port_label">
+																<property name="label" translatable="yes">Input port:</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkEntry" id="mw_input_port_entry">
+																<property name="text">00</property>
+																<property name="max-length">2</property>
+																<property name="width-chars">2</property>
+																<signal name="changed" handler="mw_input_entry_changed"/>
+															</object>
+															<packing>
+																<property name="top-attach">0</property>
+																<property name="bottom-attach">1</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="mw_output_port_label2">
+																<property name="label" translatable="yes">Output port:</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="mw_output_port_label">
+																<property name="selectable">True</property>
+																<property name="label">00</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">1</property>
+																<property name="bottom-attach">2</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="mw_analogue_input_label">
+																<property name="label" translatable="yes">Analogue input:</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkSpinButton" id="mw_analogue_input_spin_button">
+																<property name="adjustment">mw_analogue_input_adjustment</property>
+																<property name="digits">2</property>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">2</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="label5">
+																<property name="label" translatable="yes">volts</property>
+																<property name="xalign">0</property>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">2</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
 													</object>
-													<packing>
-														<property name="top-attach">0</property>
-														<property name="bottom-attach">1</property>
-														<property name="left-attach">0</property>
-														<property name="right-attach">1</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkEntry" id="mw_input_port_entry">
-														<property name="text">00</property>
-														<property name="max-length">2</property>
-														<property name="width-chars">2</property>
-														<signal name="changed" handler="mw_input_entry_changed"/>
-													</object>
-													<packing>
-														<property name="top-attach">0</property>
-														<property name="bottom-attach">1</property>
-														<property name="left-attach">1</property>
-														<property name="right-attach">3</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="mw_output_port_label2">
-														<property name="label" translatable="yes">&lt;b&gt;Output Port&lt;/b&gt;</property>
-														<property name="use-markup">True</property>
-														<property name="xalign">1</property>
-													</object>
-													<packing>
-														<property name="top-attach">1</property>
-														<property name="bottom-attach">2</property>
-														<property name="left-attach">0</property>
-														<property name="right-attach">1</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="mw_output_port_label">
-														<property name="label">00</property>
-														<property name="xalign">0</property>
-													</object>
-													<packing>
-														<property name="top-attach">1</property>
-														<property name="bottom-attach">2</property>
-														<property name="left-attach">1</property>
-														<property name="right-attach">3</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="mw_analogue_input_label">
-														<property name="label" translatable="yes">&lt;b&gt;Analogue Input&lt;/b&gt;</property>
-														<property name="use-markup">True</property>
-														<property name="xalign">1</property>
-													</object>
-													<packing>
-														<property name="top-attach">2</property>
-														<property name="bottom-attach">3</property>
-														<property name="left-attach">0</property>
-														<property name="right-attach">1</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkSpinButton" id="mw_analogue_input_spin_button">
-														<property name="adjustment">mw_analogue_input_adjustment</property>
-														<property name="digits">2</property>
-													</object>
-													<packing>
-														<property name="top-attach">2</property>
-														<property name="bottom-attach">3</property>
-														<property name="left-attach">1</property>
-														<property name="right-attach">2</property>
-													</packing>
-												</child>
-												<child>
-													<object class="GtkLabel" id="label5">
-														<property name="label" translatable="yes">volts</property>
-														<property name="xalign">0</property>
-													</object>
-													<packing>
-														<property name="top-attach">2</property>
-														<property name="bottom-attach">3</property>
-														<property name="left-attach">2</property>
-														<property name="right-attach">3</property>
-													</packing>
 												</child>
 											</object>
 										</child>
@@ -1297,18 +1330,26 @@
 								</child>
 								<child>
 									<object class="GtkFrame" id="mw_registers_frame">
+										<property name="shadow-type">GTK_SHADOW_NONE</property>
 										<child type="label">
 											<object class="GtkLabel" id="label2">
-												<property name="label" translatable="yes">&lt;b&gt;Registers&lt;/b&gt;</property>
-												<property name="use-markup">True</property>
+												<property name="label" translatable="yes">Registers</property>
+												<attributes>
+													<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+												</attributes>
 											</object>
 										</child>
 										<child>
-											<object class="GtkLabel" id="mw_registers_label">
-												<property name="selectable">True</property>
-												<property name="label">00 00 00 00 00 00 00 00</property>
-												<property name="xpad">5</property>
-												<property name="ypad">5</property>
+											<object class="GtkAlignment" id="mw_registers_alignment">
+												<property name="left-padding">12</property>
+												<child>
+													<object class="GtkLabel" id="mw_registers_label">
+														<property name="selectable">True</property>
+														<property name="label">00 00 00 00 00 00 00 00</property>
+														<property name="xpad">5</property>
+														<property name="ypad">5</property>
+													</object>
+												</child>
 											</object>
 										</child>
 									</object>
@@ -1318,17 +1359,23 @@
 								</child>
 								<child>
 									<object class="GtkFrame" id="mw_memory_frame">
+										<property name="shadow-type">GTK_SHADOW_NONE</property>
 										<child type="label">
 											<object class="GtkLabel" id="label3">
-												<property name="label" translatable="yes">&lt;b&gt;Memory&lt;/b&gt;</property>
-												<property name="use-markup">True</property>
+												<property name="label" translatable="yes">Memory</property>
+												<attributes>
+													<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+												</attributes>
 											</object>
 										</child>
 										<child>
-											<object class="GtkLabel" id="mw_memory_label">
-												<property name="selectable">True</property>
-												<property name="use-markup">True</property>
-												<property name="label">&lt;b&gt;00&lt;/b&gt; 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+											<object class="GtkAlignment" id="mw_memory_alignment">
+												<property name="left-padding">12</property>
+												<child>
+													<object class="GtkLabel" id="mw_memory_label">
+														<property name="selectable">True</property>
+														<property name="use-markup">True</property>
+														<property name="label">&lt;b&gt;00&lt;/b&gt; 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -1344,8 +1391,10 @@
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</property>
-												<property name="xpad">5</property>
-												<property name="ypad">5</property>
+														<property name="xpad">5</property>
+														<property name="ypad">5</property>
+													</object>
+												</child>
 											</object>
 										</child>
 									</object>
@@ -1354,19 +1403,27 @@
 									</packing>
 								</child>
 								<child>
-									<object class="GtkFrame" id="frame4">
+									<object class="GtkFrame" id="mw_stack_frame">
+										<property name="shadow-type">GTK_SHADOW_NONE</property>
 										<child type="label">
 											<object class="GtkLabel" id="mw_stack_label2">
-												<property name="label" translatable="yes">&lt;b&gt;Stack&lt;/b&gt;</property>
-												<property name="use-markup">True</property>
+												<property name="label" translatable="yes">Stack</property>
+												<attributes>
+													<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+												</attributes>
 											</object>
 										</child>
 										<child>
-											<object class="GtkLabel" id="mw_stack_label">
-												<property name="selectable">True</property>
-												<property name="label">(Empty)</property>
-												<property name="xpad">5</property>
-												<property name="ypad">5</property>
+											<object class="GtkAlignment" id="mw_stack_alignment">
+												<property name="left-padding">12</property>
+												<child>
+													<object class="GtkLabel" id="mw_stack_label">
+														<property name="selectable">True</property>
+														<property name="label">(Empty)</property>
+														<property name="xpad">5</property>
+														<property name="ypad">5</property>
+													</object>
+												</child>
 											</object>
 										</child>
 									</object>
