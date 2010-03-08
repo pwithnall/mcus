@@ -1,6 +1,3 @@
-XMLLINT = xmllint 
-DB2PDF = docbook2pdf
-
 clean-local: doc-clean
 distclean-local: doc-clean
 mostlyclean-local: doc-clean
@@ -10,7 +7,7 @@ include $(top_srcdir)/gnome-doc-utils.make
 dist-hook: doc-dist-hook
 
 DOC_MODULE = mcus
-DOC_ENTITIES = 
+DOC_ENTITIES =
 DOC_INCLUDES = legal.xml
 DOC_FIGURES = figures/mcus_main_window.png
 

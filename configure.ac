@@ -4,7 +4,7 @@ AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-dist-gzip check-news subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 AC_USE_SYSTEM_EXTENSIONS
 AM_MAINTAINER_MODE
-AC_PROG_CC
+AM_PROG_CC_C_O
 LT_INIT
 PKG_PROG_PKG_CONFIG
 AC_HEADER_STDC
@@ -21,7 +21,7 @@ AC_ARG_ENABLE([debug],
 	[case "${enableval}" in
 		yes) debug=true ;;
 		no)  debug=false ;;
-		*) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+		*) AC_MSG_ERROR([Bad value ${enableval} for --enable-debug.]) ;;
 	esac],[debug=false])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
@@ -55,6 +55,16 @@ dnl Documentation
 dnl ***************************************************************************
 
 GNOME_DOC_INIT
+
+AC_PATH_PROG([XMLLINT], xmllint, no)
+if test "$XMLLINT" = "no"; then
+	AC_MSG_ERROR([Could not find xmllint, which is required for building PDF documentation.])
+fi
+
+AC_PATH_PROG([DB2PDF], docbook2pdf, no)
+if test "$DB2PDF" = "no"; then
+	AC_MSG_ERROR([Could not find docbook2pdf, which is required for building PDF documentation.])
+fi
 
 dnl ***************************************************************************
 dnl Compilation
