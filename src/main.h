@@ -98,7 +98,6 @@ typedef struct {
 	GtkSourceLanguageManager *language_manager;
 
 	/* Analogue input interface */
-	GtkAdjustment *analogue_input_adjustment;
 	GtkAdjustment *analogue_input_frequency_adjustment;
 	GtkAdjustment *analogue_input_amplitude_adjustment;
 	GtkAdjustment *analogue_input_offset_adjustment;

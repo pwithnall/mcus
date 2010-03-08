@@ -162,7 +162,7 @@ mcus_update_ui (void)
 	SET_SENSITIVITY ("mcus_stop_action", mcus->simulation_state != SIMULATION_STOPPED)
 	SET_SENSITIVITY ("mcus_step_forward_action", mcus->simulation_state == SIMULATION_PAUSED)
 
-	SET_SENSITIVITY2 ("mw_analogue_input_notebook", mcus->simulation_state != SIMULATION_RUNNING)
+	SET_SENSITIVITY2 ("mw_adc_hbox", mcus->simulation_state != SIMULATION_RUNNING)
 	SET_SENSITIVITY2 ("mw_output_notebook", mcus->simulation_state != SIMULATION_RUNNING)
 	SET_SENSITIVITY2 ("mw_input_alignment", mcus->simulation_state != SIMULATION_RUNNING)
 }

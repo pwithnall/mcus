@@ -117,7 +117,6 @@ mcus_main_window_init (void)
 	guint i = 0;
 
 	/* Grab various widgets */
-	mcus->analogue_input_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_analogue_input_adjustment"));
 	mcus->analogue_input_frequency_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_frequency_adjustment"));
 	mcus->analogue_input_amplitude_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_amplitude_adjustment"));
 	mcus->analogue_input_offset_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (mcus->builder, "mw_adc_offset_adjustment"));
