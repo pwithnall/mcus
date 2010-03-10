@@ -4,6 +4,7 @@
 		<subject category="Applications|Education"/>
 		<type>user's guide</type>
 		<relation seriesid="54255607-ca1d-4d0f-9f9d-3c66fb28d8d3"/>
-		<rights type="GNU FDL" license.version="1.2" holder="Philip Withnall"/>
-	</resource>        
+		<rights type="cc-by-sa" license.version="3.0" holder="Philip Withnall"/>
+	</resource>
+	<omf>
 </omf>

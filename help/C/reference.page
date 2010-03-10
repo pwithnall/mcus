@@ -1,0 +1,348 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="reference">
+	<info>
+		<link type="guide" xref="index#reference"/>
+		<desc>Assembly syntax and instruction reference.</desc>
+	</info>
+	<title>Assembly Reference</title>
+
+	<p><app>MCUS</app> implements the assembly dialect manufactured by OCR for their
+		<link href="http://www.ocr.org.uk/qualifications/type/gce/ict_tec/electronics/index.html">A-level electronics syllabus</link>. It is not
+		an assembly dialect in use for any other purpose, but is useful for teaching purposes. <app>MCUS</app> adds a few extras to the
+		language to aid in writing working programs, which are highlighted below.</p>
+
+	<section id="instructions">
+		<title>Instructions</title>
+
+		<p><app>MCUS</app> supports the full list of instructions in the <link href="">OCR specification</link>, plus one extra implicit
+			<code>HALT</code> instruction, which has an opcode of <sys>00</sys>, and is thus executed as soon as uninitialised memory is
+			encountered (i.e. the end of the program is reached).</p>
+		<note style="warning">
+			<p>The <code>HALT</code> instruction, while designed to be implicit, can be used explicitly just as a normal instruction.
+				None of this is in the OCR specification, and is an extension specific to <app>MCUS</app>.</p>
+		</note>
+		<note style="tip">
+			<p>A good way to remember the order of parameters to instructions is to remember that the destination parameter always comes
+				before the source parameter. For example, with a <code xref="#instructions">MOV</code> instruction, the register which
+				the data is being moved into is always listed before the register which the data's being copied from.</p>
+		</note>
+
+		<!-- TODO: Anchors -->
+		<table frame="all" rules="rowgroups cols" shade="rows">
+			<colgroup><col/><col/></colgroup>
+			<colgroup><col/></colgroup>
+			<colgroup><col/></colgroup>
+			<thead>
+				<tr>
+					<td><p>Mnemonic</p></td>
+					<td><p>Opcode</p></td>
+					<td><p>Description</p></td>
+					<td><p>Example</p></td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr id="HALT">
+					<td><p><code>HALT</code></p></td>
+					<td><p><sys>00</sys></p></td>
+					<td><p>Terminate the simulation.</p></td>
+					<td><p><code>HALT</code></p></td>
+				</tr>
+			</tbody>
+			<tbody>
+				<tr id="MOVI">
+					<td><p><code>MOVI S<var>d</var>, <var>n</var></code></p></td>
+					<td><p><sys>01</sys></p></td>
+					<td><p>Copy the byte <var>n</var> into register <code>S<var>d</var></code>.</p></td>
+					<td><p><code>MOVI S0 5F</code></p></td>
+				</tr>
+				<tr id="MOV">
+					<td><p><code>MOV S<var>d</var>, S<var>s</var></code></p></td>
+					<td><p><sys>02</sys></p></td>
+					<td><p>Copy the byte from <code>S<var>s</var></code> to <code>S<var>d</var></code>.</p></td>
+					<td><p><code>MOV S3 S6</code></p></td>
+				</tr>
+			</tbody>
+			<tbody>
+				<tr id="ADD">
+					<td><p><code>ADD S<var>d</var>, S<var>s</var></code></p></td>
+					<td><p><sys>03</sys></p></td>
+					<td><p>Add the byte in <code>S<var>s</var></code> to the byte in <code>S<var>d</var></code> and store the result
+						in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>ADD S2 S4</code></p></td>
+				</tr>
+				<tr id="SUB">
+					<td><p><code>SUB S<var>d</var>, S<var>s</var></code></p></td>
+					<td><p><sys>04</sys></p></td>
+					<td><p>Subtract the byte in <code>S<var>s</var></code> from the byte in <code>S<var>d</var></code> and store the
+						result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>SUB S4 S2</code></p></td>
+				</tr>
+				<tr id="INC">
+					<td><p><code>INC S<var>d</var></code></p></td>
+					<td><p><sys>07</sys></p></td>
+					<td><p>Add 1 to <code>S<var>d</var></code> and store the result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>INC S0</code></p></td>
+				</tr>
+				<tr id="DEC">
+					<td><p><code>DEC S<var>d</var></code></p></td>
+					<td><p><sys>08</sys></p></td>
+					<td><p>Subtract 1 from <code>S<var>d</var></code> and store the result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>DEC S4</code></p></td>
+				</tr>
+			</tbody>
+			<tbody>
+				<tr id="AND">
+					<td><p><code>AND S<var>d</var>, S<var>s</var></code></p></td>
+					<td><p><sys>05</sys></p></td>
+					<td><p>Logical AND the byte in <code>S<var>s</var></code> with the byte in <code>S<var>d</var></code> and store
+						the result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>AND S0 S3</code></p></td>
+				</tr>
+				<tr id="EOR">
+					<td><p><code>EOR S<var>d</var>, S<var>s</var></code></p></td>
+					<td><p><sys>06</sys></p></td>
+					<td><p>Logical EOR the byte in <code>S<var>s</var></code> with the byte in <code>S<var>d</var></code> and store
+						the result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>EOR S1 S6</code></p></td>
+				</tr>
+				<tr id="SHL">
+					<td><p><code>SHL S<var>d</var></code></p></td>
+					<td><p><sys>10</sys></p></td>
+					<td><p>Shift the byte in <code>S<var>d</var></code> one bit left, putting a <sys>0</sys> into the
+						least-significant bit and storing the result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>SHL S2</code></p></td>
+				</tr>
+				<tr id="SHR">
+					<td><p><code>SHR S<var>d</var></code></p></td>
+					<td><p><sys>10</sys></p></td>
+					<td><p>Shift the byte in <code>S<var>d</var></code> one bit right, putting a <sys>0</sys> into the
+						most-significant bit and storing the result in <code>S<var>d</var></code>.</p></td>
+					<td><p><code>SHR S7</code></p></td>
+				</tr>
+			</tbody>
+			<tbody>
+				<tr id="IN">
+					<td><p><code>IN S<var>d</var>, I</code></p></td>
+					<td><p><sys>09</sys></p></td>
+					<td><p>Copy the byte at the input port into <code>S<var>d</var></code>.</p></td>
+					<td><p><code>IN S0, I</code></p></td>
+				</tr>
+				<tr id="OUT">
+					<td><p><code>OUT Q, S<var>s</var></code></p></td>
+					<td><p><sys>0A</sys></p></td>
+					<td><p>Copy the byte in <code>S<var>s</var></code> to the output port.</p></td>
+					<td><p><code>OUT Q, S5</code></p></td>
+				</tr>
+			</tbody>
+			<tbody>
+				<tr id="JP">
+					<td><p><code>JP <var>e</var></code></p></td>
+					<td><p><sys>0B</sys></p></td>
+					<td><p>Jump to label <var>e</var>.</p></td>
+					<td><p><code>JP main_loop</code></p></td>
+				</tr>
+				<tr id="JZ">
+					<td><p><code>JZ <var>e</var></code></p></td>
+					<td><p><sys>0C</sys></p></td>
+					<td><p>Jump to label <var>e</var> if the result of the last <code>ADD</code>, <code>SUB</code>,
+						<code>AND</code>, <code>EOR</code>, <code>INC</code>, <code>DEC</code>, <code>SHL</code>
+						or <code>SHR</code> was zero.</p></td>
+					<td><p><code>JZ if_zero_branch</code></p></td>
+				</tr>
+				<tr id="JNZ">
+					<td><p><code>JNZ <var>e</var></code></p></td>
+					<td><p><sys>0D</sys></p></td>
+					<td><p>Jump to label <var>e</var> if the result of the last <code>ADD</code>, <code>SUB</code>,
+						<code>AND</code>, <code>EOR</code>, <code>INC</code>, <code>DEC</code>, <code>SHL</code>
+						or <code>SHR</code> was <em>not</em> zero.</p></td>
+					<td><p><code>JZ if_non_zero_branch</code></p></td>
+				</tr>
+				<tr id="RCALL">
+					<td><p><code>RCALL <var>s</var></code></p></td>
+					<td><p><sys>0E</sys></p></td>
+					<td><p>Push the current program counter value onto the stack to store the return address (which will be returned
+						to when <code xref="#instructions">RET</code> is next executed) and then jump to label
+						<var>s</var>.</p></td>
+					<td><p><code>RCALL summing_routine</code></p></td>
+				</tr>
+				<tr id="RET">
+					<td><p><code>RET</code></p></td>
+					<td><p><sys>0F</sys></p></td>
+					<td><p>Pop the program counter from the stack to return to the place from which the last subroutine call (to
+						<code xref="#instructions">RCALL</code>) was made.</p></td>
+					<td><p><code>RET</code></p></td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="subroutines">
+		<title>Subroutines</title>
+
+		<p>The OCR specification gives three built-in subroutines, to be called with <code xref="#instructions">RCALL</code> as if they were any
+			normal subroutine.</p>
+
+		<note style="warning">
+			<p>Due to the fact that the subroutines have no simulated compiled representation, the operand for the
+				<code xref="#RCALL">RCALL</code> instruction is set a little differently when using any of these three subroutines.
+				This is an unavoidable artifact of the OCR specification.</p>
+
+			<terms>
+				<item>
+					<title><code>readtable</code></title>
+					<p>The operand is set to the address of the <code xref="#instructions">RCALL</code> opcode instance.</p>
+				</item>
+				<item>
+					<title><code>wait1ms</code></title>
+					<p>The operand is set to the address of the operand itself.</p>
+				</item>
+				<item>
+					<title><code>readadc</code></title>
+					<p>The operand is set to the address of the opcode following the <code xref="#instructions">RCALL</code>
+						instruction.</p>
+					<p>This is the only case where different legitimate code could produce the same compiled representation.
+						However, any code which would produce this sequence of operands and opcodes would be useless as part
+						of a program anyway.</p>
+				</item>
+			</terms>
+		</note>
+
+		<!-- TODO: Anchors -->
+		<table frame="all" rules="rows cols" shade="rows">
+			<colgroup><col/></colgroup>
+			<colgroup><col/></colgroup>
+			<colgroup><col/></colgroup>
+			<thead>
+				<tr>
+					<td><p>Subroutine</p></td>
+					<td><p>Description</p></td>
+					<td><p>Example</p></td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr id="readtable">
+					<td><p><code>readtable</code></p></td>
+					<td>
+						<p>Copies the byte in the lookup table pointed at by <code>S7</code> into <code>S0</code>. The lookup
+							table is a labelled table: when <code>S7</code> is <sys>0</sys> the first byte from the table is
+							returned in <code>S0</code>.</p>
+						<p>In the absense of further guidance, <code>readtable</code> reads from memory, and is designed to
+							work with the <code xref="#directives">$SET</code> directive, which allows lookup tables to be
+							built easily.</p>
+					</td>
+					<td><p><code>RCALL readtable</code></p></td>
+				</tr>
+				<tr id="wait1ms">
+					<td><p><code>wait1ms</code></p></td>
+					<td><p>Waits 1ms before returning. During this period, the microcontroller is essentially idle, and will
+						execute no other instructions. Note that the input port and ADC values can change during
+						this period.</p></td>
+					<td><p><code>RCALL wait1ms</code></p></td>
+				</tr>
+				<tr id="readadc">
+					<td><p><code>readadc</code></p></td>
+					<td><p>Returns a byte in <code>S0</code> proportional to the voltage at the ADC. The ADC input can vary from
+						0V to 5V, which return values of <sys>00</sys> and <sys>FF</sys> respectively.</p></td>
+					<td><p><code>RCALL readadc</code></p></td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="directives">
+		<title>Directives</title>
+
+		<p>Directives are instructions which are executed by the assembler then discarded; they affect the way the program is assembled, but
+			have no (direct) effect at runtime.</p>
+		<p>The OCR specification doesn't include any directives, but <app>MCUS</app> has added support for one to make the constructions of
+			lookup tables in memory (to be used with the <code xref="#subroutines">readtable</code> built-in subroutine) possible.</p>
+
+		<note style="warning">
+			<p>The addition of directives is non-standard, and has not been discussed with OCR. Although they are not on the specification,
+				their addition was deemed necessary to make the <code xref="#subroutines">readtable</code> subroutine useful.</p>
+		</note>
+
+		<!-- TODO: Anchors -->
+		<table frame="all" rules="rows cols" shade="rows">
+			<colgroup><col/></colgroup>
+			<colgroup><col/></colgroup>
+			<colgroup><col/></colgroup>
+			<thead>
+				<tr>
+					<td><p>Directive</p></td>
+					<td><p>Description</p></td>
+					<td><p>Example</p></td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr id="SET">
+					<td><p><code>$SET <var>aa</var>, <var>bb</var></code></p></td>
+					<td>
+						<p>Sets the hexadecimal memory address specified by the first operand to the hexadecimal value in the
+							second. Note that the memory address space is zero-based, so <sys>00</sys> refers to the first
+							byte of memory, <sys>01</sys> to the second, and so on.</p>
+						<note style="warning">
+							<p>Note that memory values set using the <code>$SET</code> directive are set before the
+								compiled program is copied into memory, so if the compiled program occupies a memory
+								range which overlaps values set using <code>$SET</code>, those values will be
+								overwritten.</p>
+						</note>
+					</td>
+					<td><p><code>$SET F0, FF</code></p></td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="syntax">
+		<title>Syntax</title>
+
+		<p>Instructions consist of a mnemonic, followed by zero or more parameters. Mnemonics are not case-sensitive, and a space separates
+			the mnemonic and its parameters. Instructions are separated by any whitespace, although it's clearest to put each instruction
+			on a new line.</p>
+		<p>Label declarations consist of the label name followed immediately by a <sys>:</sys>. They do not operate at a block level, and
+			merely provide a convenient way to reference a particular location in a program, typically for jumping to it.</p>
+		<p>The rest of a line can be marked as a comment (and consequently ignored by the compiler) by using a <sys>;</sys>. It is important to
+			document code using such comments.</p>
+		<p>Directives take the form of a <sys>$</sys> followed immediately by the case-insensitive directive name, followed by its parameters
+			as if it were a normal <link xref="#instructions">instruction</link>. Directives will be acted upon by the compiler, but then
+			removed, and not added to the compiled code or executed when the program's simulated.</p>
+
+		<p>Parameters can be of the following types, and each instruction is strict as to what it accepts. Parameters are separated by
+			whitespace and an optional comma:</p>
+		<terms>
+			<item>
+				<title>Register: <code>S<var>n</var></code></title>
+				<p>A case-insensitive <sys>S</sys>, followed by a register number from <sys>0</sys> to <sys>7</sys>. This type of
+					parameter specifies a register from which data should be read, or to which data should be written (depending
+					on the instruction in question).</p>
+				<p>Examples: <code>S0</code>, <code>S5</code></p>
+			</item>
+			<item>
+				<title>Constant</title>
+				<p>A two-digit hexadecimal constant which could either be treated as a number, or could be treated as a
+					memory address by some instructions, and can be passed in place of a label to any instruction (as
+					a memory address).</p>
+				<p>Examples: <code>05</code>, <code>7F</code></p>
+			</item>
+			<item>
+				<title>Label</title>
+				<p>A case-sensitive reference to a label defined elsewhere in the program, consisting of letters, digits and
+					underscores. Labels do not have to be declared before they're used, but compilation of a program will fail if
+					a non-existent label is referenced by an instruction.</p>
+				<p>Note that if a label reference is of the same form as a hexadecimal constant, it will be mistaken for the memory
+					address given by that constant, rather than treated as a label. For this reason, it's best to use long,
+					descriptive labels.</p>
+				<p>Examples: <code>foobar3</code>, <code>main_loop</code></p>
+			</item>
+			<item>
+				<title>Input port</title>
+				<p>A case-insensitive <code>I</code>, which refers to the only input port available in the simulation.</p>
+			</item>
+			<item>
+				<title>Output port</title>
+				<p>A case-insensitive <code>Q</code>, which refers to the only output port available in the simulation.</p>
+			</item>
+		</terms>
+	</section>
+</page>

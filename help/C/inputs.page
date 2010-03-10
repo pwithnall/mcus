@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="inputs">
+	<info>
+		<link type="guide" xref="index#io"/>
+		<desc>Retrieving digital input.</desc>
+	</info>
+	<title>Using Inputs</title>
+
+	<p><app>MCUS</app> simulates a single 8-bit hardware input port for the microcontroller, which would be eight single input lines on a real
+		microcontroller, but can be considered as a magic byte of data which the microcontroller program has access to and which changes according
+		to outside influences. Each line of the input port can either be high or low, and all the input lines are independent.</p>
+	<p>To read data from the input port in a program, use the <code xref="reference#instructions">IN</code> instruction. In this example, the contents
+		of the input port, <code>I</code>, are read into the <code>S0</code> register:</p>
+	<example>
+		<code>IN S0, I</code>
+	</example>
+
+	<p>There are two ways to set the data on the simulated input port in <app>MCUS</app>:</p>
+	<terms>
+		<item>
+			<title>The <gui style="input">Input port</gui> entry in the simulation panel</title>
+			<p>This accepts a hexadecimal value from <sys>00</sys> to <sys>FF</sys> as the value for the the one-byte input port. The value
+				<sys>00</sys> corresponds to all the lines in the input port being at at the logical low voltage, while <sys>FF</sys>
+				corresponds to them all being at the logical high voltage.</p>
+		</item>
+		<item>
+			<title>The switches on the <gui style="tab">Inputs</gui> page of the hardware panel</title>
+			<p>These allow individual bits of the input byte to be toggled. The most-significant bit is on the left, and the least-significant
+				is on the right. They correspond with individual lines of the input port.</p>
+		</item>
+	</terms>
+</page>

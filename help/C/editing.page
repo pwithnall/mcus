@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="editing">
+	<info>
+		<link type="guide" xref="index#basics"/>
+		<desc>Writing and editing assembly programs.</desc>
+	</info>
+	<title>Editing a Program</title>
+
+	<p>To open a program, choose <guiseq><gui style="menu">File</gui><gui style="menuitem">Open</gui></guiseq>, then select the <file>.asm</file> file
+		you'd like to open.</p>
+	<p>To edit the program, simply type in the editing area. It is a good idea to put each new instruction on a new line, though this is not required.
+		For a reference to the mnemonics and syntax accepted by <app>MCUS</app>, see <link xref="reference"/>.</p>
+	<p>To save a program, choose <guiseq><gui style="menu">File</gui><gui style="menuitem">Save</gui></guiseq> or
+		<guiseq><gui style="menu">File</gui><gui style="menuitem">Save As</gui></guiseq>, then select where you wish to save the file.</p>
+
+	<p>Files written by <app>MCUS</app> are editable in a text editor, since the file only stores plain text assembly code.</p>
+
+	<note style="tip">
+		<p>Example programs can be found in the <file>mcus/examples</file> directory under the installed data directory on Linux,
+			or in the <file>share\mcus\examples</file> folder under the installation folder on Windows. They demonstrate the key
+			concepts of programming in assembly with explanatory comments.</p>
+	</note>
+</page>
+
+
+

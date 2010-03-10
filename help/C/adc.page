@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="adc">
+	<info>
+		<link type="guide" xref="index#io"/>
+		<desc>Retrieving analogue input.</desc>
+	</info>
+	<title>Using the Analogue-to-Digital Converter</title>
+
+	<p>The analogue-to-digital converter (ADC) acts as another input to the simulated hardware, digitising a generated analogue signal, and making
+		it available via the <code xref="reference#subroutines">readadc</code> built-in subroutine. To read input from the ADC into register
+		<sys>S0</sys>, make the following subroutine call:</p>
+	<example>
+		<code>RCALL readadc</code>
+	</example>
+
+	<p>There are five different waveforms the ADC can be set up to generate, and all can be found on the <gui style="tab">ADC</gui> page of
+		the hardware panel:</p>
+	<terms>
+		<item>
+			<title><gui style="radiobutton">Constant</gui></title>
+			<p>This generates a constant DC voltage at the level set by the <gui style="input">Offset</gui> spin button (in the range
+				0V to 5V).</p>
+		</item>
+		<item>
+			<title><gui style="radiobutton">Sine wave</gui></title>
+			<p>This generates a <link href="http://en.wikipedia.org/wiki/Sine_wave">sine wave</link> with the properties specified
+				under <gui style="group">Wave Options</gui>. Such signals are ubiquitous in audio processing and synthesis.</p>
+		</item>
+		<item>
+			<title><gui style="radiobutton">Square wave</gui></title>
+			<p>This generates a <link href="http://en.wikipedia.org/wiki/Square_wave">square wave</link> with the properties specified
+				under <gui style="group">Wave Options</gui>. Square waves are typically used as clock or trigger signals.</p>
+		</item>
+		<item>
+			<title><gui style="radiobutton">Triangle wave</gui></title>
+			<p>This generates a <link href="http://en.wikipedia.org/wiki/Triangle_wave">triangle wave</link> with the properties specified
+				under <gui style="group">Wave Options</gui>.</p>
+		</item>
+		<item>
+			<title><gui style="radiobutton">Sawtooth wave</gui></title>
+			<p>This generates a <link href="http://en.wikipedia.org/wiki/Sawtooth_wave">sawtooth wave</link> with the properties specified
+				under <gui style="group">Wave Options</gui>. Such signals are commonly used as the deflection signals for the scanning
+				beam on a CRT screen.</p>
+		</item>
+	</terms>
+
+	<p>The properties of the wave produced by the ADC are specified by the controls under <gui style="group">Wave Options</gui>:</p>
+	<terms>
+		<item>
+			<title><gui style="input">Frequency</gui></title>
+			<p>The frequency of the waveform, in Hertz.</p>
+			<note style="warning">
+				<p>Be wary of setting the frequency to any value greater than half of the simulation clock speed, as values read from
+					the ADC will be <link href="http://en.wikipedia.org/wiki/Aliasing">aliased</link> for higher frequencies, and
+					the form and frequency of the original input wave will not be discernible by the microcontroller program.</p>
+				<p>For information on why the frequency must not go above <em>half</em> of the simulation clock speed, see the
+					<link href="http://en.wikipedia.org/wiki/Nyquist–Shannon_sampling_theorem">Nyquist–Shannon
+					sampling theorem</link>.</p>
+			</note>
+		</item>
+		<item>
+			<title><gui style="input">Amplitude</gui></title>
+			<p>The amplitude of the waveform, in Volts from 0V to 5V.</p>
+		</item>
+		<item>
+			<title><gui style="input">Offset</gui></title>
+			<p>The offset of the waveform from 0V, in Volts from 0V to 5V. To allow the maximum amplitude of 2.5V without clipping, set the
+				offset to 2.5V.</p>
+		</item>
+		<item>
+			<title><gui style="input">Phase</gui></title>
+			<p>The phase of the waveform in radians. This sets the initial time position of the wave when the simulation starts.</p>
+		</item>
+	</terms>
+</page>

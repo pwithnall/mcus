@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="introduction">
+	<info>
+		<link type="guide" xref="index"/>
+		<desc>Introduction to <app>MCUS</app>.</desc>
+	</info>
+	<title>Introduction</title>
+
+	<p>Use <app>MCUS Microcontroller Simulator</app> – <app>MCUS</app> – to develop and simulate programs in OCR assembly, using a variety of
+		simulated hardware. It has the following features:</p>
+	<list>
+		<item><p>Full support for OCR assembly.</p></item>
+		<item><p>Input hardware: hexadecimal input and bit-level switches.</p></item>
+		<item><p>Output hardware: hexadecimal output, bit-level LEDs, multiplexed SSDs, BCD-encoded SSDs and other encoded SSDs.</p></item>
+		<item><p>Context-sensitive programming help.</p></item>
+		<item><p>Step-through debugging and variable-speed simulation.</p></item>
+		<item><p>Full memory, stack and register listings.</p></item>
+	</list>
+
+	<figure>
+		<title>Main window</title>
+		<desc><app>MCUS</app> main window</desc>
+		<media type="image" src="figures/mcus_main_window.png" mime="image/png" style="right">
+			<p><app>MCUS</app> main window, containing the editing area, simulation panel and hardware panel.</p>
+		</media>
+	</figure>
+</page>
+
+
+

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="outputs">
+	<info>
+		<link type="guide" xref="index#io"/>
+		<desc>Providing digital output.</desc>
+	</info>
+	<title>Using Outputs</title>
+
+	<p>The simulated microcontroller in <app>MCUS</app> has a single 8-bit output port, which would be eight single output lines on a real
+		microcontroller, but can be considered as a magic byte of microcontroller memory which can be connected directly to external devices.
+		The microcontroller program has access to this byte of memory, and can change it at will. Each line of the output port can either be
+		high or low, and all the output lines are independent (though an assembly program may well want to make the state of one depend on the
+		states of the others).</p>
+	<p>To write data to the output port in a program, use the <code xref="reference#instructions">OUT</code> instruction. In this example, the
+		contents of the <code>S0</code> register are written to the output port, <code>Q</code>:</p>
+	<example>
+		<code>OUT Q, S0</code>
+	</example>
+
+	<!-- TODO: Examples -->
+	<p>There are several different ways to visualise data put on the output port by an assembly program:</p>
+	<terms>
+		<item>
+			<title>The <gui type="input">Output port</gui> entry in the simulation panel</title>
+			<p>This displays a hexadecimal value from <sys>00</sys> to <sys>FF</sys> from the output port. The value
+				<sys>00</sys> corresponds to all the lines in the output port being at at the logical low voltage, while <sys>FF</sys>
+				corresponds to them all being at the logical high voltage.</p>
+		</item>
+		<item>
+			<title>The LEDs on the <gui style="tab">LEDs</gui> page of the <gui style="tab">Outputs</gui> of the hardware panel</title>
+			<p>These display each bit of the output port, with the most-significant on the left, and the least-significant on the right.
+				They correspond with individual lines of the output port.</p>
+		</item>
+		<item>
+			<title>The SSD on the <gui style="tab">Single SSD</gui> page of the <gui style="tab">Outputs</gui> of the hardware panel</title>
+			<p>This displays a value decoded according to the option selected to its left.</p>
+			<p>If <gui type="radiobutton">Segments</gui> is selected, segment A is controlled by the least-significant output bit, with
+				segments B to G being controlled by progressively more significant bits. The decimal point is controlled by the
+				most-significant bit.</p>
+			<p>If <gui type="radiobutton">BCD</gui> is selected, the SSD will display the least-significant binary coded decimal digit in
+				the output (i.e. the lower four bits of the output). If the BCD is invalid, <sys>0</sys> will be displayed.</p>
+		</item>
+		<item>
+			<title>The SSDs on the <gui style="tab">Dual SSDs</gui> page of the <gui style="tab">Outputs</gui> of the hardware panel</title>
+			<p>These display two digits as represented as binary coded decimals in the output. The left-hand SSD displays the most
+				significant BCD. If a BCD is invalid, <sys>0</sys> will be displayed.</p>
+		</item>
+		<item>
+			<title>The SSDs on the <gui style="tab">Multiplexed SSDs</gui> page of the <gui style="tab">Outputs</gui> of the
+				hardware panel</title>
+			<p>These display digits as decoded from the output. The most-significant nibble of the output specifies which SSD to set, and
+				the least-significant nibble gives a BCD to use as its value. Invalid BCDs set an SSD to <sys>0</sys>.</p>
+			<p>All SSDs apart from the one specified in the most-significant nibble of the output are blanked every time the matrix of SSDs
+				is updated.</p>
+		</item>
+	</terms>
+</page>
