@@ -12,13 +12,15 @@ DOC_INCLUDES = legal.xml
 DOC_FIGURES = figures/mcus_main_window.png
 
 C/mcus-pdf.xml: C/mcus.xml
-	rm -rf html
+	$(AM_V_GEN)(rm -rf html
 	$(mkinstalldirs) html
 	$(mkinstalldirs) C
-	$(XMLLINT) --xinclude --postvalid $< -o $@
+	$(XMLLINT) --xinclude --postvalid $< -o $@.tmp
+	sed "s\\figures/\\../$(srcdir)/C/figures/\\" $@.tmp > $@
+	rm -f $@.tmp)
 
 pdf/mcus-pdf.pdf: C/mcus-pdf.xml
-	$(DB2PDF) --output pdf $<
+	$(AM_V_GEN)($(DB2PDF) --output pdf $<)
 
 pdf: pdf/mcus-pdf.pdf
 
