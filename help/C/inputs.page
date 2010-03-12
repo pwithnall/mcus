@@ -29,4 +29,10 @@
 				is on the right. They correspond with individual lines of the input port.</p>
 		</item>
 	</terms>
+
+	<note style="tip">
+		<p>The switches on the <gui style="tab">Inputs</gui> page of the hardware panel can be toggled using the keyboard shortcuts
+			<keyseq><key>Ctrl</key><key>1</key></keyseq> to <keyseq><key>Ctrl</key><key>8</key></keyseq>, which toggle the least-significant
+			to most-significant input bits, respectively.</p>
+	</note>
 </page>

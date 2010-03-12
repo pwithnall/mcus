@@ -3,7 +3,7 @@
 	<requires lib="gtk+" version="2.16"/>
 	<object class="GtkUIManager" id="mcus_ui_manager">
 		<child>
-			<object class="GtkActionGroup" id="actiongroup1">
+			<object class="GtkActionGroup" id="mw_menu_action_group">
 				<child>
 					<object class="GtkAction" id="mcus_file_action">
 						<property name="name">file</property>
@@ -260,6 +260,7 @@
 	<object class="GtkWindow" id="mcus_main_window">
 		<property name="title" translatable="yes">Microcontroller Simulator</property>
 		<signal name="delete-event" handler="mw_delete_event_cb"/>
+		<signal name="key-press-event" handler="mw_key_press_event_cb"/>
 		<child>
 			<object class="GtkVBox" id="vbox1">
 				<child>
@@ -568,8 +569,9 @@
 																				<property name="spacing">5</property>
 																				<child>
 																					<object class="GtkRadioButton" id="mw_output_single_ssd_segment_option">
-																						<property name="label" translatable="yes">Segments</property>
+																						<property name="label" translatable="yes">Se_gments</property>
 																						<property name="tooltip-text" translatable="yes">Bits in the output correspond to segments on the SSD, lighting them when high. The MSB corresponds to the point, bit 6 corresponds to segment G, all the way down to bit 0, which corresponds to segment A.</property>
+																						<property name="use-underline">True</property>
 																						<signal name="toggled" handler="mw_output_single_ssd_option_changed_cb" />
 																					</object>
 																					<packing>
@@ -578,9 +580,10 @@
 																				</child>
 																				<child>
 																					<object class="GtkRadioButton" id="mw_output_single_ssd_bcd_option">
-																						<property name="label" translatable="yes">BCD</property>
+																						<property name="label" translatable="yes">_BCD</property>
 																						<property name="tooltip-text" translatable="yes">The first four bits of the output are treated as a binary-coded decimal, and decoded to set the SSD.</property>
 																						<property name="group">mw_output_single_ssd_segment_option</property>
+																						<property name="use-underline">True</property>
 																						<signal name="toggled" handler="mw_output_single_ssd_option_changed_cb" />
 																					</object>
 																					<packing>
@@ -822,7 +825,8 @@
 																		<property name="spacing">5</property>
 																		<child>
 																			<object class="GtkRadioButton" id="mw_adc_constant_option">
-																				<property name="label" translatable="yes">Constant</property>
+																				<property name="label" translatable="yes">_Constant</property>
+																				<property name="use-underline">True</property>
 																				<signal name="toggled" handler="mw_adc_constant_option_toggled_cb"/>
 																			</object>
 																			<packing>
@@ -831,7 +835,8 @@
 																		</child>
 																		<child>
 																			<object class="GtkRadioButton" id="mw_adc_sine_wave_option">
-																				<property name="label" translatable="yes">Sine wave</property>
+																				<property name="label" translatable="yes">Si_ne wave</property>
+																				<property name="use-underline">True</property>
 																				<property name="group">mw_adc_constant_option</property>
 																			</object>
 																			<packing>
@@ -840,7 +845,8 @@
 																		</child>
 																		<child>
 																			<object class="GtkRadioButton" id="mw_adc_square_wave_option">
-																				<property name="label" translatable="yes">Square wave</property>
+																				<property name="label" translatable="yes">S_quare wave</property>
+																				<property name="use-underline">True</property>
 																				<property name="group">mw_adc_constant_option</property>
 																			</object>
 																			<packing>
@@ -849,7 +855,8 @@
 																		</child>
 																		<child>
 																			<object class="GtkRadioButton" id="mw_adc_triangle_wave_option">
-																				<property name="label" translatable="yes">Triangle wave</property>
+																				<property name="label" translatable="yes">_Triangle wave</property>
+																				<property name="use-underline">True</property>
 																				<property name="group">mw_adc_constant_option</property>
 																			</object>
 																			<packing>
@@ -858,7 +865,8 @@
 																		</child>
 																		<child>
 																			<object class="GtkRadioButton" id="mw_adc_sawtooth_wave_option">
-																				<property name="label" translatable="yes">Sawtooth wave</property>
+																				<property name="label" translatable="yes">Sa_wtooth wave</property>
+																				<property name="use-underline">True</property>
 																				<property name="group">mw_adc_constant_option</property>
 																			</object>
 																			<packing>
@@ -892,8 +900,10 @@
 																		<property name="column-spacing">5</property>
 																		<child>
 																			<object class="GtkLabel" id="label26">
-																				<property name="label" translatable="yes">Frequency:</property>
+																				<property name="label" translatable="yes">F_requency:</property>
 																				<property name="xalign">0</property>
+																				<property name="use-underline">True</property>
+																				<property name="mnemonic-widget">mw_adc_frequency_spin_button</property>
 																			</object>
 																			<packing>
 																				<property name="top-attach">0</property>
@@ -931,8 +941,10 @@
 																		</child>
 																		<child>
 																			<object class="GtkLabel" id="label27">
-																				<property name="label" translatable="yes">Amplitude:</property>
+																				<property name="label" translatable="yes">A_mplitude:</property>
 																				<property name="xalign">0</property>
+																				<property name="use-underline">True</property>
+																				<property name="mnemonic-widget">mw_adc_amplitude_spin_button</property>
 																			</object>
 																			<packing>
 																				<property name="top-attach">1</property>
@@ -970,8 +982,10 @@
 																		</child>
 																		<child>
 																			<object class="GtkLabel" id="label28">
-																				<property name="label" translatable="yes">Offset:</property>
+																				<property name="label" translatable="yes">_Offset:</property>
 																				<property name="xalign">0</property>
+																				<property name="use-underline">True</property>
+																				<property name="mnemonic-widget">mw_adc_offset_spin_button</property>
 																			</object>
 																			<packing>
 																				<property name="top-attach">2</property>
@@ -1010,6 +1024,7 @@
 																			<object class="GtkLabel" id="label29">
 																				<property name="label" translatable="yes">Phase:</property>
 																				<property name="xalign">0</property>
+																				<property name="mnemonic-widget">mw_adc_phase_spin_button</property>
 																			</object>
 																			<packing>
 																				<property name="top-attach">3</property>
@@ -1134,8 +1149,10 @@
 														</child>
 														<child>
 															<object class="GtkLabel" id="label8">
-																<property name="label" translatable="yes">Clock speed:</property>
+																<property name="label" translatable="yes">Clock _speed:</property>
 																<property name="xalign">0</property>
+																<property name="use-underline">True</property>
+																<property name="mnemonic-widget">mw_clock_speed_spin_button</property>
 															</object>
 															<packing>
 																<property name="top-attach">2</property>
@@ -1201,8 +1218,10 @@
 														<property name="border-width">5</property>
 														<child>
 															<object class="GtkLabel" id="mw_input_port_label">
-																<property name="label" translatable="yes">Input port:</property>
+																<property name="label" translatable="yes">_Input port:</property>
 																<property name="xalign">0</property>
+																<property name="use-underline">True</property>
+																<property name="mnemonic-widget">mw_input_port_entry</property>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -1252,8 +1271,10 @@
 														</child>
 														<child>
 															<object class="GtkLabel" id="mw_analogue_input_label">
-																<property name="label" translatable="yes">Analogue input:</property>
+																<property name="label" translatable="yes">_Analogue input:</property>
 																<property name="xalign">0</property>
+																<property name="use-underline">True</property>
+																<property name="mnemonic-widget">mw_analogue_input_spin_button</property>
 															</object>
 															<packing>
 																<property name="top-attach">2</property>

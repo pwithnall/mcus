@@ -2,7 +2,7 @@
 /*
  * MCUS
  * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
- * 
+ *
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <glib/gi18n.h>
+#include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksourceview.h>
 #include <gtksourceview/gtksourceprintcompositor.h>
@@ -45,6 +46,7 @@ G_MODULE_EXPORT void notify_can_redo_cb (GObject *object, GParamSpec *param_spec
 G_MODULE_EXPORT void notify_has_selection_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
 G_MODULE_EXPORT void buffer_modified_changed_cb (GtkTextBuffer *self, gpointer user_data);
 G_MODULE_EXPORT gboolean mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data);
+G_MODULE_EXPORT gboolean mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, gpointer user_data);
 G_MODULE_EXPORT void mw_quit_activate_cb (GtkAction *self, gpointer user_data);
 G_MODULE_EXPORT void mw_undo_activate_cb (GtkAction *self, gpointer user_data);
 G_MODULE_EXPORT void mw_redo_activate_cb (GtkAction *self, gpointer user_data);
@@ -193,6 +195,50 @@ G_MODULE_EXPORT gboolean
 mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
 	mcus_quit ();
+	return TRUE;
+}
+
+G_MODULE_EXPORT gboolean
+mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+	guint shift;
+
+	switch (event->keyval) {
+	case GDK_1:
+		shift = 0;
+		break;
+	case GDK_2:
+		shift = 1;
+		break;
+	case GDK_3:
+		shift = 2;
+		break;
+	case GDK_4:
+		shift = 3;
+		break;
+	case GDK_5:
+		shift = 4;
+		break;
+	case GDK_6:
+		shift = 5;
+		break;
+	case GDK_7:
+		shift = 6;
+		break;
+	case GDK_8:
+		shift = 7;
+		break;
+	default:
+		/* We don't want to handle this key */
+		return FALSE;
+	}
+
+	/* Toggle the relevant bit in the input port */
+	mcus->input_port ^= (1 << shift);
+
+	/* Update the UI (updating the check buttons updates the entry too) */
+	mcus_input_port_update_check_buttons ();
+
 	return TRUE;
 }
 
@@ -510,7 +556,7 @@ paginate_cb (GtkPrintOperation *operation, GtkPrintContext *context, GtkSourcePr
 {
 	if (gtk_source_print_compositor_paginate (source_compositor, context)) {
 		gint n_pages;
-        
+
 		n_pages = gtk_source_print_compositor_get_n_pages (source_compositor);
 		gtk_print_operation_set_n_pages (operation, n_pages);
 
@@ -540,7 +586,7 @@ mw_print_activate_cb (GtkAction *self, gpointer user_data)
 	gtk_source_print_compositor_set_print_line_numbers (source_compositor, 1);
 	gtk_source_print_compositor_set_highlight_syntax (source_compositor, TRUE);
 
-	if (settings != NULL) 
+	if (settings != NULL)
 		gtk_print_operation_set_print_settings (operation, settings);
 
 	g_signal_connect (operation, "paginate", G_CALLBACK (paginate_cb), source_compositor);
