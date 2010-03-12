@@ -295,6 +295,11 @@
 												<property name="show-line-numbers">True</property>
 												<property name="show-line-marks">True</property>
 												<property name="has-focus">True</property>
+												<child internal-child="accessible">
+													<object class="AtkObject" id="a11y-mw_code_view">
+														<property name="accessible-name" translatable="yes">Code Editor</property>
+													</object>
+												</child>
 											</object>
 										</child>
 									</object>
@@ -313,9 +318,12 @@
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<child>
-															<object class="GtkLabel" id="label41">
+															<object class="GtkLabel" id="mw_input_msb_label">
 																<property name="label" translatable="yes">MSB</property>
 																<property name="use-markup">True</property>
+																<accessibility>
+																	<relation type="label-for" target="mw_input_check_button_7"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -326,9 +334,12 @@
 															</packing>
 														</child>
 														<child>
-															<object class="GtkLabel" id="label42">
+															<object class="GtkLabel" id="mw_input_lsb_label">
 																<property name="label" translatable="yes">LSB</property>
 																<property name="use-markup">True</property>
+																<accessibility>
+																	<relation type="label-for" target="mw_input_check_button_0"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -341,6 +352,15 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_7">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<accessibility>
+																	<relation type="labelled-by" target="mw_input_msb_label"/>
+																</accessibility>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_7">
+																		<property name="accessible-name" translatable="yes">Bit 7</property>
+																		<property name="accessible-description" translatable="yes">Bit 7 (MSB) of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -352,6 +372,12 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_6">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_6">
+																		<property name="accessible-name" translatable="yes">Bit 6</property>
+																		<property name="accessible-description" translatable="yes">Bit 6 of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -363,6 +389,12 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_5">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_5">
+																		<property name="accessible-name" translatable="yes">Bit 5</property>
+																		<property name="accessible-description" translatable="yes">Bit 5 of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -374,6 +406,12 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_4">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_4">
+																		<property name="accessible-name" translatable="yes">Bit 4</property>
+																		<property name="accessible-description" translatable="yes">Bit 4 of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -385,6 +423,12 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_3">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_3">
+																		<property name="accessible-name" translatable="yes">Bit 3</property>
+																		<property name="accessible-description" translatable="yes">Bit 3 of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -396,6 +440,12 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_2">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_2">
+																		<property name="accessible-name" translatable="yes">Bit 2</property>
+																		<property name="accessible-description" translatable="yes">Bit 2 of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -407,6 +457,12 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_1">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_1">
+																		<property name="accessible-name" translatable="yes">Bit 1</property>
+																		<property name="accessible-description" translatable="yes">Bit 1 of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -418,6 +474,15 @@
 														<child>
 															<object class="GtkCheckButton" id="mw_input_check_button_0">
 																<signal name="toggled" handler="mw_input_check_button_toggled"/>
+																<accessibility>
+																	<relation type="labelled-by" target="mw_input_lsb_label"/>
+																</accessibility>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_input_check_button_0">
+																		<property name="accessible-name" translatable="yes">Bit 0</property>
+																		<property name="accessible-description" translatable="yes">Bit 0 (LSB) of the input port.</property>
+																	</object>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -1100,9 +1165,12 @@
 														<property name="column-spacing">5</property>
 														<property name="border-width">5</property>
 														<child>
-															<object class="GtkLabel" id="label6">
+															<object class="GtkLabel" id="mw_program_counter_label2">
 																<property name="label" translatable="yes">Program counter:</property>
 																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_program_counter_label" type="label-for"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -1115,6 +1183,9 @@
 															<object class="GtkLabel" id="mw_program_counter_label">
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_program_counter_label2" type="labelled-by"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>
@@ -1124,9 +1195,12 @@
 															</packing>
 														</child>
 														<child>
-															<object class="GtkLabel" id="label7">
+															<object class="GtkLabel" id="mw_stack_pointer_label2">
 																<property name="label" translatable="yes">Stack pointer:</property>
 																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_stack_pointer_label" type="label-for"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -1139,6 +1213,9 @@
 															<object class="GtkLabel" id="mw_stack_pointer_label">
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_stack_pointer_label2" type="labelled-by"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -1248,6 +1325,9 @@
 															<object class="GtkLabel" id="mw_output_port_label2">
 																<property name="label" translatable="yes">Output port:</property>
 																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_output_port_label" type="label-for"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -1261,6 +1341,9 @@
 																<property name="selectable">True</property>
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_output_port_label2" type="labelled-by"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
