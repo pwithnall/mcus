@@ -320,7 +320,6 @@
 														<child>
 															<object class="GtkLabel" id="mw_input_msb_label">
 																<property name="label" translatable="yes">MSB</property>
-																<property name="use-markup">True</property>
 																<accessibility>
 																	<relation type="label-for" target="mw_input_check_button_7"/>
 																</accessibility>
@@ -336,7 +335,6 @@
 														<child>
 															<object class="GtkLabel" id="mw_input_lsb_label">
 																<property name="label" translatable="yes">LSB</property>
-																<property name="use-markup">True</property>
 																<accessibility>
 																	<relation type="label-for" target="mw_input_check_button_0"/>
 																</accessibility>
@@ -508,9 +506,11 @@
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<child>
-															<object class="GtkLabel" id="label16">
+															<object class="GtkLabel" id="mw_output_msb_label">
 																<property name="label" translatable="yes">MSB</property>
-																<property name="use-markup">True</property>
+																<accessibility>
+																	<relation type="label-for" target="mw_output_led_7"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -521,9 +521,11 @@
 															</packing>
 														</child>
 														<child>
-															<object class="GtkLabel" id="label17">
+															<object class="GtkLabel" id="mw_output_lsb_label">
 																<property name="label" translatable="yes">LSB</property>
-																<property name="use-markup">True</property>
+																<accessibility>
+																	<relation type="label-for" target="mw_output_led_0"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">1</property>
@@ -534,7 +536,17 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_7"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_7">
+																<accessibility>
+																	<relation type="labelled-by" target="mw_output_msb_label"/>
+																</accessibility>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_7">
+																		<property name="accessible-name" translatable="yes">Bit 7</property>
+																		<property name="accessible-description" translatable="yes">Bit 7 (MSB) of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -543,7 +555,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_6"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_6">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_6">
+																		<property name="accessible-name" translatable="yes">Bit 6</property>
+																		<property name="accessible-description" translatable="yes">Bit 6 of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -552,7 +571,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_5"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_5">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_5">
+																		<property name="accessible-name" translatable="yes">Bit 5</property>
+																		<property name="accessible-description" translatable="yes">Bit 5 of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -561,7 +587,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_4"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_4">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_4">
+																		<property name="accessible-name" translatable="yes">Bit 4</property>
+																		<property name="accessible-description" translatable="yes">Bit 4 of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -570,7 +603,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_3"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_3">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_3">
+																		<property name="accessible-name" translatable="yes">Bit 3</property>
+																		<property name="accessible-description" translatable="yes">Bit 3 of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -579,7 +619,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_2"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_2">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_2">
+																		<property name="accessible-name" translatable="yes">Bit 2</property>
+																		<property name="accessible-description" translatable="yes">Bit 2 of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -588,7 +635,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_1"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_1">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_1">
+																		<property name="accessible-name" translatable="yes">Bit 1</property>
+																		<property name="accessible-description" translatable="yes">Bit 1 of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -597,7 +651,17 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_0"/>
+															<object class="MCUSLED" type-func="mcus_led_get_type" id="mw_output_led_0">
+																<accessibility>
+																	<relation type="labelled-by" target="mw_output_lsb_label"/>
+																</accessibility>
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_led_0">
+																		<property name="accessible-name" translatable="yes">Bit 0</property>
+																		<property name="accessible-description" translatable="yes">Bit 0 (LSB) of the output port.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -677,10 +741,24 @@
 												<child>
 													<object class="GtkHBox" id="hbox3">
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_dual_ssd1"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_dual_ssd1">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_dual_ssd1">
+																		<property name="accessible-name" translatable="yes">SSD 1</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display 1 (MSN) of the output port.</property>
+																	</object>
+																</child>
+															</object>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_dual_ssd0"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_dual_ssd0">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_dual_ssd0">
+																		<property name="accessible-name" translatable="yes">SSD 0</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display 0 (LSN) of the output port.</property>
+																	</object>
+																</child>
+															</object>
 														</child>
 													</object>
 												</child>
@@ -694,7 +772,14 @@
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd15"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd15">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd15">
+																		<property name="accessible-name" translatable="yes">SSD 15</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 15.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -703,7 +788,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd14"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd14">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd14">
+																		<property name="accessible-name" translatable="yes">SSD 14</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 14.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -712,7 +804,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd13"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd13">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd13">
+																		<property name="accessible-name" translatable="yes">SSD 13</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 13.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -721,7 +820,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd12"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd12">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd12">
+																		<property name="accessible-name" translatable="yes">SSD 12</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 12.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -730,7 +836,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd11"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd11">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd11">
+																		<property name="accessible-name" translatable="yes">SSD 11</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 11.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -739,7 +852,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd10"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd10">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd10">
+																		<property name="accessible-name" translatable="yes">SSD 10</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 10.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -748,7 +868,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd9"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd9">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd9">
+																		<property name="accessible-name" translatable="yes">SSD 9</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 9.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -757,7 +884,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd8"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd8">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd8">
+																		<property name="accessible-name" translatable="yes">SSD 8</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 8.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
@@ -766,7 +900,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd7"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd7">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd7">
+																		<property name="accessible-name" translatable="yes">SSD 7</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 7.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -775,7 +916,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd6"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd6">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd6">
+																		<property name="accessible-name" translatable="yes">SSD 6</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 6.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -784,7 +932,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd5"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd5">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd5">
+																		<property name="accessible-name" translatable="yes">SSD 5</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 5.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -793,7 +948,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd4"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd4">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd4">
+																		<property name="accessible-name" translatable="yes">SSD 4</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 4.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -802,7 +964,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd3"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd3">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd3">
+																		<property name="accessible-name" translatable="yes">SSD 3</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 3.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -811,7 +980,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd2"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd2">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd2">
+																		<property name="accessible-name" translatable="yes">SSD 2</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 2.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -820,7 +996,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd1"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd1">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd1">
+																		<property name="accessible-name" translatable="yes">SSD 1</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 1.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
@@ -829,7 +1012,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd0"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd0">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_multi_ssd0">
+																		<property name="accessible-name" translatable="yes">SSD 0</property>
+																		<property name="accessible-description" translatable="yes">Seven-segment display enabled when the MSN of the output port is 0.</property>
+																	</object>
+																</child>
+															</object>
 															<packing>
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>

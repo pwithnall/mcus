@@ -2,7 +2,7 @@
 /*
  * MCUS
  * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
- * 
+ *
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,9 @@
  */
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <gtk/gtk.h>
+#include <atk/atk.h>
 #include <math.h>
 #include <string.h>
 
@@ -64,6 +66,7 @@ enum {
 	ALL_SEGMENTS_ACTIVE = 0xFF
 };
 
+/* Table mapping digits to the active segment assignments required to display them */
 static const guint8 segment_digit_map[10] = {
 	ALL_SEGMENTS_ACTIVE ^ SEGMENT_G_ACTIVE ^ POINT_ACTIVE,						/* "0" */
 	SEGMENT_B_ACTIVE | SEGMENT_C_ACTIVE,								/* "1" */
@@ -79,10 +82,13 @@ static const guint8 segment_digit_map[10] = {
 
 static void mcus_seven_segment_display_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_seven_segment_display_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void mcus_seven_segment_display_finalize (GObject *object);
 static void mcus_seven_segment_display_realize (GtkWidget *widget);
 static void mcus_seven_segment_display_size_request (GtkWidget *widget, GtkRequisition *requisition);
 static void mcus_seven_segment_display_size_allocate (GtkWidget *widget, GtkAllocation *allocation);
 static gint mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *event);
+static AtkObject *mcus_seven_segment_display_get_accessible (GtkWidget *widget);
+static GType mcus_seven_segment_display_accessible_get_type (void) G_GNUC_CONST;
 
 struct _MCUSSevenSegmentDisplayPrivate {
 	guint8 segments;
@@ -91,6 +97,7 @@ struct _MCUSSevenSegmentDisplayPrivate {
 	gdouble render_height;
 	gdouble render_x;
 	gdouble render_y;
+	gchar *description; /* accessible description of the SSD's state */
 };
 
 enum {
@@ -106,7 +113,6 @@ enum {
 };
 
 G_DEFINE_TYPE (MCUSSevenSegmentDisplay, mcus_seven_segment_display, GTK_TYPE_WIDGET)
-#define MCUS_SEVEN_SEGMENT_DISPLAY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MCUS_TYPE_SEVEN_SEGMENT_DISPLAY, MCUSSevenSegmentDisplayPrivate))
 
 MCUSSevenSegmentDisplay *
 mcus_seven_segment_display_new (void)
@@ -122,13 +128,15 @@ mcus_seven_segment_display_class_init (MCUSSevenSegmentDisplayClass *klass)
 
 	g_type_class_add_private (klass, sizeof (MCUSSevenSegmentDisplayPrivate));
 
-	gobject_class->set_property = mcus_seven_segment_display_set_property;
 	gobject_class->get_property = mcus_seven_segment_display_get_property;
+	gobject_class->set_property = mcus_seven_segment_display_set_property;
+	gobject_class->finalize = mcus_seven_segment_display_finalize;
 
 	widget_class->realize = mcus_seven_segment_display_realize;
 	widget_class->size_request = mcus_seven_segment_display_size_request;
 	widget_class->size_allocate = mcus_seven_segment_display_size_allocate;
 	widget_class->expose_event = mcus_seven_segment_display_expose_event;
+	widget_class->get_accessible = mcus_seven_segment_display_get_accessible;
 
 	g_object_class_install_property (gobject_class, PROP_DIGIT,
 				g_param_spec_int ("digit",
@@ -187,7 +195,7 @@ mcus_seven_segment_display_init (MCUSSevenSegmentDisplay *self)
 static void
 mcus_seven_segment_display_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
 {
-	MCUSSevenSegmentDisplayPrivate *priv = MCUS_SEVEN_SEGMENT_DISPLAY_GET_PRIVATE (object);
+	MCUSSevenSegmentDisplayPrivate *priv = MCUS_SEVEN_SEGMENT_DISPLAY (object)->priv;
 
 	switch (property_id) {
 		case PROP_DIGIT:
@@ -227,70 +235,54 @@ mcus_seven_segment_display_get_property (GObject *object, guint property_id, GVa
 static void
 mcus_seven_segment_display_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
 {
-	MCUSSevenSegmentDisplayPrivate *priv = MCUS_SEVEN_SEGMENT_DISPLAY_GET_PRIVATE (object);
+	MCUSSevenSegmentDisplay *self = MCUS_SEVEN_SEGMENT_DISPLAY (object);
 
 	switch (property_id) {
 		case PROP_DIGIT:
-			priv->digit = g_value_get_int (value);
-			if (priv->digit != -1)
-				mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (object), priv->digit);
+			self->priv->digit = g_value_get_int (value);
+			if (self->priv->digit != -1)
+				mcus_seven_segment_display_set_digit (self, self->priv->digit);
 			break;
 		case PROP_SEGMENT_A_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_A_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_A_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_A, g_value_get_boolean (value));
 			break;
 		case PROP_SEGMENT_B_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_B_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_B_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_B, g_value_get_boolean (value));
 			break;
 		case PROP_SEGMENT_C_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_C_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_C_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_C, g_value_get_boolean (value));
 			break;
 		case PROP_SEGMENT_D_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_D_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_D_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_D, g_value_get_boolean (value));
 			break;
 		case PROP_SEGMENT_E_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_E_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_E_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_E, g_value_get_boolean (value));
 			break;
 		case PROP_SEGMENT_F_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_F_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_F_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_F, g_value_get_boolean (value));
 			break;
 		case PROP_SEGMENT_G_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= SEGMENT_G_ACTIVE;
-			else
-				priv->segments &= ~SEGMENT_G_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_G, g_value_get_boolean (value));
 			break;
 		case PROP_POINT_ENABLED:
-			if (g_value_get_boolean (value) == TRUE)
-				priv->segments |= POINT_ACTIVE;
-			else
-				priv->segments &= ~POINT_ACTIVE;
+			mcus_seven_segment_display_set_segment (self, SEGMENT_POINT, g_value_get_boolean (value));
 			break;
 		default:
 			/* We don't have any other property... */
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 			break;
 	}
+}
 
-	/* Ensure we're redrawn */
-	gtk_widget_queue_draw (GTK_WIDGET (object));
+static void
+mcus_seven_segment_display_finalize (GObject *object)
+{
+	MCUSSevenSegmentDisplayPrivate *priv = MCUS_SEVEN_SEGMENT_DISPLAY (object)->priv;
+
+	g_free (priv->description);
+
+	/* Chain up to the parent class */
+	G_OBJECT_CLASS (mcus_seven_segment_display_parent_class)->finalize (object);
 }
 
 static void
@@ -300,7 +292,6 @@ mcus_seven_segment_display_realize (GtkWidget *widget)
 	GdkWindowAttr attributes;
 	gint attr_mask;
 
-	g_return_if_fail (widget != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget));
 
 	/* Mark the widget as realised */
@@ -332,7 +323,7 @@ mcus_seven_segment_display_realize (GtkWidget *widget)
 static void
 mcus_seven_segment_display_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
-	g_return_if_fail (widget != NULL || requisition != NULL);
+	g_return_if_fail (requisition != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget));
 
 	requisition->width = MINIMUM_WIDTH;
@@ -344,11 +335,11 @@ mcus_seven_segment_display_size_allocate (GtkWidget *widget, GtkAllocation *allo
 {
 	MCUSSevenSegmentDisplayPrivate *priv;
 
-	g_return_if_fail (widget != NULL || allocation != NULL);
+	g_return_if_fail (allocation != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget));
 
 	widget->allocation = *allocation;
-	priv = MCUS_SEVEN_SEGMENT_DISPLAY_GET_PRIVATE (widget);
+	priv = MCUS_SEVEN_SEGMENT_DISPLAY (widget)->priv;
 
 	/* Sort out sizes, ratios, etc. */
 	if (allocation->height < allocation->width * WIDTH_HEIGHT_RATIO) {
@@ -399,14 +390,14 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	MCUSSevenSegmentDisplayPrivate *priv;
 	GdkColor segment_fill, segment_stroke;
 
-	g_return_val_if_fail (widget != NULL || event != NULL, FALSE);
+	g_return_val_if_fail (event != NULL, FALSE);
 	g_return_val_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget), FALSE);
 
 	/* Compress exposes */
 	if (event->count > 0)
 		return TRUE;
 
-	priv = MCUS_SEVEN_SEGMENT_DISPLAY_GET_PRIVATE (widget);
+	priv = MCUS_SEVEN_SEGMENT_DISPLAY (widget)->priv;
 
 	/* Clear the area first */
 	gdk_window_clear_area (widget->window, event->area.x, event->area.y, event->area.width, event->area.height);
@@ -496,10 +487,42 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	return TRUE;
 }
 
+static void
+update_accessible_description (MCUSSevenSegmentDisplay *self)
+{
+	guint8 segments = self->priv->segments;
+
+	g_free (self->priv->description);
+
+	/* If a digit is being displayed, have that (and the point) as the accessible description */
+	if (self->priv->digit != -1) {
+		self->priv->description = g_strdup_printf ("%u%s", self->priv->digit, (segments & POINT_ACTIVE) ? "." : "");
+		return;
+	}
+
+	/* Otherwise, the string is just a concatenation of the letters representing the different segments which are currently active */
+	self->priv->description = g_strdup_printf ("%s%s%s%s%s%s%s%s",
+	                                           /* Translators: this is the name of the top segment of a seven-segment display */
+	                                           (segments & SEGMENT_A_ACTIVE) ? _("A") : "",
+	                                           /* Translators: this is the name of the top-right segment of a seven-segment display */
+	                                           (segments & SEGMENT_B_ACTIVE) ? _("B") : "",
+	                                           /* Translators: this is the name of the bottom-right segment of a seven-segment display */
+	                                           (segments & SEGMENT_C_ACTIVE) ? _("C") : "",
+	                                           /* Translators: this is the name of the bottom segment of a seven-segment display */
+	                                           (segments & SEGMENT_D_ACTIVE) ? _("D") : "",
+	                                           /* Translators: this is the name of the bottom-left segment of a seven-segment display */
+	                                           (segments & SEGMENT_E_ACTIVE) ? _("E") : "",
+	                                           /* Translators: this is the name of the top-left segment of a seven-segment display */
+	                                           (segments & SEGMENT_F_ACTIVE) ? _("F") : "",
+	                                           /* Translators: this is the name of the middle segment of a seven-segment display */
+	                                           (segments & SEGMENT_G_ACTIVE) ? _("G") : "",
+	                                           /* Translators: this is the name of the decimal point segment of a seven-segment display */
+	                                           (segments & POINT_ACTIVE) ? _(".") : "");
+}
+
 guint8
 mcus_seven_segment_display_get_segment_mask (MCUSSevenSegmentDisplay *self)
 {
-	g_return_val_if_fail (self != NULL, 0);
 	g_return_val_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self), 0);
 
 	return self->priv->segments;
@@ -508,10 +531,13 @@ mcus_seven_segment_display_get_segment_mask (MCUSSevenSegmentDisplay *self)
 void
 mcus_seven_segment_display_set_segment_mask (MCUSSevenSegmentDisplay *self, guint8 segment_mask)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self));
 
 	self->priv->segments = segment_mask;
+	self->priv->digit = -1;
+
+	/* Update the accessible description */
+	update_accessible_description (self);
 
 	/* Ensure we're redrawn */
 	gtk_widget_queue_draw (GTK_WIDGET (self));
@@ -520,7 +546,6 @@ mcus_seven_segment_display_set_segment_mask (MCUSSevenSegmentDisplay *self, guin
 gint
 mcus_seven_segment_display_get_digit (MCUSSevenSegmentDisplay *self)
 {
-	g_return_val_if_fail (self != NULL, -1);
 	g_return_val_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self), -1);
 
 	return self->priv->digit;
@@ -530,13 +555,15 @@ void
 mcus_seven_segment_display_set_digit (MCUSSevenSegmentDisplay *self, guint digit)
 {
 	g_return_if_fail (/*digit >= 0 && */digit <= 9);
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self));
 
 	self->priv->digit = digit;
 
 	/* Preserve the state of the point */
 	self->priv->segments = segment_digit_map[digit] | (self->priv->segments & POINT_ACTIVE);
+
+	/* Update the accessible description */
+	update_accessible_description (self);
 
 	/* Ensure we're redrawn */
 	gtk_widget_queue_draw (GTK_WIDGET (self));
@@ -545,7 +572,6 @@ mcus_seven_segment_display_set_digit (MCUSSevenSegmentDisplay *self, guint digit
 gboolean
 mcus_seven_segment_display_get_segment (MCUSSevenSegmentDisplay *self, MCUSSevenSegmentDisplaySegment segment)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self), FALSE);
 
 	return self->priv->segments & (1 << segment);
@@ -554,7 +580,6 @@ mcus_seven_segment_display_get_segment (MCUSSevenSegmentDisplay *self, MCUSSeven
 void
 mcus_seven_segment_display_set_segment (MCUSSevenSegmentDisplay *self, MCUSSevenSegmentDisplaySegment segment, gboolean enabled)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (self));
 
 	if (enabled == TRUE)
@@ -563,6 +588,171 @@ mcus_seven_segment_display_set_segment (MCUSSevenSegmentDisplay *self, MCUSSeven
 		self->priv->segments &= ~(1 << segment);
 	self->priv->digit = -1;
 
+	/* Update the accessible description */
+	update_accessible_description (self);
+
 	/* Ensure we're redrawn */
 	gtk_widget_queue_draw (GTK_WIDGET (self));
+}
+
+/* Accessibility stuff */
+static AtkObject *
+mcus_seven_segment_display_accessible_new (GObject *object)
+{
+	AtkObject *accessible;
+
+	g_return_val_if_fail (GTK_IS_WIDGET (object), NULL);
+
+	accessible = g_object_new (mcus_seven_segment_display_accessible_get_type (), NULL);
+	atk_object_initialize (accessible, object);
+
+	return accessible;
+}
+
+static void
+mcus_seven_segment_display_accessible_factory_class_init (AtkObjectFactoryClass *klass)
+{
+	klass->create_accessible = mcus_seven_segment_display_accessible_new;
+	klass->get_accessible_type = mcus_seven_segment_display_accessible_get_type;
+}
+
+static GType
+mcus_seven_segment_display_accessible_factory_get_type (void)
+{
+	static GType type = 0;
+
+	if (!type) {
+		const GTypeInfo tinfo = {
+			sizeof (AtkObjectFactoryClass),
+			NULL,           /* base_init */
+			NULL,           /* base_finalize */
+			(GClassInitFunc) mcus_seven_segment_display_accessible_factory_class_init,
+			NULL,           /* class_finalize */
+			NULL,           /* class_data */
+			sizeof (AtkObjectFactory),
+			0,             /* n_preallocs */
+			NULL, NULL
+		};
+
+		type = g_type_register_static (ATK_TYPE_OBJECT_FACTORY, _("MCUSSevenSegmentDisplayAccessibleFactory"), &tinfo, 0);
+	}
+
+	return type;
+}
+
+static AtkObjectClass *a11y_parent_class = NULL;
+
+static void
+mcus_seven_segment_display_accessible_initialize (AtkObject *accessible, gpointer widget)
+{
+	atk_object_set_name (accessible, _("Seven-Segment Display"));
+	atk_object_set_description (accessible, _("Simulates a hardware seven-segment display"));
+
+	a11y_parent_class->initialize (accessible, widget);
+}
+
+static void
+mcus_seven_segment_display_accessible_class_init (AtkObjectClass *klass)
+{
+	a11y_parent_class = g_type_class_peek_parent (klass);
+	klass->initialize = mcus_seven_segment_display_accessible_initialize;
+}
+
+static void
+mcus_seven_segment_display_accessible_image_get_size (AtkImage *image, gint *width, gint *height)
+{
+	GtkWidget *widget = GTK_ACCESSIBLE (image)->widget;
+	if (!widget) {
+		*width = *height = 0;
+	} else {
+		*width = widget->allocation.width;
+		*height = widget->allocation.height;
+	}
+}
+
+static const gchar *
+mcus_seven_segment_display_accessible_image_get_description (AtkImage *image)
+{
+	MCUSSevenSegmentDisplay *self = MCUS_SEVEN_SEGMENT_DISPLAY (GTK_ACCESSIBLE (image)->widget);
+	return self->priv->description;
+}
+
+static void
+mcus_seven_segment_display_accessible_image_interface_init (AtkImageIface *iface)
+{
+	iface->get_image_size = mcus_seven_segment_display_accessible_image_get_size;
+	iface->get_image_description = mcus_seven_segment_display_accessible_image_get_description;
+}
+
+static GType
+mcus_seven_segment_display_accessible_get_type (void)
+{
+	static GType type = 0;
+
+	/* Action interface
+	   Name etc. ... */
+	if (G_UNLIKELY (type == 0)) {
+		const GInterfaceInfo atk_image_info = {
+			(GInterfaceInitFunc) mcus_seven_segment_display_accessible_image_interface_init,
+			(GInterfaceFinalizeFunc) NULL,
+			NULL
+		};
+		GType parent_atk_type;
+		GTypeInfo tinfo = { 0 };
+		GTypeQuery query;
+		AtkObjectFactory *factory;
+
+		if ((type = g_type_from_name ("MCUSSevenSegmentDisplayAccessible")))
+			return type;
+
+		factory = atk_registry_get_factory (atk_get_default_registry (), GTK_TYPE_IMAGE);
+		if (!factory)
+			return G_TYPE_INVALID;
+
+		parent_atk_type = atk_object_factory_get_accessible_type (factory);
+		if (!parent_atk_type)
+			return G_TYPE_INVALID;
+
+		/* Figure out the size of the class and instance we are deriving from */
+		g_type_query (parent_atk_type, &query);
+
+		tinfo.class_init = (GClassInitFunc) mcus_seven_segment_display_accessible_class_init;
+		tinfo.class_size = query.class_size;
+		tinfo.instance_size = query.instance_size;
+
+		/* Register the type */
+		type = g_type_register_static (parent_atk_type, "MCUSSevenSegmentDisplayAccessible", &tinfo, 0);
+
+		g_type_add_interface_static (type, ATK_TYPE_IMAGE, &atk_image_info);
+	}
+
+	return type;
+}
+
+static AtkObject *
+mcus_seven_segment_display_get_accessible (GtkWidget *widget)
+{
+	static gboolean first_time = TRUE;
+
+	if (first_time) {
+		AtkObjectFactory *factory;
+		AtkRegistry *registry;
+		GType derived_type, derived_atk_type;
+
+		/* Figure out whether accessibility is enabled by looking at the type of the accessible object which would be created for
+		 * the parent type of MCUSLED. */
+		derived_type = g_type_parent (MCUS_TYPE_SEVEN_SEGMENT_DISPLAY);
+
+		registry = atk_get_default_registry ();
+		factory = atk_registry_get_factory (registry, derived_type);
+		derived_atk_type = atk_object_factory_get_accessible_type (factory);
+		if (g_type_is_a (derived_atk_type, GTK_TYPE_ACCESSIBLE)) {
+			atk_registry_set_factory_type (registry, MCUS_TYPE_SEVEN_SEGMENT_DISPLAY,
+			                               mcus_seven_segment_display_accessible_factory_get_type ());
+		}
+
+		first_time = FALSE;
+	}
+
+	return GTK_WIDGET_CLASS (mcus_seven_segment_display_parent_class)->get_accessible (widget);
 }
