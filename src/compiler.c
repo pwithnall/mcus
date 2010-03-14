@@ -450,7 +450,7 @@ lex_lookup_table (MCUSCompiler *self, MCUSLookupTable *lookup_table, GError **er
 		guchar constant;
 		GError *child_error = NULL;
 
-		skip_whitespace (self, FALSE, (i == 0) ? FALSE : TRUE);
+		skip_whitespace (self, (i == 0) ? FALSE : TRUE, (i == 0) ? FALSE : TRUE);
 
 		if (lex_constant (self, &constant, &child_error) == TRUE) {
 			/* Store the constant in the lookup table */

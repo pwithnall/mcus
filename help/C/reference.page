@@ -226,9 +226,9 @@
 						<p>Copies the byte in the lookup table pointed at by <code>S7</code> into <code>S0</code>. The lookup
 							table is a labelled table: when <code>S7</code> is <sys>0</sys> the first byte from the table is
 							returned in <code>S0</code>.</p>
-						<p>In the absense of further guidance, <code>readtable</code> reads from memory, and is designed to
-							work with the <code xref="#directives">$SET</code> directive, which allows lookup tables to be
-							built easily.</p>
+						<p>The lookup table itself is defined with a special label construct, <code>table:</code>, followed
+							by the constant values to be put into the table. Up to 256 values can be stored in the table,
+							which is stored separately from the program in the simulated microcontroller's memory.</p>
 					</td>
 					<td><p><code>RCALL readtable</code></p></td>
 				</tr>
@@ -249,51 +249,6 @@
 		</table>
 	</section>
 
-	<section id="directives">
-		<title>Directives</title>
-
-		<p>Directives are instructions which are executed by the assembler then discarded; they affect the way the program is assembled, but
-			have no (direct) effect at runtime.</p>
-		<p>The OCR specification doesn't include any directives, but <app>MCUS</app> has added support for one to make the constructions of
-			lookup tables in memory (to be used with the <code xref="#subroutines">readtable</code> built-in subroutine) possible.</p>
-
-		<note style="warning">
-			<p>The addition of directives is non-standard, and has not been discussed with OCR. Although they are not on the specification,
-				their addition was deemed necessary to make the <code xref="#subroutines">readtable</code> subroutine useful.</p>
-		</note>
-
-		<!-- TODO: Anchors -->
-		<table frame="all" rules="rows cols" shade="rows">
-			<colgroup><col/></colgroup>
-			<colgroup><col/></colgroup>
-			<colgroup><col/></colgroup>
-			<thead>
-				<tr>
-					<td><p>Directive</p></td>
-					<td><p>Description</p></td>
-					<td><p>Example</p></td>
-				</tr>
-			</thead>
-			<tbody>
-				<tr id="SET">
-					<td><p><code>$SET <var>aa</var>, <var>bb</var></code></p></td>
-					<td>
-						<p>Sets the hexadecimal memory address specified by the first operand to the hexadecimal value in the
-							second. Note that the memory address space is zero-based, so <sys>00</sys> refers to the first
-							byte of memory, <sys>01</sys> to the second, and so on.</p>
-						<note style="warning">
-							<p>Note that memory values set using the <code>$SET</code> directive are set before the
-								compiled program is copied into memory, so if the compiled program occupies a memory
-								range which overlaps values set using <code>$SET</code>, those values will be
-								overwritten.</p>
-						</note>
-					</td>
-					<td><p><code>$SET F0, FF</code></p></td>
-				</tr>
-			</tbody>
-		</table>
-	</section>
-
 	<section id="syntax">
 		<title>Syntax</title>
 
@@ -304,9 +259,8 @@
 			merely provide a convenient way to reference a particular location in a program, typically for jumping to it.</p>
 		<p>The rest of a line can be marked as a comment (and consequently ignored by the compiler) by using a <sys>;</sys>. It is important to
 			document code using such comments.</p>
-		<p>Directives take the form of a <sys>$</sys> followed immediately by the case-insensitive directive name, followed by its parameters
-			as if it were a normal <link xref="#instructions">instruction</link>. Directives will be acted upon by the compiler, but then
-			removed, and not added to the compiled code or executed when the program's simulated.</p>
+		<p>Lookup tables consist of the special label string <sys>table:</sys>, followed by a comma-separated list of two-character hexadecimal
+			constants.</p>
 
 		<p>Parameters can be of the following types, and each instruction is strict as to what it accepts. Parameters are separated by
 			whitespace and an optional comma:</p>
