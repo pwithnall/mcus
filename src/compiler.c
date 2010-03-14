@@ -27,6 +27,11 @@
 #include "main.h"
 
 typedef struct {
+	guchar *table;
+	guchar length;
+} MCUSLookupTable;
+
+typedef struct {
 	gchar *label;
 	guchar address;
 } MCUSLabel;
@@ -89,6 +94,7 @@ const MCUSInstructionData const mcus_instruction_data[] = {
 static void mcus_compiler_finalize (GObject *object);
 static void reset_state (MCUSCompiler *self);
 
+#define LOOKUP_TABLE_BLOCK_SIZE 10
 #define LABEL_BLOCK_SIZE 5
 #define INSTRUCTION_BLOCK_SIZE 10
 #define COMPILER_ERROR_CONTEXT_LENGTH 4
@@ -100,7 +106,7 @@ struct _MCUSCompilerPrivate {
 	MCUSInstruction *instructions;
 	guint instruction_count;
 
-	guchar lookup_table[LOOKUP_TABLE_SIZE];
+	MCUSLookupTable lookup_table;
 
 	const gchar *code;
 	const gchar *i;
@@ -191,7 +197,8 @@ reset_state (MCUSCompiler *self)
 	g_free (self->priv->instructions);
 
 	/* Reset the lookup table */
-	memset (self->priv->lookup_table, 0, sizeof (self->priv->lookup_table));
+	g_free (self->priv->lookup_table.table);
+	self->priv->lookup_table.length = 0;
 
 	self->priv->label_count = 0;
 	self->priv->instruction_count = 0;
@@ -202,9 +209,43 @@ reset_state (MCUSCompiler *self)
 	self->priv->dirty = FALSE;
 }
 
-static void
-store_label (MCUSCompiler *self, const MCUSLabel *label)
+static gboolean
+store_lookup_table (MCUSCompiler *self, const MCUSLookupTable *lookup_table, GError **error)
 {
+	if (self->priv->lookup_table.length > 0) {
+		/* A lookup table's been defined already */
+		self->priv->error_length = strlen ("table:");
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_DUPLICATE_LOOKUP_TABLE,
+		             _("More than one lookup table was defined."));
+
+		return FALSE;
+	}
+
+	/* Store the lookup table */
+	g_memmove (&(self->priv->lookup_table), lookup_table, sizeof (MCUSLookupTable));
+
+	return TRUE;
+}
+
+static gboolean
+store_label (MCUSCompiler *self, const MCUSLabel *label, GError **error)
+{
+	guint i;
+
+	/* Check that no label with the same name has been stored before */
+	for (i = 0; i < self->priv->label_count; i++) {
+		if (strcmp (label->label, self->priv->labels[i].label) == 0) {
+			/* The label's been defined already! */
+			self->priv->error_length = strlen (label->label) + 1;
+			self->priv->i -= self->priv->error_length;
+			g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_DUPLICATE_LABEL,
+			             _("A label (\"%s\") was defined more than once."),
+			             label->label);
+
+			return FALSE;
+		}
+	}
+
 	/* If our label array is full, extend it */
 	if (self->priv->label_count % LABEL_BLOCK_SIZE == 0) {
 		self->priv->labels = g_realloc (self->priv->labels,
@@ -223,6 +264,8 @@ store_label (MCUSCompiler *self, const MCUSLabel *label)
 
 	/* Copy the new label into the array */
 	g_memmove (&(self->priv->labels[self->priv->label_count-1]), label, sizeof (MCUSLabel));
+
+	return TRUE;
 }
 
 static guchar
@@ -292,6 +335,18 @@ store_instruction (MCUSCompiler *self, const MCUSInstruction *instruction)
 
 	/* Increase the compiled size */
 	self->priv->compiled_size += mcus_instruction_data[instruction->opcode].size;
+}
+
+static void
+free_lookup_table (MCUSLookupTable *lookup_table)
+{
+	g_free (lookup_table->table);
+}
+
+static void
+free_label (MCUSLabel *label)
+{
+	g_free (label->label);
 }
 
 static void
@@ -366,11 +421,11 @@ lex_constant (MCUSCompiler *self, guchar *constant, GError **error)
 }
 
 static gboolean
-lex_table (MCUSCompiler *self, guchar *table, GError **error)
+lex_lookup_table (MCUSCompiler *self, MCUSLookupTable *lookup_table, GError **error)
 {
 	/* In EBNF:
-	 * table_label ::= "table:"
-	 * table ::= table_label , whitespace, constant, { "," , whitespace , { whitespace } , constant } */
+	 * lookup_table_label ::= "table:"
+	 * lookup_table ::= lookup_table_label , whitespace, constant, { "," , whitespace , { whitespace } , constant } */
 
 	guint length = 0, i;
 
@@ -379,7 +434,7 @@ lex_table (MCUSCompiler *self, guchar *table, GError **error)
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 		self->priv->error_length = length;
 
-		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_TABLE,
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LOOKUP_TABLE,
 		             _("An expected lookup table was not correctly labelled (\"table:\") around line %u before \"%s\"."),
 		             self->priv->line_number,
 		             following_section);
@@ -387,6 +442,8 @@ lex_table (MCUSCompiler *self, guchar *table, GError **error)
 	}
 
 	self->priv->i += strlen ("table:");
+	lookup_table->length = 0;
+	lookup_table->table = NULL;
 
 	/* Lex the constants; there can be a maximum of 256 of them, and there must be at least one */
 	for (i = 0; i < LOOKUP_TABLE_SIZE; i++) {
@@ -397,7 +454,11 @@ lex_table (MCUSCompiler *self, guchar *table, GError **error)
 
 		if (lex_constant (self, &constant, &child_error) == TRUE) {
 			/* Store the constant in the lookup table */
-			table[i] = constant;
+			if (lookup_table->length % LOOKUP_TABLE_BLOCK_SIZE == 0)
+				lookup_table->table = g_realloc (lookup_table->table,
+				                                 sizeof (guchar) * (lookup_table->length - lookup_table->length % LOOKUP_TABLE_BLOCK_SIZE + 1) * LOOKUP_TABLE_BLOCK_SIZE);
+
+			lookup_table->table[lookup_table->length++] = constant;
 		} else if (i == 0) {
 			/* Throw the error, since we've failed to parse the first (and required) constant */
 			g_propagate_error (error, child_error);
@@ -700,7 +761,7 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 	/* In EBNF:
 	 * comment ::= ";" , ? any characters ? , "\n"
 	 * terminating-whitespace ::= comment | whitespace | "\n"
-	 * assembly ::= { terminating-whitespace , { terminating-whitespace } , ( instruction | label | table ) } , { terminating-whitespace } , "\0" */
+	 * assembly ::= { terminating-whitespace , { terminating-whitespace } , ( instruction | label | lookup_table ) } , { terminating-whitespace } , "\0" */
 
 	/* Set up parser variables */
 	reset_state (self);
@@ -713,17 +774,23 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 	while (*(self->priv->i) != '\0') {
 		MCUSInstruction instruction;
 		MCUSLabel label;
+		MCUSLookupTable lookup_table;
 		GError *child_error = NULL;
 
 		/* Are we finished? */
 		if (*(self->priv->i) == '\0')
 			break;
 
-		if (lex_table (self, self->priv->lookup_table, &child_error) == TRUE) {
+		if (lex_lookup_table (self, &lookup_table, &child_error) == TRUE) {
 			/* Lookup table */
+			if (store_lookup_table (self, &lookup_table, &child_error) == FALSE) {
+				free_lookup_table (&lookup_table);
+				goto throw_error;
+			}
+
 			skip_whitespace (self, TRUE, FALSE);
 			continue;
-		} else if (g_error_matches (child_error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_TABLE) == FALSE) {
+		} else if (g_error_matches (child_error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LOOKUP_TABLE) == FALSE) {
 			goto throw_error;
 		} else {
 			g_clear_error (&child_error);
@@ -731,7 +798,11 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 
 		if (lex_label (self, &label, &child_error) == TRUE) {
 			/* Label */
-			store_label (self, &label);
+			if (store_label (self, &label, &child_error) == FALSE) {
+				free_label (&label);
+				goto throw_error;
+			}
+
 			skip_whitespace (self, TRUE, FALSE);
 			continue;
 		} else if (g_error_matches (child_error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LABEL_DELIMITATION) == FALSE) {
@@ -762,6 +833,10 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 	guint i;
 	self->priv->dirty = TRUE;
 
+	/* Empty the current contents of memory and the lookup table before starting */
+	memset (mcus->memory, 0, MEMORY_SIZE);
+	memset (mcus->lookup_table, 0, LOOKUP_TABLE_SIZE);
+
 	/* Allocate the line number map's memory */
 	g_free (mcus->offset_map);
 	mcus->offset_map = g_malloc (sizeof (*mcus->offset_map) * (self->priv->compiled_size + 1));
@@ -789,8 +864,8 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 		if (projected_size >= MEMORY_SIZE) {
 			self->priv->error_length = strlen (instruction_data->mnemonic);
 			g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_MEMORY_OVERFLOW,
-				     _("Instruction %u overflows the microcontroller memory."),
-				     i);
+			             _("Instruction %u overflows the microcontroller memory."),
+			             i);
 			return FALSE;
 		}
 
@@ -855,7 +930,7 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 	mcus->offset_map[self->priv->compiled_size].length = 0;
 
 	/* Copy across the lookup table */
-	g_memmove (mcus->lookup_table, self->priv->lookup_table, sizeof (self->priv->lookup_table));
+	g_memmove (&(mcus->lookup_table), self->priv->lookup_table.table, sizeof (guchar) * self->priv->lookup_table.length);
 
 	reset_state (self);
 
