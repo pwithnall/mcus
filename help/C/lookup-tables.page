@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="lookup-tables">
+	<info>
+		<link type="guide" xref="index#basics"/>
+		<desc>Creating and using lookup tables.</desc>
+	</info>
+	<title>Lookup Tables</title>
+
+	<p>Lookup tables are a key concept in assembly programming, allowing easy lookup of data by keys, or easy looping through a series of values.
+		Only one lookup table can be defined for the simulated microcontroller in <app>MCUS</app>, containing up to 256 indexable values. This
+		table is defined using a special label syntax, shown below. The table is stored separately from the compiled program, and accessed using
+		the <link xref="reference#subroutines"><code>readtable</code></link> subroutine.</p>
+
+	<example>
+		<title>Defining and Using a Lookup Table</title>
+		<code>; Define the lookup table.
+table: 01, 02, 03, 04, 05
+
+; Set the table offset to be read.
+; In this case, it's the second value in the table ("02").
+MOVI S7, 01
+
+; Read the given table value into S0.
+RCALL readtable
+
+; Output the value which has been read from the table.
+; Should put "02" into the output port.
+OUT Q, S0</code>
+	</example>
+
+	<p>Only one lookup table can be defined in a program, but it can be defined anywhere in the program. If values of the lookup table outside the
+		defined range are read using the <link xref="reference#subroutines"><code>readtable</code></link> subroutine, <sys>00</sys> is returned
+		in <code>S0</code>.</p>
+</page>

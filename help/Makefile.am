@@ -17,7 +17,8 @@ DOC_PAGES = \
 	introduction.page	\
 	outputs.page		\
 	reference.page		\
-	simulating.page
+	simulating.page		\
+	lookup-tables.page
 
 #C/mcus-pdf.xml: C/mcus.xml
 #	$(AM_V_GEN)(rm -rf html
