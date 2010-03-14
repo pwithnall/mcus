@@ -155,7 +155,6 @@ mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	cairo_t *cr;
 	MCUSLEDPrivate *priv;
 	GdkColor fill, stroke;
-	GdkWindow *window;
 	GtkAllocation allocation;
 	GtkStyle *style;
 
@@ -163,10 +162,6 @@ mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	g_return_val_if_fail (MCUS_IS_LED (widget), FALSE);
 
 	priv = MCUS_LED (widget)->priv;
-
-	/* Clear the area first */
-	window = gtk_widget_get_window (widget);
-	gdk_window_clear_area (window, event->area.x, event->area.y, event->area.width, event->area.height);
 
 	/* Prepare our custom colours */
 	fill.red = 29555; /* Tango's medium "chameleon" --- 73d216 */
@@ -177,7 +172,7 @@ mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	stroke.blue = 34181;
 
 	/* Draw! */
-	cr = gdk_cairo_create (window);
+	cr = gdk_cairo_create (gtk_widget_get_window (widget));
 
 	/* Clip to the exposed area */
 	cairo_rectangle (cr, event->area.x, event->area.y, event->area.width, event->area.height);

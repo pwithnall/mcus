@@ -355,7 +355,6 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	cairo_t *cr;
 	MCUSSevenSegmentDisplayPrivate *priv;
 	GdkColor segment_fill, segment_stroke;
-	GdkWindow *window;
 	GtkStyle *style;
 	GtkAllocation allocation;
 
@@ -367,10 +366,6 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 
 	priv = MCUS_SEVEN_SEGMENT_DISPLAY (widget)->priv;
 
-	/* Clear the area first */
-	window = gtk_widget_get_window (widget);
-	gdk_window_clear_area (window, event->area.x, event->area.y, event->area.width, event->area.height);
-
 	/* Prepare our custom colours */
 	segment_fill.red = 29555; /* Tango's medium "chameleon" */
 	segment_fill.green = 53970;
@@ -380,7 +375,7 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	segment_stroke.blue = 34181;
 
 	/* Draw! */
-	cr = gdk_cairo_create (window);
+	cr = gdk_cairo_create (gtk_widget_get_window (widget));
 
 	/* Clip to the exposed area */
 	cairo_rectangle (cr, event->area.x, event->area.y, event->area.width, event->area.height);
