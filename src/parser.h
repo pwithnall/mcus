@@ -1,8 +1,8 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
- * 
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
+ *
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -55,10 +55,10 @@ typedef struct {
 	GObjectClass parent;
 } MCUSParserClass;
 
-GType mcus_parser_get_type (void);
-GQuark mcus_parser_error_quark (void);
+GType mcus_parser_get_type (void) G_GNUC_CONST;
+GQuark mcus_parser_error_quark (void) G_GNUC_CONST;
 
-MCUSParser *mcus_parser_new (void);
+MCUSParser *mcus_parser_new (void) G_GNUC_WARN_UNUSED_RESULT;
 gboolean mcus_parser_parse (MCUSParser *self, const gchar *code, GError **error);
 gboolean mcus_parser_compile (MCUSParser *self, GError **error);
 guint mcus_parser_get_offset (MCUSParser *self);

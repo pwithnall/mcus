@@ -1,8 +1,8 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
- * 
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
+ *
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +33,7 @@ enum {
 	MCUS_SIMULATION_ERROR_INVALID_OPCODE
 };
 
-GQuark mcus_simulation_error_quark (void);
+GQuark mcus_simulation_error_quark (void) G_GNUC_CONST;
 
 void mcus_simulation_init (void);
 gboolean mcus_simulation_iterate (GError **error);

@@ -1,8 +1,8 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
- * 
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
+ *
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -44,8 +44,8 @@ typedef struct {
 	GtkWidgetClass parent;
 } MCUSLEDClass;
 
-G_MODULE_EXPORT GType mcus_led_get_type (void);
-MCUSLED *mcus_led_new (void);
+G_MODULE_EXPORT GType mcus_led_get_type (void) G_GNUC_CONST;
+MCUSLED *mcus_led_new (void) G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean mcus_led_get_enabled (MCUSLED *self);
 void mcus_led_set_enabled (MCUSLED *self, gboolean enabled);
