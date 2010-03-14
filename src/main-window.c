@@ -203,6 +203,10 @@ mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, gpointer user_data
 {
 	guint shift;
 
+	/* The Ctrl key should be pressed */
+	if (!(event->state & GDK_CONTROL_MASK))
+		return FALSE;
+
 	switch (event->keyval) {
 	case GDK_1:
 		shift = 0;
