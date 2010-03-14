@@ -505,6 +505,7 @@
 													<object class="GtkTable" id="mw_output_table">
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
+														<property name="column-spacing">6</property>
 														<child>
 															<object class="GtkLabel" id="mw_output_msb_label">
 																<property name="label" translatable="yes">MSB</property>
@@ -678,6 +679,7 @@
 												</child>
 												<child>
 													<object class="GtkHBox" id="hbox2">
+														<property name="spacing">6</property>
 														<child>
 															<object class="GtkFrame" id="mw_decoder_frame">
 																<property name="shadow-type">GTK_SHADOW_NONE</property>
@@ -694,8 +696,8 @@
 																		<property name="left-padding">12</property>
 																		<child>
 																			<object class="GtkVBox" id="mw_decoder_vbox">
-																				<property name="border-width">5</property>
-																				<property name="spacing">5</property>
+																				<property name="border-width">6</property>
+																				<property name="spacing">6</property>
 																				<child>
 																					<object class="GtkRadioButton" id="mw_output_single_ssd_segment_option">
 																						<property name="label" translatable="yes">Se_gments</property>
@@ -729,7 +731,14 @@
 															</packing>
 														</child>
 														<child>
-															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_single_ssd"/>
+															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_single_ssd">
+																<child internal-child="accessible">
+																	<object class="AtkObject" id="a11y-mw_output_single_ssd">
+																		<property name="accessible-name" translatable="yes">SSD</property>
+																		<property name="accessible-description" translatable="yes">Single seven-segment display for the output port.</property>
+																	</object>
+																</child>
+															</object>
 														</child>
 													</object>
 												</child>
@@ -740,6 +749,7 @@
 												</child>
 												<child>
 													<object class="GtkHBox" id="hbox3">
+														<property name="spacing">6</property>
 														<child>
 															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_dual_ssd1">
 																<child internal-child="accessible">
@@ -771,6 +781,8 @@
 													<object class="GtkTable" id="table3">
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
+														<property name="row-spacing">6</property>
+														<property name="column-spacing">6</property>
 														<child>
 															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_multi_ssd15">
 																<child internal-child="accessible">
@@ -1059,7 +1071,7 @@
 										</child>
 										<child>
 											<object class="GtkHBox" id="mw_adc_hbox">
-												<property name="spacing">5</property>
+												<property name="spacing">6</property>
 												<child>
 													<object class="GtkFrame" id="mw_waveform_frame">
 														<property name="shadow-type">GTK_SHADOW_NONE</property>
@@ -1076,8 +1088,8 @@
 																<property name="left-padding">12</property>
 																<child>
 																	<object class="GtkVBox" id="mw_waveform_vbox">
-																		<property name="border-width">5</property>
-																		<property name="spacing">5</property>
+																		<property name="border-width">6</property>
+																		<property name="spacing">6</property>
 																		<child>
 																			<object class="GtkRadioButton" id="mw_adc_constant_option">
 																				<property name="label" translatable="yes">_Constant</property>
@@ -1152,7 +1164,7 @@
 																	<object class="GtkTable" id="mw_wave_options_table">
 																		<property name="n-rows">4</property>
 																		<property name="n-columns">3</property>
-																		<property name="column-spacing">5</property>
+																		<property name="column-spacing">6</property>
 																		<child>
 																			<object class="GtkLabel" id="label26">
 																				<property name="label" translatable="yes">F_requency:</property>
@@ -1352,8 +1364,8 @@
 													<object class="GtkTable" id="mw_general_table">
 														<property name="n-rows">3</property>
 														<property name="n-columns">3</property>
-														<property name="column-spacing">5</property>
-														<property name="border-width">5</property>
+														<property name="column-spacing">6</property>
+														<property name="border-width">6</property>
 														<child>
 															<object class="GtkLabel" id="mw_program_counter_label2">
 																<property name="label" translatable="yes">Program counter:</property>
@@ -1481,8 +1493,8 @@
 													<object class="GtkTable" id="mw_io_table">
 														<property name="n-rows">3</property>
 														<property name="n-columns">3</property>
-														<property name="column-spacing">5</property>
-														<property name="border-width">5</property>
+														<property name="column-spacing">6</property>
+														<property name="border-width">6</property>
 														<child>
 															<object class="GtkLabel" id="mw_input_port_label">
 																<property name="label" translatable="yes">_Input port:</property>
@@ -1607,8 +1619,8 @@
 													<object class="GtkLabel" id="mw_registers_label">
 														<property name="selectable">True</property>
 														<property name="label">00 00 00 00 00 00 00 00</property>
-														<property name="xpad">5</property>
-														<property name="ypad">5</property>
+														<property name="xpad">6</property>
+														<property name="ypad">6</property>
 													</object>
 												</child>
 											</object>
@@ -1652,8 +1664,8 @@
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</property>
-														<property name="xpad">5</property>
-														<property name="ypad">5</property>
+														<property name="xpad">6</property>
+														<property name="ypad">6</property>
 													</object>
 												</child>
 											</object>
@@ -1680,9 +1692,9 @@
 												<child>
 													<object class="GtkLabel" id="mw_stack_label">
 														<property name="selectable">True</property>
-														<property name="label">(Empty)</property>
-														<property name="xpad">5</property>
-														<property name="ypad">5</property>
+														<property name="label" translatable="yes">(Empty)</property>
+														<property name="xpad">6</property>
+														<property name="ypad">6</property>
 													</object>
 												</child>
 											</object>
