@@ -30,7 +30,6 @@
 
 static void mcus_led_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_led_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
-static void mcus_led_realize (GtkWidget *widget);
 static void mcus_led_size_request (GtkWidget *widget, GtkRequisition *requisition);
 static void mcus_led_size_allocate (GtkWidget *widget, GtkAllocation *allocation);
 static gint mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event);
@@ -65,7 +64,6 @@ mcus_led_class_init (MCUSLEDClass *klass)
 	gobject_class->get_property = mcus_led_get_property;
 	gobject_class->set_property = mcus_led_set_property;
 
-	widget_class->realize = mcus_led_realize;
 	widget_class->size_request = mcus_led_size_request;
 	widget_class->size_allocate = mcus_led_size_allocate;
 	widget_class->expose_event = mcus_led_expose_event;
@@ -82,6 +80,9 @@ static void
 mcus_led_init (MCUSLED *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MCUS_TYPE_LED, MCUSLEDPrivate);
+
+	/* We don't have a window of our own; we use our parent's */
+	gtk_widget_set_has_window (GTK_WIDGET (self), FALSE);
 }
 
 static void
@@ -115,41 +116,6 @@ mcus_led_set_property (GObject *object, guint property_id, const GValue *value, 
 }
 
 static void
-mcus_led_realize (GtkWidget *widget)
-{
-	MCUSLED *self;
-	GdkWindowAttr attributes;
-	gint attr_mask;
-
-	g_return_if_fail (MCUS_IS_LED (widget));
-
-	/* Mark the widget as realised */
-	GTK_WIDGET_SET_FLAGS (widget, GTK_REALIZED);
-	self = MCUS_LED (widget);
-
-	/* Create the attribute object */
-	attributes.x = widget->allocation.x;
-	attributes.y = widget->allocation.y;
-	attributes.width = widget->allocation.width;
-	attributes.height = widget->allocation.height;
-	attributes.wclass = GDK_INPUT_OUTPUT;
-	attributes.window_type = GDK_WINDOW_CHILD;
-	attributes.event_mask = GDK_EXPOSURE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK;
-	attributes.visual = gtk_widget_get_visual (widget);
-	attributes.colormap = gtk_widget_get_colormap (widget);
-
-	/* Create a new GdkWindow for the widget */
-	attr_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
-	widget->window = gdk_window_new (widget->parent->window, &attributes, attr_mask);
-	gdk_window_set_user_data (widget->window, self);
-
-	/* Attach a style to the window and draw a background colour */
-	widget->style = gtk_style_attach (widget->style, widget->window);
-	gtk_style_set_background (widget->style, widget->window, GTK_STATE_NORMAL);
-	gdk_window_show (widget->window);
-}
-
-static void
 mcus_led_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 	g_return_if_fail (requisition != NULL);
@@ -163,11 +129,13 @@ static void
 mcus_led_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	MCUSLEDPrivate *priv;
+	GtkStyle *style;
 
 	g_return_if_fail (allocation != NULL);
 	g_return_if_fail (MCUS_IS_LED (widget));
 
-	widget->allocation = *allocation;
+	GTK_WIDGET_CLASS (mcus_led_parent_class)->size_allocate (widget, allocation);
+
 	priv = MCUS_LED (widget)->priv;
 
 	/* Sort out sizes, ratios, etc. */
@@ -177,10 +145,8 @@ mcus_led_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 		priv->render_size = allocation->width;
 
 	/* Ensure the borders aren't clipped */
-	priv->render_size -= widget->style->xthickness * 2.0;
-
-	if (GTK_WIDGET_REALIZED (widget))
-		gdk_window_move_resize (widget->window, allocation->x, allocation->y, allocation->width, allocation->height);
+	style = gtk_widget_get_style (widget);
+	priv->render_size -= style->xthickness * 2.0;
 }
 
 static gint
@@ -189,18 +155,18 @@ mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	cairo_t *cr;
 	MCUSLEDPrivate *priv;
 	GdkColor fill, stroke;
+	GdkWindow *window;
+	GtkAllocation allocation;
+	GtkStyle *style;
 
 	g_return_val_if_fail (event != NULL, FALSE);
 	g_return_val_if_fail (MCUS_IS_LED (widget), FALSE);
 
-	/* Compress exposes */
-	if (event->count > 0)
-		return TRUE;
-
 	priv = MCUS_LED (widget)->priv;
 
 	/* Clear the area first */
-	gdk_window_clear_area (widget->window, event->area.x, event->area.y, event->area.width, event->area.height);
+	window = gtk_widget_get_window (widget);
+	gdk_window_clear_area (window, event->area.x, event->area.y, event->area.width, event->area.height);
 
 	/* Prepare our custom colours */
 	fill.red = 29555; /* Tango's medium "chameleon" --- 73d216 */
@@ -211,20 +177,22 @@ mcus_led_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	stroke.blue = 34181;
 
 	/* Draw! */
-	cr = gdk_cairo_create (widget->window);
+	cr = gdk_cairo_create (window);
 
 	/* Clip to the exposed area */
 	cairo_rectangle (cr, event->area.x, event->area.y, event->area.width, event->area.height);
 	cairo_clip (cr);
 
-	cairo_set_line_width (cr, widget->style->xthickness);
+	style = gtk_widget_get_style (widget);
+	cairo_set_line_width (cr, style->xthickness);
 
 	/* Draw the LED */
+	gtk_widget_get_allocation (widget, &allocation);
 	cairo_arc (cr,
-		   widget->allocation.width / 2.0,
-		   widget->allocation.height / 2.0,
-		   priv->render_size / 2.0,
-		   0, 2 * M_PI);
+	           allocation.x + allocation.width / 2.0,
+	           allocation.y + allocation.height / 2.0,
+	           priv->render_size / 2.0,
+	           0, 2 * M_PI);
 	gdk_cairo_set_source_color (cr, priv->enabled ? &fill : &stroke);
 	cairo_fill_preserve (cr);
 	gdk_cairo_set_source_color (cr, &stroke);
@@ -321,11 +289,15 @@ static void
 mcus_led_accessible_image_get_size (AtkImage *image, gint *width, gint *height)
 {
 	GtkWidget *widget = GTK_ACCESSIBLE (image)->widget;
+
 	if (!widget) {
 		*width = *height = 0;
 	} else {
-		*width = widget->allocation.width;
-		*height = widget->allocation.height;
+		GtkAllocation allocation;
+		gtk_widget_get_allocation (widget, &allocation);
+
+		*width = allocation.width;
+		*height = allocation.height;
 	}
 }
 

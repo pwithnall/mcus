@@ -83,7 +83,6 @@ static const guint8 segment_digit_map[10] = {
 static void mcus_seven_segment_display_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_seven_segment_display_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void mcus_seven_segment_display_finalize (GObject *object);
-static void mcus_seven_segment_display_realize (GtkWidget *widget);
 static void mcus_seven_segment_display_size_request (GtkWidget *widget, GtkRequisition *requisition);
 static void mcus_seven_segment_display_size_allocate (GtkWidget *widget, GtkAllocation *allocation);
 static gint mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *event);
@@ -132,7 +131,6 @@ mcus_seven_segment_display_class_init (MCUSSevenSegmentDisplayClass *klass)
 	gobject_class->set_property = mcus_seven_segment_display_set_property;
 	gobject_class->finalize = mcus_seven_segment_display_finalize;
 
-	widget_class->realize = mcus_seven_segment_display_realize;
 	widget_class->size_request = mcus_seven_segment_display_size_request;
 	widget_class->size_allocate = mcus_seven_segment_display_size_allocate;
 	widget_class->expose_event = mcus_seven_segment_display_expose_event;
@@ -190,6 +188,9 @@ mcus_seven_segment_display_init (MCUSSevenSegmentDisplay *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MCUS_TYPE_SEVEN_SEGMENT_DISPLAY, MCUSSevenSegmentDisplayPrivate);
 	self->priv->digit = -1;
+
+	/* We don't have a window of our own; we use our parent's */
+	gtk_widget_set_has_window (GTK_WIDGET (self), FALSE);
 }
 
 static void
@@ -286,41 +287,6 @@ mcus_seven_segment_display_finalize (GObject *object)
 }
 
 static void
-mcus_seven_segment_display_realize (GtkWidget *widget)
-{
-	MCUSSevenSegmentDisplay *self;
-	GdkWindowAttr attributes;
-	gint attr_mask;
-
-	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget));
-
-	/* Mark the widget as realised */
-	GTK_WIDGET_SET_FLAGS (widget, GTK_REALIZED);
-	self = MCUS_SEVEN_SEGMENT_DISPLAY (widget);
-
-	/* Create the attribute object */
-	attributes.x = widget->allocation.x;
-	attributes.y = widget->allocation.y;
-	attributes.width = widget->allocation.width;
-	attributes.height = widget->allocation.height;
-	attributes.wclass = GDK_INPUT_OUTPUT;
-	attributes.window_type = GDK_WINDOW_CHILD;
-	attributes.event_mask = GDK_EXPOSURE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK;
-	attributes.visual = gtk_widget_get_visual (widget);
-	attributes.colormap = gtk_widget_get_colormap (widget);
-
-	/* Create a new GdkWindow for the widget */
-	attr_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
-	widget->window = gdk_window_new (widget->parent->window, &attributes, attr_mask);
-	gdk_window_set_user_data (widget->window, self);
-
-	/* Attach a style to the window and draw a background colour */
-	widget->style = gtk_style_attach (widget->style, widget->window);
-	gtk_style_set_background (widget->style, widget->window, GTK_STATE_NORMAL);
-	gdk_window_show (widget->window);
-}
-
-static void
 mcus_seven_segment_display_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 	g_return_if_fail (requisition != NULL);
@@ -334,11 +300,13 @@ static void
 mcus_seven_segment_display_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	MCUSSevenSegmentDisplayPrivate *priv;
+	GtkStyle *style;
 
 	g_return_if_fail (allocation != NULL);
 	g_return_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget));
 
-	widget->allocation = *allocation;
+	GTK_WIDGET_CLASS (mcus_seven_segment_display_parent_class)->size_allocate (widget, allocation);
+
 	priv = MCUS_SEVEN_SEGMENT_DISPLAY (widget)->priv;
 
 	/* Sort out sizes, ratios, etc. */
@@ -352,14 +320,12 @@ mcus_seven_segment_display_size_allocate (GtkWidget *widget, GtkAllocation *allo
 	}
 
 	/* Ensure the borders aren't clipped */
-	priv->render_width -= widget->style->xthickness * 2.0;
-	priv->render_height -= widget->style->xthickness * 2.0;
+	style = gtk_widget_get_style (widget);
+	priv->render_width -= style->xthickness * 2.0;
+	priv->render_height -= style->xthickness * 2.0;
 
 	priv->render_x = (allocation->width - priv->render_width) / 2.0;
 	priv->render_y = (allocation->height - priv->render_height) / 2.0;
-
-	if (GTK_WIDGET_REALIZED (widget))
-		gdk_window_move_resize (widget->window, allocation->x, allocation->y, allocation->width, allocation->height);
 }
 
 static void
@@ -389,18 +355,21 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	cairo_t *cr;
 	MCUSSevenSegmentDisplayPrivate *priv;
 	GdkColor segment_fill, segment_stroke;
+	GdkWindow *window;
+	GtkStyle *style;
+	GtkAllocation allocation;
 
 	g_return_val_if_fail (event != NULL, FALSE);
 	g_return_val_if_fail (MCUS_IS_SEVEN_SEGMENT_DISPLAY (widget), FALSE);
 
-	/* Compress exposes */
-	if (event->count > 0)
-		return TRUE;
+	if (gtk_widget_is_drawable (widget) == FALSE)
+		return FALSE;
 
 	priv = MCUS_SEVEN_SEGMENT_DISPLAY (widget)->priv;
 
 	/* Clear the area first */
-	gdk_window_clear_area (widget->window, event->area.x, event->area.y, event->area.width, event->area.height);
+	window = gtk_widget_get_window (widget);
+	gdk_window_clear_area (window, event->area.x, event->area.y, event->area.width, event->area.height);
 
 	/* Prepare our custom colours */
 	segment_fill.red = 29555; /* Tango's medium "chameleon" */
@@ -411,28 +380,30 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	segment_stroke.blue = 34181;
 
 	/* Draw! */
-	cr = gdk_cairo_create (widget->window);
+	cr = gdk_cairo_create (window);
 
 	/* Clip to the exposed area */
 	cairo_rectangle (cr, event->area.x, event->area.y, event->area.width, event->area.height);
 	cairo_clip (cr);
 
 	/* Sort out sizes, ratios, etc. */
-	cairo_translate (cr, priv->render_x, priv->render_y);
-	cairo_set_line_width (cr, widget->style->xthickness / (priv->render_width / EXTERNAL_WIDTH)); /* make sure the thickness isn't scaled */
+	style = gtk_widget_get_style (widget);
+	gtk_widget_get_allocation (widget, &allocation);
+	cairo_translate (cr, allocation.x + priv->render_x, allocation.y + priv->render_y);
+	cairo_set_line_width (cr, style->xthickness / (priv->render_width / EXTERNAL_WIDTH)); /* make sure the thickness isn't scaled */
 	cairo_scale (cr, priv->render_width / EXTERNAL_WIDTH, priv->render_height / EXTERNAL_HEIGHT);
 
 	/* Draw the body of the display */
-	cairo_rectangle (cr, 0, 0, EXTERNAL_WIDTH, EXTERNAL_HEIGHT);
-	gdk_cairo_set_source_color (cr, &widget->style->mid[GTK_STATE_NORMAL]);
+	cairo_rectangle (cr, 0.0, 0.0, EXTERNAL_WIDTH, EXTERNAL_HEIGHT);
+	gdk_cairo_set_source_color (cr, &(style->mid[GTK_STATE_NORMAL]));
 	cairo_fill_preserve (cr);
-	gdk_cairo_set_source_color (cr, &widget->style->dark[GTK_STATE_NORMAL]);
+	gdk_cairo_set_source_color (cr, &(style->dark[GTK_STATE_NORMAL]));
 	cairo_stroke (cr);
 
 	/* Draw the decimal point */
 	cairo_arc (cr, EXTERNAL_WIDTH - (EXTERNAL_HEIGHT - INTERNAL_HEIGHT) / 2.0 + SEGMENT_SEPARATION * 2.0,
-		       EXTERNAL_HEIGHT - (EXTERNAL_HEIGHT - INTERNAL_HEIGHT) / 2.0,
-		       DOT_RADIUS, 0, 2 * M_PI);
+	               EXTERNAL_HEIGHT - (EXTERNAL_HEIGHT - INTERNAL_HEIGHT) / 2.0,
+	               DOT_RADIUS, 0.0, 2.0 * M_PI);
 	gdk_cairo_set_source_color (cr, priv->segments & POINT_ACTIVE ? &segment_fill : &segment_stroke);
 	cairo_fill_preserve (cr);
 	gdk_cairo_set_source_color (cr, &segment_stroke);
@@ -446,14 +417,14 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	cairo_rotate (cr, SEGMENT_ANGLE);
 
 	/* Segment A */
-	cairo_translate (cr, 0, -SEGMENT_LENGTH - SEGMENT_SEPARATION * 2.0);
+	cairo_translate (cr, 0.0, -SEGMENT_LENGTH - SEGMENT_SEPARATION * 2.0);
 	cairo_save (cr);
 	cairo_rotate (cr, -SEGMENT_ANGLE);
 	draw_segment (cr, &segment_fill, &segment_stroke, priv->segments & SEGMENT_A_ACTIVE);
 	cairo_restore (cr);
 
 	/* Segment D */
-	cairo_translate (cr, 0, SEGMENT_LENGTH * 2.0 + SEGMENT_SEPARATION * 4.0);
+	cairo_translate (cr, 0.0, SEGMENT_LENGTH * 2.0 + SEGMENT_SEPARATION * 4.0);
 	cairo_save (cr);
 	cairo_rotate (cr, -SEGMENT_ANGLE);
 	draw_segment (cr, &segment_fill, &segment_stroke, priv->segments & SEGMENT_D_ACTIVE);
@@ -473,18 +444,18 @@ mcus_seven_segment_display_expose_event (GtkWidget *widget, GdkEventExpose *even
 	draw_segment (cr, &segment_fill, &segment_stroke, priv->segments & SEGMENT_C_ACTIVE);
 
 	/* Segment B */
-	cairo_translate (cr, -SEGMENT_LENGTH - SEGMENT_SEPARATION * 2.0, 0);
+	cairo_translate (cr, -SEGMENT_LENGTH - SEGMENT_SEPARATION * 2.0, 0.0);
 	draw_segment (cr, &segment_fill, &segment_stroke, priv->segments & SEGMENT_B_ACTIVE);
 
 	/* Segment F */
 	cairo_rotate (cr, -SEGMENT_ANGLE);
-	cairo_translate (cr, 0, SEGMENT_LENGTH + SEGMENT_SEPARATION * 2.0);
+	cairo_translate (cr, 0.0, SEGMENT_LENGTH + SEGMENT_SEPARATION * 2.0);
 	cairo_rotate (cr, SEGMENT_ANGLE);
 	draw_segment (cr, &segment_fill, &segment_stroke, priv->segments & SEGMENT_F_ACTIVE);
 
 	cairo_destroy (cr);
 
-	return TRUE;
+	return FALSE;
 }
 
 static void
@@ -662,11 +633,15 @@ static void
 mcus_seven_segment_display_accessible_image_get_size (AtkImage *image, gint *width, gint *height)
 {
 	GtkWidget *widget = GTK_ACCESSIBLE (image)->widget;
+
 	if (!widget) {
 		*width = *height = 0;
 	} else {
-		*width = widget->allocation.width;
-		*height = widget->allocation.height;
+		GtkAllocation allocation;
+		gtk_widget_get_allocation (widget, &allocation);
+
+		*width = allocation.width;
+		*height = allocation.height;
 	}
 }
 
