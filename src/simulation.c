@@ -162,8 +162,7 @@ mcus_simulation_iterate (GError **error)
 		/* Check for calling the built-in subroutines */
 		if (operand1 == mcus->program_counter) {
 			/* readtable */
-			/* TODO: Is this correct? */
-			mcus->registers[0] = mcus->memory[mcus->registers[7]];
+			mcus->registers[0] = mcus->lookup_table[mcus->registers[7]];
 			break;
 		} else if (operand1 == mcus->program_counter + 1) {
 			/* wait1ms */

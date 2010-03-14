@@ -100,6 +100,8 @@ struct _MCUSCompilerPrivate {
 	MCUSInstruction *instructions;
 	guint instruction_count;
 
+	guchar lookup_table[LOOKUP_TABLE_SIZE];
+
 	const gchar *code;
 	const gchar *i;
 
@@ -187,6 +189,9 @@ reset_state (MCUSCompiler *self)
 
 	g_free (self->priv->labels);
 	g_free (self->priv->instructions);
+
+	/* Reset the lookup table */
+	memset (self->priv->lookup_table, 0, sizeof (self->priv->lookup_table));
 
 	self->priv->label_count = 0;
 	self->priv->instruction_count = 0;
@@ -329,6 +334,85 @@ skip_whitespace (MCUSCompiler *self, gboolean skip_newlines, gboolean skip_comma
 }
 
 static gboolean
+lex_constant (MCUSCompiler *self, guchar *constant, GError **error)
+{
+	/* In EBNF:
+	 * hex-digit ::= "0" | "1" | ... | "9" | "A" | ... | "F"
+	 * constant ::= hex-digit , hex-digit */
+
+	guint length = 0;
+
+	/* Find where the constant ends and copy it to a string that length */
+	while (g_ascii_isxdigit (*(self->priv->i + length)))
+		length++;
+
+	/* Check we actually have a constant to lex */
+	if (length != 2) {
+		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = 0;
+
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_CONSTANT,
+		             _("A required constant had an incorrect length around line %u before \"%s\"."),
+		             self->priv->line_number,
+		             following_section);
+		return FALSE;
+	}
+
+	*constant = g_ascii_xdigit_value (self->priv->i[0]) * 16 + g_ascii_xdigit_value (self->priv->i[1]);
+	self->priv->i += length;
+
+	return TRUE;
+}
+
+static gboolean
+lex_table (MCUSCompiler *self, guchar *table, GError **error)
+{
+	/* In EBNF:
+	 * table_label ::= "table:"
+	 * table ::= table_label , whitespace, constant, { "," , whitespace , { whitespace } , constant } */
+
+	guint length = 0, i;
+
+	if (strncmp (self->priv->i, "table:", 6) != 0) {
+		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
+		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
+
+		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_TABLE,
+		             _("An expected lookup table was not correctly labelled (\"table:\") around line %u before \"%s\"."),
+		             self->priv->line_number,
+		             following_section);
+		return FALSE;
+	}
+
+	self->priv->i += strlen ("table:");
+
+	/* Lex the constants; there can be a maximum of 256 of them, and there must be at least one */
+	for (i = 0; i < LOOKUP_TABLE_SIZE; i++) {
+		guchar constant;
+		GError *child_error = NULL;
+
+		skip_whitespace (self, FALSE, (i == 0) ? FALSE : TRUE);
+
+		if (lex_constant (self, &constant, &child_error) == TRUE) {
+			/* Store the constant in the lookup table */
+			table[i] = constant;
+		} else if (i == 0) {
+			/* Throw the error, since we've failed to parse the first (and required) constant */
+			g_propagate_error (error, child_error);
+			return FALSE;
+		} else {
+			/* We've come to the end of the list of constants */
+			g_error_free (child_error);
+			break;
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
 lex_label (MCUSCompiler *self, MCUSLabel *label, GError **error)
 {
 	/* In EBNF:
@@ -381,8 +465,7 @@ lex_operand (MCUSCompiler *self, MCUSOperand *operand, GError **error)
 	 * register ::= "S" , ( "0" | "1" | ... | "6" | "7" )
 	 * hex-digit ::= "0" | "1" | ... | "9" | "A" | ... | "F"
 	 * constant ::= hex-digit , hex-digit
-	 * operand ::= input | output | register | constant | label-reference
-	*/
+	 * operand ::= input | output | register | constant | label-reference */
 
 	guint length = 0;
 	gchar *operand_string;
@@ -558,6 +641,8 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 		const gchar *old_i = self->priv->i;
 		GError *child_error = NULL;
 
+		skip_whitespace (self, FALSE, (i == 0) ? FALSE : TRUE);
+
 		if (lex_operand (self, &operand, &child_error) == TRUE) {
 			/* Check the operand's type is valid */
 			if ((instruction_data->operand_types[i] == OPERAND_LABEL && operand.type != OPERAND_CONSTANT && operand.type != OPERAND_LABEL) ||
@@ -596,7 +681,6 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 
 			/* Store the operand */
 			instruction->operands[i] = operand;
-			skip_whitespace (self, FALSE, TRUE);
 		} else {
 			/* Throw the error */
 			g_propagate_error (error, child_error);
@@ -616,7 +700,7 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 	/* In EBNF:
 	 * comment ::= ";" , ? any characters ? , "\n"
 	 * terminating-whitespace ::= comment | whitespace | "\n"
-	 * assembly ::= { terminating-whitespace , { terminating-whitespace } , ( instruction | label ) } , { terminating-whitespace } , "\0" */
+	 * assembly ::= { terminating-whitespace , { terminating-whitespace } , ( instruction | label | table ) } , { terminating-whitespace } , "\0" */
 
 	/* Set up parser variables */
 	reset_state (self);
@@ -634,6 +718,16 @@ mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error)
 		/* Are we finished? */
 		if (*(self->priv->i) == '\0')
 			break;
+
+		if (lex_table (self, self->priv->lookup_table, &child_error) == TRUE) {
+			/* Lookup table */
+			skip_whitespace (self, TRUE, FALSE);
+			continue;
+		} else if (g_error_matches (child_error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_TABLE) == FALSE) {
+			goto throw_error;
+		} else {
+			g_clear_error (&child_error);
+		}
 
 		if (lex_label (self, &label, &child_error) == TRUE) {
 			/* Label */
@@ -759,6 +853,9 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 	/* Set the last element in the line number map to -1 for safety */
 	mcus->offset_map[self->priv->compiled_size].offset = -1;
 	mcus->offset_map[self->priv->compiled_size].length = 0;
+
+	/* Copy across the lookup table */
+	g_memmove (mcus->lookup_table, self->priv->lookup_table, sizeof (self->priv->lookup_table));
 
 	reset_state (self);
 

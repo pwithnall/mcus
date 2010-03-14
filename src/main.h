@@ -52,6 +52,7 @@ typedef enum {
 
 #define REGISTER_COUNT 8
 #define MEMORY_SIZE 256
+#define LOOKUP_TABLE_SIZE 256
 /* The number of stack frames to show */
 #define STACK_PREVIEW_SIZE 5
 #define PROGRAM_START_ADDRESS 0
@@ -80,6 +81,7 @@ typedef struct {
 	guchar output_port;
 	gdouble analogue_input;
 	guchar memory[MEMORY_SIZE];
+	guchar lookup_table[LOOKUP_TABLE_SIZE];
 	MCUSStackFrame *stack;
 
 	/* Simulation state */
