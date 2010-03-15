@@ -45,27 +45,10 @@ src_mcus_LDADD = \
 
 # Below copied from https://www.redhat.com/archives/libvir-list/2008-October/msg00331.html
 if WITH_WIN_ICON
-src_mcus_LDADD += mcus_win_icon.$(OBJEXT)
-src_mcus_DEPENDENCIES = mcus_win_icon.$(OBJEXT)
+src_mcus_LDADD += src/mcus_win_icon.$(OBJEXT)
+src_mcus_DEPENDENCIES = src/mcus_win_icon.$(OBJEXT)
 
-# Before you edit mcus_win_icon.rc, please note the following
-# limitations of the resource file format:
-#
-# (1) '..' is not permitted in the icon filename field.
-# (2) '-' is not permitted in the icon filename field.
-# (3) Comments are not permitted in the file.
-#
-# Windows appears to choose the first <= 32x32 icon it finds
-# in the resource file.  Therefore you should list the available
-# icons from largest to smallest, and make sure that the 32x32
-# icon is the most legible.
-#
-# Windows .ICO is a special MS-only format.  GIMP and other
-# tools can write it.  However there are several variations,
-# and Windows seems to do its own colour quantization.  More
-# information is needed in this area.
-
-mcus_win_icon.$(OBJEXT): mcus_win_icon.rc
+src/mcus_win_icon.$(OBJEXT): data/icons/mcus_win_icon.rc
 	$(WINDRES) \
 	  --input-format rc --input $< \
 	  --output-format coff --output $@
