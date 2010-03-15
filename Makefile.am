@@ -1,9 +1,39 @@
 SUBDIRS = . po help
 
+# Enums
+MCUS_ENUM_FILES = \
+	src/simulation-enums.c	\
+	src/simulation-enums.h
+
+src/simulation-enums.h: src/simulation.h Makefile
+	$(AM_V_GEN)(cd $(srcdir) && $(GLIB_MKENUMS) \
+			--fhead "#ifndef __MCUS_SIMULATION_ENUMS_H__\n#define __MCUS_SIMULATION_ENUMS_H__\n\n#include <glib-object.h>\n\nG_BEGIN_DECLS\n" \
+			--fprod "/* enumerations from \"@filename@\" */\n" \
+			--vhead "GType @enum_name@_get_type (void) G_GNUC_CONST;\n#define MCUS_TYPE_@ENUMSHORT@ (@enum_name@_get_type())\n" \
+			--ftail "G_END_DECLS\n\n#endif /* __MCUS_SIMULATION_ENUMS_H__ */" \
+		src/simulation.h > $@.tmp \
+		&& sed "s/m_cus/mcus/" $@.tmp > $@.tmp2 \
+		&& sed "s/MCUS_TYPE_CUS/MCUS_TYPE/" $@.tmp2 > $@ \
+		&& rm -f $@.tmp $@.tmp2)
+
+src/simulation-enums.c: src/simulation.h Makefile src/simulation-enums.h
+	$(AM_V_GEN)(cd $(srcdir) && $(GLIB_MKENUMS) \
+			--fhead "#include \"simulation.h\"\n#include \"simulation-enums.h\"" \
+			--fprod "\n/* enumerations from \"@filename@\" */" \
+			--vhead "GType\n@enum_name@_get_type (void)\n{\n  static GType etype = 0;\n  if (etype == 0) {\n    static const G@Type@Value values[] = {" \
+			--vprod "      { @VALUENAME@, \"@VALUENAME@\", \"@valuenick@\" }," \
+			--vtail "      { 0, NULL, NULL }\n    };\n    etype = g_@type@_register_static (\"@EnumName@\", values);\n  }\n  return etype;\n}\n" \
+		src/simulation.h > $@.tmp \
+		&& sed "s/m_cus/mcus/" $@.tmp > $@ \
+		&& rm -f $@.tmp)
+
+CLEANFILES = $(MCUS_ENUM_FILES)
+
 # MCUS binary
 bin_PROGRAMS = src/mcus
 
 src_mcus_SOURCES = \
+	$(MCUS_ENUM_FILES)			\
 	src/main.c				\
 	src/main.h				\
 	src/compiler.c				\
@@ -99,7 +129,7 @@ desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 endif
 
 EXTRA_DIST += $(desktop_in_files)
-CLEANFILES = $(desktop_DATA)
+CLEANFILES += $(desktop_DATA)
 
 # Example programs
 exampledir = $(datadir)/mcus/examples

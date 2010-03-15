@@ -52,7 +52,6 @@ static void mcus_main_window_finalize (GObject *object);
 
 static void update_simulation_ui (MCUSMainWindow *self);
 static void read_analogue_input (MCUSMainWindow *self);
-static void update_ui (MCUSMainWindow *self);
 static void remove_tag (MCUSMainWindow *self, GtkTextTag *tag);
 static void tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
 static gboolean input_port_read_entry (MCUSMainWindow *self, GError **error);
@@ -61,6 +60,9 @@ static void input_port_read_check_buttons (MCUSMainWindow *self);
 static void input_port_update_check_buttons (MCUSMainWindow *self);
 
 /* Normal callbacks */
+static void simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindow *main_window);
+static void simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainWindow *main_window);
+static void notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_can_undo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_can_redo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_has_selection_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
@@ -101,9 +103,6 @@ G_MODULE_EXPORT void mw_print_activate_cb (GtkAction *self, MCUSMainWindow *main
 /* TODO: Shouldn't have this */
 #define STACK_PREVIEW_SIZE 5
 
-/* This is also in the UI file (in Hz) */
-#define DEFAULT_CLOCK_SPEED 1
-
 typedef enum {
 	OUTPUT_LED_DEVICE = 0,
 	OUTPUT_SINGLE_SSD_DEVICE,
@@ -111,17 +110,9 @@ typedef enum {
 	OUTPUT_MULTIPLEXED_SSD_DEVICE
 } OutputDevice;
 
-typedef enum {
-	SIMULATION_STOPPED,
-	SIMULATION_PAUSED,
-	SIMULATION_RUNNING
-} SimulationState;
-
 struct _MCUSMainWindowPrivate {
 	/* Simulation */
 	MCUSSimulation *simulation;
-	SimulationState simulation_state;
-	gulong clock_speed;
 
 	/* Displays */
 	GtkLabel *registers_label;
@@ -227,9 +218,6 @@ mcus_main_window_init (MCUSMainWindow *self)
 
 	/* Set up the simulation */
 	self->priv->simulation = mcus_simulation_new ();
-
-	/* Set up the clock speed */
-	self->priv->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
 }
 
 static void
@@ -406,8 +394,12 @@ mcus_main_window_new (void)
 	priv->output_single_ssd_segment_option = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, "mw_output_single_ssd_segment_option"));
 
 	/* Set up the simulation state */
-	priv->simulation_state = SIMULATION_STOPPED;
-	update_ui (MCUS_MAIN_WINDOW (main_window));
+	g_signal_connect (priv->simulation, "iteration-started", (GCallback) simulation_iteration_started_cb, main_window);
+	g_signal_connect (priv->simulation, "iteration-finished", (GCallback) simulation_iteration_finished_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::state", (GCallback) notify_simulation_state_cb, main_window);
+
+	/* Call notify_simulation_state_cb() initialise the interface */
+	notify_simulation_state_cb (G_OBJECT (priv->simulation), NULL, main_window);
 
 	/* Create the highlighting tags */
 	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "mw_code_buffer"));
@@ -685,49 +677,6 @@ mcus_main_window_quit (MCUSMainWindow *self)
 }
 
 static void
-update_ui (MCUSMainWindow *self)
-{
-	GtkSourceBuffer *source_buffer;
-	MCUSMainWindowPrivate *priv = self->priv;
-	gboolean stopped, not_running, has_selection;
-
-	stopped = priv->simulation_state == SIMULATION_STOPPED;
-	not_running = priv->simulation_state != SIMULATION_RUNNING;
-	has_selection = gtk_text_buffer_get_has_selection (self->priv->code_buffer);
-	source_buffer = GTK_SOURCE_BUFFER (self->priv->code_buffer);
-
-#define SET_SENSITIVITY_A(W,S) \
-	gtk_action_set_sensitive (GTK_ACTION (priv->W), (S))
-#define SET_SENSITIVITY_W(W,S) \
-	gtk_widget_set_sensitive (GTK_WIDGET (priv->W), (S))
-
-	SET_SENSITIVITY_W (code_view, stopped);
-	SET_SENSITIVITY_W (input_port_entry, not_running);
-	SET_SENSITIVITY_W (adc_spin_button, not_running);
-	SET_SENSITIVITY_W (clock_speed_spin_button, not_running);
-	SET_SENSITIVITY_W (adc_hbox, not_running);
-	SET_SENSITIVITY_W (output_notebook, not_running);
-	SET_SENSITIVITY_W (input_alignment, not_running);
-
-	gtk_action_group_set_sensitive (priv->file_action_group, stopped);
-
-	SET_SENSITIVITY_A (undo_action, stopped && gtk_source_buffer_can_undo (source_buffer));
-	SET_SENSITIVITY_A (redo_action, stopped && gtk_source_buffer_can_redo (source_buffer));
-	SET_SENSITIVITY_A (cut_action, not_running && has_selection);
-	SET_SENSITIVITY_A (copy_action, not_running && has_selection);
-	SET_SENSITIVITY_A (paste_action, stopped);
-	SET_SENSITIVITY_A (delete_action, not_running && has_selection);
-
-	SET_SENSITIVITY_A (run_action, not_running);
-	SET_SENSITIVITY_A (pause_action, priv->simulation_state == SIMULATION_RUNNING);
-	SET_SENSITIVITY_A (stop_action, priv->simulation_state != SIMULATION_STOPPED);
-	SET_SENSITIVITY_A (step_forward_action, priv->simulation_state == SIMULATION_PAUSED);
-
-#undef SET_SENSITIVITY_A
-#undef SET_SENSITIVITY_W
-}
-
-static void
 remove_tag (MCUSMainWindow *self, GtkTextTag *tag)
 {
 	GtkTextIter start_iter, end_iter;
@@ -999,7 +948,11 @@ read_analogue_input (MCUSMainWindow *self)
 {
 	MCUSMainWindowPrivate *priv = self->priv;
 	gdouble amplitude, frequency, phase, offset, analogue_input;
-	guint iteration = mcus_simulation_get_iteration (priv->simulation);
+	guint iteration;
+	gulong clock_speed;
+
+	iteration = mcus_simulation_get_iteration (priv->simulation);
+	clock_speed = mcus_simulation_get_clock_speed (priv->simulation);
 
 	/* Update the analogue input from the function generator */
 	amplitude = gtk_adjustment_get_value (priv->adc_amplitude_adjustment);
@@ -1012,19 +965,19 @@ read_analogue_input (MCUSMainWindow *self)
 		analogue_input = offset;
 	} else if (gtk_toggle_button_get_active (priv->adc_sine_wave_option) == TRUE) {
 		/* Sine wave */
-		analogue_input = amplitude * sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * priv->clock_speed / 1000.0) + phase) + offset;
+		analogue_input = amplitude * sin (2.0 * M_PI * frequency * ((gdouble)(iteration) / clock_speed) + phase) + offset;
 	} else if (gtk_toggle_button_get_active (priv->adc_square_wave_option) == TRUE) {
 		/* Square wave */
-		gdouble sine = sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * priv->clock_speed / 1000.0) + phase);
+		gdouble sine = sin (2.0 * M_PI * frequency * ((gdouble)(iteration) / clock_speed) + phase);
 		analogue_input = (sine > 0) ? 1.0 : (sine == 0) ? 0.0 : -1.0;
 		analogue_input = amplitude * analogue_input + offset;
 	} else if (gtk_toggle_button_get_active (priv->adc_triangle_wave_option) == TRUE) {
 		/* Triangle wave */
 		analogue_input = amplitude * asin (sin (2.0 * M_PI * frequency *
-		                                        ((gdouble)(iteration) * priv->clock_speed / 1000.0) + phase)) + offset;
+		                                        ((gdouble)(iteration) / clock_speed) + phase)) + offset;
 	} else {
 		/* Sawtooth wave */
-		gdouble t = ((gdouble)(iteration) * priv->clock_speed / 1000.0) * frequency;
+		gdouble t = ((gdouble)(iteration) / clock_speed) * frequency;
 		analogue_input = amplitude * 2.0 * (t - floor (t + 0.5)) + offset;
 	}
 
@@ -1035,25 +988,116 @@ read_analogue_input (MCUSMainWindow *self)
 }
 
 static void
+simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindow *main_window)
+{
+	read_analogue_input (main_window);
+}
+
+static void
+simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainWindow *main_window)
+{
+	if (error != NULL) {
+		GtkWidget *dialog;
+		guchar program_counter;
+
+		program_counter = mcus_simulation_get_program_counter (main_window->priv->simulation);
+
+		/* Highlight the offending line */
+		tag_range (main_window, main_window->priv->error_tag,
+		           main_window->priv->offset_map[program_counter].offset,
+		           main_window->priv->offset_map[program_counter].offset + main_window->priv->offset_map[program_counter].length,
+		           FALSE);
+
+		/* Display an error message */
+		dialog = gtk_message_dialog_new (GTK_WINDOW (main_window),
+		                                 GTK_DIALOG_MODAL,
+		                                 GTK_MESSAGE_ERROR,
+		                                 GTK_BUTTONS_OK,
+		                                 _("Error iterating simulation"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+		g_error_free (error);
+	} else {
+		update_simulation_ui (main_window);
+	}
+}
+
+static void
+notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
+{
+	GtkSourceBuffer *source_buffer;
+	gboolean stopped, not_running, has_selection;
+	MCUSMainWindowPrivate *priv = main_window->priv;
+	MCUSSimulationState state = mcus_simulation_get_state (priv->simulation);
+
+	stopped = (state == MCUS_SIMULATION_STOPPED);
+	not_running = (state != MCUS_SIMULATION_RUNNING);
+	has_selection = gtk_text_buffer_get_has_selection (main_window->priv->code_buffer);
+	source_buffer = GTK_SOURCE_BUFFER (main_window->priv->code_buffer);
+
+#define SET_SENSITIVITY_A(W,S) \
+	gtk_action_set_sensitive (GTK_ACTION (priv->W), (S))
+#define SET_SENSITIVITY_W(W,S) \
+	gtk_widget_set_sensitive (GTK_WIDGET (priv->W), (S))
+
+	/* Update the UI */
+	SET_SENSITIVITY_W (code_view, stopped);
+	SET_SENSITIVITY_W (input_port_entry, not_running);
+	SET_SENSITIVITY_W (adc_spin_button, not_running);
+	SET_SENSITIVITY_W (clock_speed_spin_button, not_running);
+	SET_SENSITIVITY_W (adc_hbox, not_running);
+	SET_SENSITIVITY_W (output_notebook, not_running);
+	SET_SENSITIVITY_W (input_alignment, not_running);
+
+	gtk_action_group_set_sensitive (priv->file_action_group, stopped);
+
+	SET_SENSITIVITY_A (undo_action, stopped && gtk_source_buffer_can_undo (source_buffer));
+	SET_SENSITIVITY_A (redo_action, stopped && gtk_source_buffer_can_redo (source_buffer));
+	SET_SENSITIVITY_A (cut_action, not_running && has_selection);
+	SET_SENSITIVITY_A (copy_action, not_running && has_selection);
+	SET_SENSITIVITY_A (paste_action, stopped);
+	SET_SENSITIVITY_A (delete_action, not_running && has_selection);
+
+	SET_SENSITIVITY_A (run_action, not_running);
+	SET_SENSITIVITY_A (pause_action, state == MCUS_SIMULATION_RUNNING);
+	SET_SENSITIVITY_A (stop_action, state != MCUS_SIMULATION_STOPPED);
+	SET_SENSITIVITY_A (step_forward_action, state == MCUS_SIMULATION_PAUSED);
+
+#undef SET_SENSITIVITY_A
+#undef SET_SENSITIVITY_W
+
+	if (stopped) {
+		/* If we're finished, remove the current instruction tag */
+		remove_tag (main_window, main_window->priv->current_instruction_tag);
+	}
+}
+
+static void
 notify_can_undo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
-	gtk_action_set_sensitive (main_window->priv->undo_action, gtk_source_buffer_can_undo (GTK_SOURCE_BUFFER (object)));
+	gtk_action_set_sensitive (main_window->priv->undo_action,
+	                          mcus_simulation_get_state (main_window->priv->simulation) == MCUS_SIMULATION_STOPPED &&
+	                          gtk_source_buffer_can_undo (GTK_SOURCE_BUFFER (object)));
 }
 
 static void
 notify_can_redo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
-	gtk_action_set_sensitive (main_window->priv->redo_action, gtk_source_buffer_can_redo (GTK_SOURCE_BUFFER (object)));
+	gtk_action_set_sensitive (main_window->priv->redo_action,
+	                          mcus_simulation_get_state (main_window->priv->simulation) == MCUS_SIMULATION_STOPPED &&
+	                          gtk_source_buffer_can_undo (GTK_SOURCE_BUFFER (object)));
 }
 
 static void
 notify_has_selection_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
-	gboolean has_selection = gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (object));
+	gboolean sensitive = mcus_simulation_get_state (main_window->priv->simulation) != MCUS_SIMULATION_RUNNING &&
+	                     gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (object));
 
-	gtk_action_set_sensitive (main_window->priv->cut_action, has_selection);
-	gtk_action_set_sensitive (main_window->priv->copy_action, has_selection);
-	gtk_action_set_sensitive (main_window->priv->delete_action, has_selection);
+	gtk_action_set_sensitive (main_window->priv->cut_action, sensitive);
+	gtk_action_set_sensitive (main_window->priv->copy_action, sensitive);
+	gtk_action_set_sensitive (main_window->priv->delete_action, sensitive);
 }
 
 static void
@@ -1193,55 +1237,6 @@ mw_delete_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	gtk_text_buffer_delete_selection (main_window->priv->code_buffer, TRUE, TRUE);
 }
 
-static gboolean
-simulation_iterate_cb (MCUSMainWindow *main_window)
-{
-	GError *error = NULL;
-
-	if (main_window->priv->simulation_state != SIMULATION_RUNNING)
-		return FALSE;
-
-	read_analogue_input (main_window);
-
-	if (mcus_simulation_iterate (main_window->priv->simulation, &error) == FALSE) {
-		/* Get out of simulation UI mode */
-		main_window->priv->simulation_state = SIMULATION_STOPPED;
-		mcus_simulation_finish (main_window->priv->simulation);
-		update_ui (main_window);
-
-		if (error != NULL) {
-			GtkWidget *dialog;
-			guchar program_counter = mcus_simulation_get_program_counter (main_window->priv->simulation);
-
-			/* Highlight the offending line */
-			tag_range (main_window, main_window->priv->error_tag,
-			           main_window->priv->offset_map[program_counter].offset,
-			           main_window->priv->offset_map[program_counter].offset + main_window->priv->offset_map[program_counter].length,
-			           FALSE);
-
-			/* Display an error message */
-			dialog = gtk_message_dialog_new (GTK_WINDOW (main_window),
-			                                 GTK_DIALOG_MODAL,
-			                                 GTK_MESSAGE_ERROR,
-			                                 GTK_BUTTONS_OK,
-			                                 _("Error iterating simulation"));
-			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
-			gtk_dialog_run (GTK_DIALOG (dialog));
-			gtk_widget_destroy (dialog);
-			g_error_free (error);
-		} else {
-			/* If we're finished, remove the current instruction tag */
-			remove_tag (main_window, main_window->priv->current_instruction_tag);
-		}
-
-		return FALSE;
-	}
-
-	update_simulation_ui (main_window);
-
-	return TRUE;
-}
-
 G_MODULE_EXPORT void
 mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
@@ -1280,16 +1275,8 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	g_object_unref (compiler);
 
 	/* Initialise the simulator */
-	if (main_window->priv->simulation_state == SIMULATION_STOPPED)
-		mcus_simulation_start (main_window->priv->simulation);
+	mcus_simulation_start (main_window->priv->simulation);
 	update_simulation_ui (main_window);
-
-	/* Enter simulation UI mode */
-	main_window->priv->simulation_state = SIMULATION_RUNNING;
-	update_ui (main_window);
-
-	/* Add the timeout for the simulation iterations */
-	g_timeout_add (main_window->priv->clock_speed, (GSourceFunc) simulation_iterate_cb, main_window);
 
 	return;
 
@@ -1315,30 +1302,26 @@ compiler_error:
 G_MODULE_EXPORT void
 mw_pause_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	main_window->priv->simulation_state = SIMULATION_PAUSED;
-	update_ui (main_window);
+	mcus_simulation_pause (main_window->priv->simulation);
 }
 
 G_MODULE_EXPORT void
 mw_stop_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	main_window->priv->simulation_state = SIMULATION_STOPPED;
 	mcus_simulation_finish (main_window->priv->simulation);
-	update_ui (main_window);
 }
 
 G_MODULE_EXPORT void
 mw_step_forward_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	main_window->priv->simulation_state = SIMULATION_RUNNING;
-	if (simulation_iterate_cb (NULL) == TRUE)
-		main_window->priv->simulation_state = SIMULATION_PAUSED;
+	/* Errors are handled in the MCUSSimulation::iteration-finished callback */
+	mcus_simulation_iterate (main_window->priv->simulation, NULL);
 }
 
 G_MODULE_EXPORT void
 mw_clock_speed_spin_button_value_changed_cb (GtkSpinButton *self, MCUSMainWindow *main_window)
 {
-	main_window->priv->clock_speed = 1000 / gtk_spin_button_get_value (self);
+	mcus_simulation_set_clock_speed (main_window->priv->simulation, gtk_spin_button_get_value (self));
 }
 
 G_MODULE_EXPORT void

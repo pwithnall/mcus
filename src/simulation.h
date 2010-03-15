@@ -39,6 +39,12 @@ struct _MCUSStackFrame {
 	MCUSStackFrame *prev;
 };
 
+typedef enum {
+	MCUS_SIMULATION_STOPPED,
+	MCUS_SIMULATION_PAUSED,
+	MCUS_SIMULATION_RUNNING
+} MCUSSimulationState;
+
 enum {
 	MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
 	MCUS_SIMULATION_ERROR_STACK_OVERFLOW,
@@ -73,6 +79,7 @@ MCUSSimulation *mcus_simulation_new (void) G_GNUC_WARN_UNUSED_RESULT;
 
 void mcus_simulation_start (MCUSSimulation *self);
 gboolean mcus_simulation_iterate (MCUSSimulation *self, GError **error);
+void mcus_simulation_pause (MCUSSimulation *self);
 void mcus_simulation_finish (MCUSSimulation *self);
 void mcus_simulation_print_debug_data (MCUSSimulation *self);
 
@@ -92,6 +99,11 @@ void mcus_simulation_set_input_port (MCUSSimulation *self, guchar input_port);
 
 gdouble mcus_simulation_get_analogue_input (MCUSSimulation *self);
 void mcus_simulation_set_analogue_input (MCUSSimulation *self, gdouble analogue_input);
+
+MCUSSimulationState mcus_simulation_get_state (MCUSSimulation *self);
+
+gulong mcus_simulation_get_clock_speed (MCUSSimulation *self);
+void mcus_simulation_set_clock_speed (MCUSSimulation *self, gulong clock_speed);
 
 G_END_DECLS
 
