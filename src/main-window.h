@@ -55,7 +55,6 @@ G_MODULE_EXPORT GType mcus_main_window_get_type (void) G_GNUC_CONST;
 
 GtkWindow *mcus_main_window_new (void) G_GNUC_WARN_UNUSED_RESULT;
 
-gboolean mcus_save_changes (MCUSMainWindow *self); /* TODO */
 void mcus_main_window_new_program (MCUSMainWindow *self);
 void mcus_main_window_open_program (MCUSMainWindow *self);
 void mcus_main_window_save_program (MCUSMainWindow *self);

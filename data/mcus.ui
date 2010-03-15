@@ -1519,6 +1519,7 @@
 																<property name="max-length">2</property>
 																<property name="width-chars">2</property>
 																<signal name="changed" handler="mw_input_entry_changed"/>
+																<signal name="insert-text" handler="mw_input_entry_insert_text"/>
 															</object>
 															<packing>
 																<property name="top-attach">0</property>

@@ -51,13 +51,8 @@ static void mcus_main_window_dispose (GObject *object);
 static void mcus_main_window_finalize (GObject *object);
 
 static void update_simulation_ui (MCUSMainWindow *self);
-static void read_analogue_input (MCUSMainWindow *self);
 static void remove_tag (MCUSMainWindow *self, GtkTextTag *tag);
 static void tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
-static gboolean input_port_read_entry (MCUSMainWindow *self, GError **error);
-static void input_port_update_entry (MCUSMainWindow *self);
-static void input_port_read_check_buttons (MCUSMainWindow *self);
-static void input_port_update_check_buttons (MCUSMainWindow *self);
 
 /* Normal callbacks */
 static void simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindow *main_window);
@@ -68,11 +63,14 @@ static void notify_can_redo_cb (GObject *object, GParamSpec *param_spec, MCUSMai
 static void notify_has_selection_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_program_counter_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
+static void notify_input_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void buffer_modified_changed_cb (GtkTextBuffer *self, MCUSMainWindow *main_window);
 
 /* GtkBuilder callbacks */
 G_MODULE_EXPORT void mw_input_entry_changed (GtkEntry *self, MCUSMainWindow *main_window);
+G_MODULE_EXPORT void mw_input_entry_insert_text (GtkEditable *editable, gchar *new_text, gint new_text_length,
+                                                 gint *position, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_input_check_button_toggled (GtkToggleButton *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, MCUSMainWindow *main_window);
@@ -398,9 +396,6 @@ mcus_main_window_new (void)
 	g_signal_connect (priv->simulation, "iteration-finished", (GCallback) simulation_iteration_finished_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::state", (GCallback) notify_simulation_state_cb, main_window);
 
-	/* Call notify_simulation_state_cb() initialise the interface */
-	notify_simulation_state_cb (G_OBJECT (priv->simulation), NULL, main_window);
-
 	/* Create the highlighting tags */
 	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "mw_code_buffer"));
 	priv->current_instruction_tag = gtk_text_buffer_create_tag (text_buffer, "current-instruction",
@@ -418,6 +413,7 @@ mcus_main_window_new (void)
 	/* Watch for changes in the simulation */
 	g_signal_connect (priv->simulation, "notify::program-counter", (GCallback) notify_program_counter_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::zero-flag", (GCallback) notify_zero_flag_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::input-port", (GCallback) notify_input_port_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::output-port", (GCallback) notify_output_port_cb, main_window);
 
 	/* Watch for modification of the code buffer */
@@ -466,6 +462,9 @@ mcus_main_window_new (void)
 	gtk_source_buffer_set_language (GTK_SOURCE_BUFFER (text_buffer), language);
 	if (gtk_source_buffer_get_style_scheme (GTK_SOURCE_BUFFER (text_buffer)) == NULL)
 		g_debug ("NULL style scheme");
+
+	/* Call notify_simulation_state_cb() to initialise the interface */
+	notify_simulation_state_cb (G_OBJECT (priv->simulation), NULL, main_window);
 
 	g_object_unref (builder);
 
@@ -705,155 +704,65 @@ tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_
 	gtk_text_buffer_apply_tag (text_buffer, tag, &start_iter, &end_iter);
 }
 
-static gboolean
-input_port_read_entry (MCUSMainWindow *self, GError **error)
-{
-	gint digit_value;
-	guchar input_port;
-	const gchar *entry_text;
-
-	entry_text = gtk_entry_get_text (self->priv->input_port_entry);
-	if (strlen (entry_text) != 2) {
-		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
-			     _("The input port value was not two digits long."));
-		return FALSE;
-	}
-
-	/* Deal with the first digit */
-	digit_value = g_ascii_xdigit_value (entry_text[0]);
-	if (digit_value == -1) {
-		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
-			     _("The input port contained a non-hexadecimal digit (\"%c\")."),
-			     entry_text[0]);
-		return FALSE;
-	}
-	input_port = digit_value * 16;
-
-	/* Deal with the second digit */
-	digit_value = g_ascii_xdigit_value (entry_text[1]);
-	if (digit_value == -1) {
-		g_set_error (error, MCUS_IO_ERROR, MCUS_IO_ERROR_INPUT,
-			     _("The input port contained a non-hexadecimal digit (\"%c\")."),
-			     entry_text[1]);
-		return FALSE;
-	}
-	input_port += digit_value;
-
-	mcus_simulation_set_input_port (self->priv->simulation, input_port);
-
-	return TRUE;
-}
-
-static void
-input_port_update_entry (MCUSMainWindow *self)
-{
-	gchar *output = g_strdup_printf ("%02X", mcus_simulation_get_input_port (self->priv->simulation));
-	gtk_entry_set_text (self->priv->input_port_entry, output);
-	g_free (output);
-}
-
-static void
-input_port_read_check_buttons (MCUSMainWindow *self)
-{
-	guint i;
-	guchar input_port = 0;
-
-	/* 0 is LSB, 7 is MSB */
-	for (i = 0; i < 8; i++) {
-		/* Grab the control (have to take the inverse of i, since 7 is the MSB) */
-		/* Shift the new bit in as the LSB */
-		input_port = gtk_toggle_button_get_active (self->priv->input_check_button[7 - i]) | (input_port << 1);
-	}
-
-	mcus_simulation_set_input_port (self->priv->simulation, input_port);
-}
-
-static void
-input_port_update_check_buttons (MCUSMainWindow *self)
-{
-	guint i;
-	guchar input_port = mcus_simulation_get_input_port (self->priv->simulation);
-
-	/* 0 is LSB, 7 is MSB */
-	for (i = 0; i < 8; i++) {
-		/* Mask out everything except the interesting bit */
-		gtk_toggle_button_set_active (self->priv->input_check_button[i], input_port & (1 << i));
-	}
-}
-
-static void
-update_single_ssd_output (MCUSMainWindow *self)
-{
-	if (gtk_toggle_button_get_active (self->priv->output_single_ssd_segment_option) == TRUE) {
-		/* Each bit in the output corresponds to one segment */
-		mcus_seven_segment_display_set_segment_mask (self->priv->output_single_ssd, mcus_simulation_get_output_port (self->priv->simulation));
-	} else {
-		/* The output is BCD-encoded, and we should display that number */
-		guint digit = mcus_simulation_get_output_port (self->priv->simulation) & 0x0F;
-
-		if (digit > 9)
-			digit = 0;
-
-		mcus_seven_segment_display_set_digit (self->priv->output_single_ssd, digit);
-	}
-}
-
-static void
-update_multi_ssd_output (MCUSMainWindow *self)
-{
-	guint i;
-	guchar output_port = mcus_simulation_get_output_port (self->priv->simulation);
-
-	for (i = 0; i < 16; i++) {
-		/* Work out which SSD we're setting */
-		if (i == output_port >> 4) {
-			guint digit;
-
-			/* Get the new value */
-			digit = output_port & 0x0F;
-			if (digit > 9)
-				digit = 0;
-
-			mcus_seven_segment_display_set_digit (self->priv->output_multi_ssd[i], digit);
-		} else {
-			/* Blank the display */
-			mcus_seven_segment_display_set_segment_mask (self->priv->output_multi_ssd[i], 0);
-		}
-	}
-}
-
 static void
 update_outputs (MCUSMainWindow *self)
 {
+	MCUSMainWindowPrivate *priv = self->priv;
 	guint i;
-	guchar output_port = mcus_simulation_get_output_port (self->priv->simulation);
+	guchar output_port = mcus_simulation_get_output_port (priv->simulation);
 
 	/* Only update outputs if they're visible */
-	switch (self->priv->output_device) {
+	switch (priv->output_device) {
 	case OUTPUT_LED_DEVICE:
 		/* Update the LED outputs */
 		for (i = 0; i < 8; i++)
-			mcus_led_set_enabled (self->priv->output_led[i], output_port & (1 << i));
+			mcus_led_set_enabled (priv->output_led[i], output_port & (1 << i));
 		break;
 	case OUTPUT_SINGLE_SSD_DEVICE:
 		/* Update the single SSD output */
-		update_single_ssd_output (self);
+		if (gtk_toggle_button_get_active (priv->output_single_ssd_segment_option) == TRUE) {
+			/* Each bit in the output corresponds to one segment */
+			mcus_seven_segment_display_set_segment_mask (priv->output_single_ssd, output_port);
+		} else {
+			/* The output is BCD-encoded, and we should display that number */
+			guint digit = output_port & 0x0F;
+
+			if (digit > 9)
+				digit = 0;
+
+			mcus_seven_segment_display_set_digit (priv->output_single_ssd, digit);
+		}
 		break;
 	case OUTPUT_DUAL_SSD_DEVICE:
 		/* Update the dual-SSD output */
 		i = output_port >> 4;
 		if (i > 9)
 			i = 0;
-		mcus_seven_segment_display_set_digit (self->priv->output_dual_ssd[1], i);
+		mcus_seven_segment_display_set_digit (priv->output_dual_ssd[1], i);
 
 		i = output_port & 0x0F;
 		if (i > 9)
 			i = 0;
-		mcus_seven_segment_display_set_digit (self->priv->output_dual_ssd[0], i);
+		mcus_seven_segment_display_set_digit (priv->output_dual_ssd[0], i);
 		break;
 	case OUTPUT_MULTIPLEXED_SSD_DEVICE:
 		/* Update the multi-SSD output */
-		update_multi_ssd_output (self);
+		for (i = 0; i < 16; i++) {
+			/* Work out which SSD we're setting */
+			if (i == output_port >> 4) {
+				guint digit;
+
+				/* Get the new value */
+				digit = output_port & 0x0F;
+				if (digit > 9)
+					digit = 0;
+
+				mcus_seven_segment_display_set_digit (priv->output_multi_ssd[i], digit);
+			} else {
+				/* Blank the display */
+				mcus_seven_segment_display_set_segment_mask (priv->output_multi_ssd[i], 0);
+			}
+		}
 		break;
 	default:
 		g_assert_not_reached ();
@@ -930,8 +839,6 @@ update_simulation_ui (MCUSMainWindow *self)
 	g_sprintf (byte_text, "%02X", (stack == NULL) ? 0 : stack->program_counter);
 	gtk_label_set_text (self->priv->stack_pointer_label, byte_text);
 
-	update_outputs (self);
-
 	/* Move the current line mark */
 	if (self->priv->offset_map != NULL) {
 		tag_range (self, self->priv->current_instruction_tag,
@@ -944,15 +851,15 @@ update_simulation_ui (MCUSMainWindow *self)
 }
 
 static void
-read_analogue_input (MCUSMainWindow *self)
+simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindow *main_window)
 {
-	MCUSMainWindowPrivate *priv = self->priv;
+	MCUSMainWindowPrivate *priv = main_window->priv;
 	gdouble amplitude, frequency, phase, offset, analogue_input;
 	guint iteration;
 	gulong clock_speed;
 
-	iteration = mcus_simulation_get_iteration (priv->simulation);
-	clock_speed = mcus_simulation_get_clock_speed (priv->simulation);
+	iteration = mcus_simulation_get_iteration (self);
+	clock_speed = mcus_simulation_get_clock_speed (self);
 
 	/* Update the analogue input from the function generator */
 	amplitude = gtk_adjustment_get_value (priv->adc_amplitude_adjustment);
@@ -982,15 +889,9 @@ read_analogue_input (MCUSMainWindow *self)
 	}
 
 	/* Clamp the value to 0--5V and set it */
-	mcus_simulation_set_analogue_input (priv->simulation, CLAMP (analogue_input, 0.0, 5.0));
+	mcus_simulation_set_analogue_input (self, CLAMP (analogue_input, 0.0, 5.0));
 
 	g_debug ("Analogue input: %f", analogue_input);
-}
-
-static void
-simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindow *main_window)
-{
-	read_analogue_input (main_window);
 }
 
 static void
@@ -1093,7 +994,7 @@ static void
 notify_has_selection_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
 	gboolean sensitive = mcus_simulation_get_state (main_window->priv->simulation) != MCUS_SIMULATION_RUNNING &&
-	                     gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (object));
+	                                                gtk_text_buffer_get_has_selection (GTK_TEXT_BUFFER (object));
 
 	gtk_action_set_sensitive (main_window->priv->cut_action, sensitive);
 	gtk_action_set_sensitive (main_window->priv->copy_action, sensitive);
@@ -1119,6 +1020,51 @@ notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *ma
 }
 
 static void
+disable_input_signals (MCUSMainWindow *self, gboolean blocked)
+{
+	guint i;
+
+	/* Input port entry */
+	if (blocked == TRUE)
+		g_signal_handlers_block_by_func (self->priv->input_port_entry, mw_input_entry_changed, self);
+	else
+		g_signal_handlers_unblock_by_func (self->priv->input_port_entry, mw_input_entry_changed, self);
+
+	/* Check buttons */
+	for (i = 0; i < 8; i++) {
+		/* Either block or unblock the signal as appropriate */
+		if (blocked == TRUE)
+			g_signal_handlers_block_by_func (self->priv->input_check_button[i], mw_input_check_button_toggled, self);
+		else
+			g_signal_handlers_unblock_by_func (self->priv->input_check_button[i], mw_input_check_button_toggled, self);
+	}
+}
+
+static void
+notify_input_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
+{
+	gchar *output;
+	guint i;
+	guchar input_port = mcus_simulation_get_input_port (main_window->priv->simulation);
+
+	/* Disable signals from both sets of input widgets so we don't get an infinite loop */
+	disable_input_signals (main_window, TRUE);
+
+	/* Update the input port entry */
+	output = g_strdup_printf ("%02X", input_port);
+	gtk_entry_set_text (main_window->priv->input_port_entry, output);
+	g_free (output);
+
+	/* Update the check buttons; 0 is LSB, 7 is MSB */
+	for (i = 0; i < 8; i++) {
+		/* Mask out everything except the interesting bit */
+		gtk_toggle_button_set_active (main_window->priv->input_check_button[i], input_port & (1 << i));
+	}
+
+	disable_input_signals (main_window, FALSE);
+}
+
+static void
 notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
 	/* 3 characters for two hexadecimal characters and one \0 */
@@ -1128,6 +1074,9 @@ notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *
 	/* Update the output port label */
 	g_sprintf (byte_text, "%02X", output_port);
 	gtk_label_set_text (main_window->priv->output_port_label, byte_text);
+
+	/* Update the other outputs */
+	update_outputs (main_window);
 }
 
 static void
@@ -1185,9 +1134,6 @@ mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, MCUSMainWindow *ma
 
 	/* Toggle the relevant bit in the input port */
 	mcus_simulation_set_input_port (main_window->priv->simulation, mcus_simulation_get_input_port (main_window->priv->simulation) ^ (1 << shift));
-
-	/* Update the UI (updating the check buttons updates the entry too) */
-	input_port_update_check_buttons (main_window);
 
 	return TRUE;
 }
@@ -1501,45 +1447,59 @@ mw_print_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 G_MODULE_EXPORT void
 mw_input_check_button_toggled (GtkToggleButton *self, MCUSMainWindow *main_window)
 {
-	/* Signal fluff prevents race condition between this signal handler and the one below */
-	g_signal_handlers_block_by_func (main_window->priv->input_port_entry, mw_input_entry_changed, NULL);
-
-	input_port_read_check_buttons (main_window);
-	input_port_update_entry (main_window);
-
-	g_signal_handlers_unblock_by_func (main_window->priv->input_port_entry, mw_input_entry_changed, NULL);
-}
-
-static void
-set_input_check_button_signal_state (MCUSMainWindow *self, gboolean blocked)
-{
+	MCUSMainWindowPrivate *priv = main_window->priv;
 	guint i;
+	guchar input_port = 0;
 
+	/* 0 is LSB, 7 is MSB */
 	for (i = 0; i < 8; i++) {
-		/* Either block or unblock the signal as appropriate */
-		if (blocked == TRUE)
-			g_signal_handlers_block_by_func (self->priv->input_check_button[i], mw_input_check_button_toggled, NULL);
-		else
-			g_signal_handlers_unblock_by_func (self->priv->input_check_button[i], mw_input_check_button_toggled, NULL);
+		/* Grab the control (have to take the inverse of i, since 7 is the MSB) */
+		/* Shift the new bit in as the LSB */
+		input_port = gtk_toggle_button_get_active (priv->input_check_button[7 - i]) | (input_port << 1);
 	}
+
+	/* Set the input port value */
+	mcus_simulation_set_input_port (priv->simulation, input_port);
 }
 
 G_MODULE_EXPORT void
 mw_input_entry_changed (GtkEntry *self, MCUSMainWindow *main_window)
 {
-	set_input_check_button_signal_state (main_window, TRUE);
+	const gchar *entry_text;
 
-	/* TODO: Do something on error? */
-	if (input_port_read_entry (main_window, NULL))
-		input_port_update_check_buttons (main_window);
+	entry_text = gtk_entry_get_text (main_window->priv->input_port_entry);
 
-	set_input_check_button_signal_state (main_window, FALSE);
+	/* Ignore the change if it's not two digits long, since the user's probably in the middle of typing a full value */
+	if (strlen (entry_text) != 2)
+		return;
+
+	/* Set the input port value */
+	mcus_simulation_set_input_port (main_window->priv->simulation,
+	                                g_ascii_xdigit_value (entry_text[0]) * 16 + g_ascii_xdigit_value (entry_text[1]));
+}
+
+G_MODULE_EXPORT void
+mw_input_entry_insert_text (GtkEditable *editable, gchar *new_text, gint new_text_length, gint *position, MCUSMainWindow *main_window)
+{
+	const gchar *i;
+
+	if (new_text_length == -1)
+		new_text_length = strlen (new_text);
+
+	/* Validate the text. If any characters aren't hexadecimal, abort the insertion completely. */
+	for (i = new_text; i < new_text + new_text_length; i++) {
+		if (g_ascii_isxdigit (*i) == FALSE) {
+			g_signal_stop_emission_by_name (editable, "insert-text");
+			gtk_widget_error_bell (GTK_WIDGET (editable));
+			return;
+		}
+	}
 }
 
 G_MODULE_EXPORT void
 mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, MCUSMainWindow *main_window)
 {
-	update_single_ssd_output (main_window);
+	update_outputs (main_window);
 }
 
 G_MODULE_EXPORT void
