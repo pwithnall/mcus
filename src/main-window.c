@@ -169,7 +169,6 @@ struct _MCUSMainWindowPrivate {
 	GtkWidget *adc_spin_button;
 	GtkWidget *clock_speed_spin_button;
 	GtkWidget *adc_hbox;
-	GtkWidget *output_notebook;
 	GtkWidget *input_alignment;
 	GtkWidget *adc_frequency_spin_button;
 	GtkWidget *adc_amplitude_spin_button;
@@ -318,7 +317,6 @@ mcus_main_window_new (void)
 	priv->adc_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_analogue_input_spin_button"));
 	priv->clock_speed_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_clock_speed_spin_button"));
 	priv->adc_hbox = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_hbox"));
-	priv->output_notebook = GTK_WIDGET (gtk_builder_get_object (builder, "mw_output_notebook"));
 	priv->input_alignment = GTK_WIDGET (gtk_builder_get_object (builder, "mw_input_alignment"));
 	priv->adc_frequency_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_frequency_spin_button"));
 	priv->adc_amplitude_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_amplitude_spin_button"));
@@ -948,7 +946,6 @@ notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWin
 	SET_SENSITIVITY_W (adc_spin_button, not_running);
 	SET_SENSITIVITY_W (clock_speed_spin_button, not_running);
 	SET_SENSITIVITY_W (adc_hbox, not_running);
-	SET_SENSITIVITY_W (output_notebook, not_running);
 	SET_SENSITIVITY_W (input_alignment, not_running);
 
 	gtk_action_group_set_sensitive (priv->file_action_group, stopped);

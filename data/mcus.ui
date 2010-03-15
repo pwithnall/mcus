@@ -506,7 +506,7 @@
 											<object class="GtkNotebook" id="mw_output_notebook">
 												<signal name="switch-page" handler="mw_output_notebook_switch_page_cb"/>
 												<child>
-													<object class="GtkTable" id="mw_output_table">
+													<object class="GtkTable" id="mw_output_led_table">
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<property name="column-spacing">6</property>
@@ -682,7 +682,7 @@
 													</object>
 												</child>
 												<child>
-													<object class="GtkHBox" id="hbox2">
+													<object class="GtkHBox" id="mw_output_single_ssd_hbox">
 														<property name="spacing">6</property>
 														<child>
 															<object class="GtkFrame" id="mw_decoder_frame">
@@ -752,7 +752,7 @@
 													</object>
 												</child>
 												<child>
-													<object class="GtkHBox" id="hbox3">
+													<object class="GtkHBox" id="mw_output_dual_ssd_hbox">
 														<property name="spacing">6</property>
 														<child>
 															<object class="MCUSSevenSegmentDisplay" type-func="mcus_seven_segment_display_get_type" id="mw_output_dual_ssd1">
@@ -782,7 +782,7 @@
 													</object>
 												</child>
 												<child>
-													<object class="GtkTable" id="table3">
+													<object class="GtkTable" id="mw_output_multi_ssd_table">
 														<property name="n-rows">2</property>
 														<property name="n-columns">8</property>
 														<property name="row-spacing">6</property>
