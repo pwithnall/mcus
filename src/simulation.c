@@ -19,12 +19,14 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <gtk/gtk.h>
+#include <glib/gprintf.h>
 #include <limits.h>
 
-#include "main.h"
 #include "instructions.h"
 #include "simulation.h"
+
+/* This is also in the UI file (in Volts) */
+#define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
 
 GQuark
 mcus_simulation_error_quark (void)
@@ -40,14 +42,6 @@ mcus_simulation_error_quark (void)
 static void mcus_simulation_finalize (GObject *object);
 static void mcus_simulation_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_simulation_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
-
-#define REGISTER_COUNT 8
-#define MEMORY_SIZE 256
-#define LOOKUP_TABLE_SIZE 256
-#define PROGRAM_START_ADDRESS 0
-
-/* This is also in the UI file (in Volts) */
-#define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
 
 struct _MCUSSimulationPrivate {
 	/* Simulated hardware */
@@ -454,6 +448,69 @@ mcus_simulation_finish (MCUSSimulation *self)
 		g_free (stack_frame);
 		stack_frame = prev_frame;
 	}
+}
+
+/* TODO: Remove this */
+/* The number of stack frames to show */
+#define STACK_PREVIEW_SIZE 5
+
+void
+mcus_simulation_print_debug_data (MCUSSimulation *self)
+{
+	MCUSSimulationPrivate *priv = self->priv;
+	guint i;
+	MCUSStackFrame *stack_frame;
+
+	/* TODO if (mcus->debug == FALSE)
+		return;*/
+
+	/* General data */
+	g_printf ("Program counter: %02X\nZero flag: %u",/*\nClock speed: %lu\n",*/
+	          (guint) priv->program_counter,
+	          (priv->zero_flag == TRUE) ? 1 : 0/*,
+	          TODO mcus->clock_speed*/);
+
+	/* Registers */
+	g_printf ("Registers:");
+	for (i = 0; i < REGISTER_COUNT; i++)
+		g_printf (" %02X", (guint) priv->registers[i]);
+	g_printf ("\n");
+
+	/* Stack */
+	g_printf ("Stack:\n");
+	stack_frame = priv->stack;
+	i = 0;
+	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
+		g_printf (" %02X", (guint) stack_frame->program_counter);
+
+		if (i % 16 == 15)
+			g_printf ("\n");
+
+		i++;
+		stack_frame = stack_frame->prev;
+	}
+	if (i == 0)
+		g_printf ("(Empty)");
+	g_printf ("\n");
+
+	/* Ports */
+	g_printf ("Input port: %02X\nOutput port: %02X\nAnalogue input: %f\n",
+	          (guint) priv->input_port,
+	          (guint) priv->output_port,
+	          priv->analogue_input);
+
+	/* Memory */
+	g_printf ("Memory:\n");
+	for (i = 0; i < MEMORY_SIZE; i++) {
+		if (i == priv->program_counter)
+			g_printf ("\033[1m%02X\033[0m ", (guint) priv->memory[i]);
+		else
+			g_printf ("%02X ", (guint) priv->memory[i]);
+
+		if (i % 16 == 15)
+			g_printf ("\n");
+	}
+	g_printf ("\n");
 }
 
 guchar *

@@ -6,13 +6,9 @@ bin_PROGRAMS = src/mcus
 src_mcus_SOURCES = \
 	src/main.c				\
 	src/main.h				\
-	src/interface.c				\
-	src/interface.h				\
 	src/compiler.c				\
 	src/compiler.h				\
 	src/instructions.h			\
-	src/input-port.c			\
-	src/input-port.h			\
 	src/main-window.c			\
 	src/main-window.h			\
 	src/simulation.c			\

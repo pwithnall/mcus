@@ -29,244 +29,21 @@
 #endif
 
 #include "main.h"
-#include "interface.h"
-
-static GtkFileFilter *filter = NULL;
-
-static GtkFileFilter *
-get_file_filter (void)
-{
-	if (filter == NULL) {
-		/* Set up the filter */
-		filter = gtk_file_filter_new ();
-		gtk_file_filter_add_pattern (filter, "*.asm");
-		g_object_ref_sink (filter);
-	}
-
-	return filter;
-}
-
-/* Returns TRUE if changes were saved, or FALSE if the operation was cancelled */
-gboolean
-mcus_save_changes (void)
-{
-	GtkWidget *dialog;
-
-	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window), GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
-					 _("Save changes to the program before closing?"));
-	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
-				_("Close without Saving"), GTK_RESPONSE_CLOSE,
-				"gtk-cancel", GTK_RESPONSE_CANCEL,
-				(mcus->current_filename == NULL) ? "gtk-save-as" : "gtk-save", GTK_RESPONSE_OK,
-				NULL);
-	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("If you don't save, your changes will be permanently lost."));
-
-	switch (gtk_dialog_run (GTK_DIALOG (dialog))) {
-	case GTK_RESPONSE_CLOSE:
-		gtk_widget_destroy (dialog);
-		return TRUE;
-	case GTK_RESPONSE_CANCEL:
-		gtk_widget_destroy (dialog);
-		return FALSE;
-	default:
-		gtk_widget_destroy (dialog);
-		mcus_save_program ();
-		return TRUE;
-	}
-}
+#include "main-window.h"
 
 void
-mcus_new_program (void)
+mcus_quit (MCUSMainWindow *main_window)
 {
-	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	/* Ask to save old files */
-	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    mcus_save_changes () == TRUE) {
-		gtk_text_buffer_set_text (text_buffer, "", -1);
-		gtk_text_buffer_set_modified (text_buffer, FALSE);
-	}
-}
-
-void
-mcus_open_program (void)
-{
-	GtkWidget *dialog;
-	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	/* Ask to save old files */
-	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    mcus_save_changes () == TRUE) {
-		/* Get a filename to open */
-		dialog = gtk_file_chooser_dialog_new (_("Open File"), GTK_WINDOW (mcus->main_window), GTK_FILE_CHOOSER_ACTION_OPEN,
-						      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-						      GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-						      NULL);
-		gtk_file_chooser_set_filter (GTK_FILE_CHOOSER (dialog), get_file_filter ());
-
-		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-		{
-			gchar *filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-			mcus_open_file (filename);
-		}
-		gtk_widget_destroy (dialog);
-	}
-}
-
-void
-mcus_save_program (void)
-{
-	GtkTextIter start_iter, end_iter;
-	GtkTextBuffer *text_buffer;
-	GIOChannel *channel;
-	GtkWidget *dialog;
-	gchar *file_contents = NULL;
-	GError *error = NULL;
-
-	if (mcus->current_filename == NULL)
-		return mcus_save_program_as ();
-
-	channel = g_io_channel_new_file (mcus->current_filename, "w", &error);
-	if (error != NULL)
-		goto file_error;
-
-	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	gtk_text_buffer_get_bounds (text_buffer, &start_iter, &end_iter);
-	file_contents = gtk_text_buffer_get_text (text_buffer, &start_iter, &end_iter, FALSE);
-
-	g_io_channel_write_chars (channel, file_contents, -1, NULL, &error);
-	if (error != NULL)
-		goto file_error;
-
-	gtk_text_buffer_set_modified (text_buffer, FALSE);
-	g_free (file_contents);
-
-	g_io_channel_shutdown (channel, TRUE, NULL);
-	g_io_channel_unref (channel);
-
-	return;
-
-file_error:
-	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
-					 GTK_DIALOG_MODAL,
-					 GTK_MESSAGE_ERROR,
-					 GTK_BUTTONS_OK,
-					 _("Program could not be saved to \"%s\""), mcus->current_filename);
-	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
-
-	g_error_free (error);
-	g_io_channel_unref (channel);
-	if (file_contents != NULL)
-		g_free (file_contents);
-}
-
-void
-mcus_save_program_as (void)
-{
-	GtkWidget *dialog;
-
-	dialog = gtk_file_chooser_dialog_new (_("Save File"), GTK_WINDOW (mcus->main_window), GTK_FILE_CHOOSER_ACTION_SAVE,
-					      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-					      NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_filter (GTK_FILE_CHOOSER (dialog), get_file_filter ());
-
-	if (mcus->current_filename != NULL)
-		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog), mcus->current_filename);
-
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		g_free (mcus->current_filename);
-		mcus->current_filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-
-		/* Ensure it ends with ".asm" */
-		if (g_str_has_suffix (mcus->current_filename, ".asm") == FALSE) {
-			gchar *temp_string = g_strconcat (mcus->current_filename, ".asm", NULL);
-			g_free (mcus->current_filename);
-			mcus->current_filename = temp_string;
-		}
-
-		mcus_save_program ();
-	}
-	gtk_widget_destroy (dialog);
-}
-
-/* Takes ownership of filename */
-void
-mcus_open_file (gchar *filename)
-{
-	GIOChannel *channel;
-	GtkWidget *dialog;
-	gchar *file_contents = NULL;
-	GError *error = NULL;
-	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	channel = g_io_channel_new_file (filename, "r", &error);
-	if (error != NULL)
-		goto file_error;
-
-	g_io_channel_read_to_end (channel, &file_contents, NULL, &error);
-	if (error != NULL)
-		goto file_error;
-
-	gtk_text_buffer_set_text (text_buffer, file_contents, -1);
-	gtk_text_buffer_set_modified (text_buffer, FALSE);
-	g_free (file_contents);
-
-	g_io_channel_shutdown (channel, FALSE, NULL);
-	g_io_channel_unref (channel);
-
-	g_free (mcus->current_filename);
-	mcus->current_filename = filename;
-
-	return;
-
-file_error:
-	dialog = gtk_message_dialog_new (GTK_WINDOW (mcus->main_window),
-					 GTK_DIALOG_MODAL,
-					 GTK_MESSAGE_ERROR,
-					 GTK_BUTTONS_OK,
-					 _("Program could not be opened from \"%s\""), filename);
-	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
-
-	g_error_free (error);
-	g_io_channel_unref (channel);
-	g_free (file_contents);
-}
-
-void
-mcus_quit (void)
-{
-	GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (mcus->builder, "mw_code_buffer"));
-
-	/* Ask to save old files */
-	if (gtk_text_buffer_get_modified (text_buffer) == TRUE &&
-	    mcus_save_changes () == FALSE) {
+	/* Try and save the file first */
+	if (mcus_main_window_quit (main_window) == FALSE)
 		return;
-	}
 
-	if (filter != NULL)
-		g_object_unref (filter);
-
-	/*g_object_unref (mcus->current_instruction_tag);
-	g_object_unref (mcus->error_tag);*/
-	if (mcus->language_manager != NULL)
-		g_object_unref (mcus->language_manager);
-
-	if (mcus->builder != NULL)
-		g_object_unref (mcus->builder);
-	if (mcus->main_window != NULL)
-		gtk_widget_destroy (mcus->main_window);
+	if (main_window != NULL)
+		gtk_widget_destroy (GTK_WIDGET (main_window));
 	if (mcus->simulation != NULL)
 		g_object_unref (mcus->simulation);
 
 	g_free (mcus->offset_map);
-	g_free (mcus->current_filename);
 
 	g_free (mcus);
 
@@ -394,6 +171,9 @@ mcus_get_data_directory (void)
 	return path;
 }
 
+/* This is also in the UI file (in Hz) */
+#define DEFAULT_CLOCK_SPEED 1
+
 int
 main (int argc, char *argv[])
 {
@@ -401,6 +181,7 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	gboolean debug = FALSE;
 	gchar **filenames = NULL;
+	GtkWindow *main_window;
 
 	const GOptionEntry options[] = {
 		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, N_("Enable debug mode"), NULL },
@@ -454,13 +235,16 @@ main (int argc, char *argv[])
 	gtk_window_set_default_icon_name ("mcus");
 
 	/* Create and show the interface */
-	mcus_create_interface ();
-	gtk_widget_show_all (mcus->main_window);
+	main_window = mcus_main_window_new ();
+	if (main_window == NULL)
+		mcus_quit (MCUS_MAIN_WINDOW (main_window));
+	gtk_widget_show_all (GTK_WIDGET (main_window));
 
 	/* See if a file to load has been specified on the command line */
 	if (filenames != NULL && filenames[0] != NULL)
-		mcus_open_file (filenames[0]);
+		mcus_main_window_open_file (MCUS_MAIN_WINDOW (main_window), filenames[0]);
 
 	gtk_main ();
+
 	return 0;
 }

@@ -25,7 +25,19 @@
 
 G_BEGIN_DECLS
 
-#define MCUS_SIMULATION_ERROR		(mcus_simulation_error_quark ())
+/* Microcontroller specifications */
+#define PROGRAM_START_ADDRESS 0
+#define REGISTER_COUNT 8
+#define LOOKUP_TABLE_SIZE 256
+#define MEMORY_SIZE 256
+
+typedef struct _MCUSStackFrame MCUSStackFrame;
+
+struct _MCUSStackFrame {
+	guchar program_counter;
+	guchar registers[REGISTER_COUNT];
+	MCUSStackFrame *prev;
+};
 
 enum {
 	MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
@@ -35,6 +47,7 @@ enum {
 };
 
 GQuark mcus_simulation_error_quark (void) G_GNUC_CONST;
+#define MCUS_SIMULATION_ERROR (mcus_simulation_error_quark ())
 
 #define MCUS_TYPE_SIMULATION		(mcus_simulation_get_type ())
 #define MCUS_SIMULATION(o)		(G_TYPE_CHECK_INSTANCE_CAST ((o), MCUS_TYPE_SIMULATION, MCUSSimulation))
@@ -59,12 +72,12 @@ GType mcus_simulation_get_type (void) G_GNUC_CONST;
 void mcus_simulation_start (MCUSSimulation *self);
 gboolean mcus_simulation_iterate (MCUSSimulation *self, GError **error);
 void mcus_simulation_finish (MCUSSimulation *self);
+void mcus_simulation_print_debug_data (MCUSSimulation *self);
 
 guchar *mcus_simulation_get_memory (MCUSSimulation *self);
 guchar *mcus_simulation_get_lookup_table (MCUSSimulation *self);
 guchar *mcus_simulation_get_registers (MCUSSimulation *self);
 
-#include "main.h"
 MCUSStackFrame *mcus_simulation_get_stack_head (MCUSSimulation *self);
 
 guint mcus_simulation_get_iteration (MCUSSimulation *self);

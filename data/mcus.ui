@@ -3,7 +3,7 @@
 	<requires lib="gtk+" version="2.16"/>
 	<object class="GtkUIManager" id="mcus_ui_manager">
 		<child>
-			<object class="GtkActionGroup" id="mw_menu_action_group">
+			<object class="GtkActionGroup" id="mw_file_action_group">
 				<child>
 					<object class="GtkAction" id="mcus_file_action">
 						<property name="name">file</property>
@@ -49,6 +49,10 @@
 					</object>
 					<accelerator key="P" modifiers="GDK_CONTROL_MASK"/>
 				</child>
+			</object>
+		</child>
+		<child>
+			<object class="GtkActionGroup" id="mw_main_action_group">
 				<child>
 					<object class="GtkAction" id="mcus_quit_action">
 						<property name="stock-id">gtk-quit</property>
@@ -257,7 +261,7 @@
 		<property name="step-increment">0.1</property>
 	</object>
 
-	<object class="GtkWindow" id="mcus_main_window">
+	<object class="MCUSMainWindow" type-func="mcus_main_window_get_type" id="mcus_main_window">
 		<property name="title" translatable="yes">Microcontroller Simulator</property>
 		<signal name="delete-event" handler="mw_delete_event_cb"/>
 		<signal name="key-press-event" handler="mw_key_press_event_cb"/>

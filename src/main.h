@@ -17,11 +17,10 @@
  * along with MCUS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtk/gtk.h>
 #include <glib.h>
-#include <gtksourceview/gtksourcelanguagemanager.h>
 
 #include "simulation.h"
+#include "main-window.h"
 
 #ifndef MCUS_MAIN_H
 #define MCUS_MAIN_H
@@ -39,75 +38,19 @@ typedef struct {
 	guint length;
 } MCUSInstructionOffset;
 
-/* These correspond to the tabs in the UI */
-typedef enum {
-	ANALOGUE_INPUT_LINEAR_DEVICE = 0,
-	ANALOGUE_INPUT_FUNCTION_GENERATOR_DEVICE
-} MCUSAnalogueInputDevice;
-
-typedef enum {
-	OUTPUT_LED_DEVICE = 0,
-	OUTPUT_SINGLE_SSD_DEVICE,
-	OUTPUT_DUAL_SSD_DEVICE,
-	OUTPUT_MULTIPLEXED_SSD_DEVICE
-} MCUSOutputDevice;
-
-/* The number of stack frames to show */
-#define STACK_PREVIEW_SIZE 5
-/* This is also in the UI file (in Hz) */
-#define DEFAULT_CLOCK_SPEED 1
-/* TODO: Duplicate */
-#define REGISTER_COUNT 8
-/* TODO: Duplicate */
-#define PROGRAM_START_ADDRESS 0
-/* TODO: Duplicate */
-#define LOOKUP_TABLE_SIZE 256
-#define MEMORY_SIZE 256
-
-typedef struct _MCUSStackFrame MCUSStackFrame;
-
-struct _MCUSStackFrame {
-	guchar program_counter;
-	guchar registers[REGISTER_COUNT];
-	MCUSStackFrame *prev;
-};
-
 typedef struct {
-	GtkWidget *main_window;
-	GtkBuilder *builder;
-
 	/* Simulation state */
 	MCUSSimulation *simulation;
+	MCUSSimulationState simulation_state;
 	gulong clock_speed;
 	gboolean debug;
-	MCUSSimulationState simulation_state;
 	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
-	MCUSAnalogueInputDevice analogue_input_device;
-	MCUSOutputDevice output_device;
-
-	/* Interface */
-	GtkTextTag *current_instruction_tag;
-	GtkTextTag *error_tag;
-	gchar *current_filename;
-	GtkSourceLanguageManager *language_manager;
-
-	/* Analogue input interface */
-	GtkAdjustment *analogue_input_frequency_adjustment;
-	GtkAdjustment *analogue_input_amplitude_adjustment;
-	GtkAdjustment *analogue_input_offset_adjustment;
-	GtkAdjustment *analogue_input_phase_adjustment;
 } MCUS;
 
 MCUS *mcus;
 
-gboolean mcus_save_changes (void);
-void mcus_new_program (void);
-void mcus_open_program (void);
-void mcus_save_program (void);
-void mcus_save_program_as (void);
-void mcus_open_file (gchar *filename);
 const gchar *mcus_get_data_directory (void);
-void mcus_quit (void);
+void mcus_quit (MCUSMainWindow *main_window);
 
 G_END_DECLS
 

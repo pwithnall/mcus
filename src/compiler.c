@@ -19,11 +19,10 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <math.h>
-#include <string.h>
 
 #include "compiler.h"
 #include "instructions.h"
+/* TODO: remove this */
 #include "main.h"
 
 typedef struct {
