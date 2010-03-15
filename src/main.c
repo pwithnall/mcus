@@ -40,12 +40,6 @@ mcus_quit (MCUSMainWindow *main_window)
 
 	if (main_window != NULL)
 		gtk_widget_destroy (GTK_WIDGET (main_window));
-	if (mcus->simulation != NULL)
-		g_object_unref (mcus->simulation);
-
-	g_free (mcus->offset_map);
-
-	g_free (mcus);
 
 	if (gtk_main_level () > 0)
 		gtk_main_quit ();
@@ -100,7 +94,7 @@ set_paths (void)
 
 	if (g_setenv ("PATH", path, TRUE) == FALSE)
 		g_warning ("Could not set PATH for MCUS.");
-	else if (mcus->debug)
+	else
 		g_debug ("Setting PATH as \"%s\".", path);
 
 	g_free (path);
@@ -110,7 +104,9 @@ static void
 set_icon_paths (void)
 {
 	GtkIconTheme *icon_theme;
-	gchar *path;
+	gchar *path, **paths;
+	gint path_count;
+	guint i;
 	const gchar *top_directory;
 
 	icon_theme = gtk_icon_theme_get_default ();
@@ -119,26 +115,19 @@ set_icon_paths (void)
 				 "icons",
 				 NULL);
 
-	if (mcus->debug)
-		g_debug ("Appending \"%s\" to icon theme search path.", path);
-
+	g_debug ("Appending \"%s\" to icon theme search path.", path);
 	gtk_icon_theme_append_search_path (icon_theme, path);
 
-	if (mcus->debug) {
-		gchar **paths;
-		gint path_count;
-		guint i;
-
-		gtk_icon_theme_get_search_path (icon_theme, &paths, &path_count);
-
-		g_debug ("Current icon theme search path:");
-		for (i = 0; i < path_count; i++)
-			g_debug ("\t%s", paths[i]);
-
-		g_strfreev (paths);
-	}
-
 	g_free (path);
+
+	/* Debug */
+	gtk_icon_theme_get_search_path (icon_theme, &paths, &path_count);
+
+	g_debug ("Current icon theme search path:");
+	for (i = 0; i < path_count; i++)
+		g_debug ("\t%s", paths[i]);
+
+	g_strfreev (paths);
 }
 #endif
 
@@ -153,26 +142,28 @@ mcus_get_data_directory (void)
 
 		get_installation_directories (&top_directory, NULL);
 		path = g_build_filename (top_directory,
-					 "share",
-					 "mcus",
-					 NULL);
+		                         "share",
+		                         "mcus",
+		                         NULL);
 #else /* G_OS_WIN32 */
-		/* Support loading while in the source tree, iff we've been called with --debug */
-		if (mcus->debug == TRUE && g_file_test ("data/", G_FILE_TEST_IS_DIR) == TRUE)
-			path = "data/";
-		else
-			path = PACKAGE_DATA_DIR"/mcus/";
+		path = PACKAGE_DATA_DIR"/mcus/";
 #endif /* !G_OS_WIN32 */
 
-		if (mcus->debug)
-			g_debug ("Setting data directory as \"%s\".", path);
+		g_debug ("Setting data directory as \"%s\".", path);
 	}
 
 	return path;
 }
 
-/* This is also in the UI file (in Hz) */
-#define DEFAULT_CLOCK_SPEED 1
+/* Debug log message handler: discards debug messages unless MCUS is run with the --debug flag. */
+static void
+debug_handler (const char *log_domain, GLogLevelFlags log_level, const char *message, gpointer user_data)
+{
+	gboolean debug = GPOINTER_TO_UINT (user_data);
+
+	if (debug == TRUE)
+		g_log_default_handler (log_domain, log_level, message, NULL);
+}
 
 int
 main (int argc, char *argv[])
@@ -208,10 +199,10 @@ main (int argc, char *argv[])
 	if (g_option_context_parse (context, &argc, &argv, &error) == FALSE) {
 		/* Show an error */
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
-							    GTK_DIALOG_MODAL,
-							    GTK_MESSAGE_ERROR,
-							    GTK_BUTTONS_OK,
-							    _("Command-line options could not be parsed"));
+		                                            GTK_DIALOG_MODAL,
+		                                            GTK_MESSAGE_ERROR,
+		                                            GTK_BUTTONS_OK,
+		                                            _("Command-line options could not be parsed"));
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
@@ -222,12 +213,10 @@ main (int argc, char *argv[])
 
 	g_option_context_free (context);
 
-	/* Setup */
-	mcus = g_new0 (MCUS, 1);
-	mcus->debug = debug;
-	mcus->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
-	mcus->simulation = g_object_new (MCUS_TYPE_SIMULATION, NULL);
+	/* Debug log handling */
+	g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, (GLogFunc) debug_handler, GUINT_TO_POINTER (debug));
 
+	/* Set up */
 #ifdef G_OS_WIN32
 	set_paths ();
 	set_icon_paths ();

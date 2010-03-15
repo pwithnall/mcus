@@ -101,6 +101,9 @@ G_MODULE_EXPORT void mw_print_activate_cb (GtkAction *self, MCUSMainWindow *main
 /* TODO: Shouldn't have this */
 #define STACK_PREVIEW_SIZE 5
 
+/* This is also in the UI file (in Hz) */
+#define DEFAULT_CLOCK_SPEED 1
+
 typedef enum {
 	OUTPUT_LED_DEVICE = 0,
 	OUTPUT_SINGLE_SSD_DEVICE,
@@ -108,7 +111,18 @@ typedef enum {
 	OUTPUT_MULTIPLEXED_SSD_DEVICE
 } OutputDevice;
 
+typedef enum {
+	SIMULATION_STOPPED,
+	SIMULATION_PAUSED,
+	SIMULATION_RUNNING
+} SimulationState;
+
 struct _MCUSMainWindowPrivate {
+	/* Simulation */
+	MCUSSimulation *simulation;
+	SimulationState simulation_state;
+	gulong clock_speed;
+
 	/* Displays */
 	GtkLabel *registers_label;
 	GtkLabel *memory_label;
@@ -152,6 +166,7 @@ struct _MCUSMainWindowPrivate {
 
 	/* Code editing/highlighting */
 	GtkTextBuffer *code_buffer;
+	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
 	GtkTextTag *current_instruction_tag;
 	GtkTextTag *error_tag;
 	GtkSourceLanguageManager *language_manager;
@@ -209,6 +224,12 @@ mcus_main_window_init (MCUSMainWindow *self)
 	self->priv->filter = gtk_file_filter_new ();
 	g_object_ref_sink (self->priv->filter);
 	gtk_file_filter_add_pattern (self->priv->filter, "*.asm");
+
+	/* Set up the simulation */
+	self->priv->simulation = mcus_simulation_new ();
+
+	/* Set up the clock speed */
+	self->priv->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
 }
 
 static void
@@ -227,6 +248,10 @@ mcus_main_window_dispose (GObject *object)
 		g_object_unref (priv->filter);
 	priv->filter = NULL;
 
+	if (priv->simulation != NULL)
+		g_object_unref (priv->simulation);
+	priv->simulation = NULL;
+
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (mcus_main_window_parent_class)->dispose (object);
 }
@@ -237,6 +262,7 @@ mcus_main_window_finalize (GObject *object)
 	MCUSMainWindowPrivate *priv = MCUS_MAIN_WINDOW (object)->priv;
 
 	g_free (priv->current_filename);
+	g_free (priv->offset_map);
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (mcus_main_window_parent_class)->finalize (object);
@@ -252,6 +278,7 @@ mcus_main_window_new (void)
 	GtkTextBuffer *text_buffer;
 	GtkSourceLanguage *language;
 	const gchar * const *old_language_dirs;
+	const gchar * const *language_ids;
 	const gchar **language_dirs;
 	guint i = 0;
 	gchar *interface_filename;
@@ -379,7 +406,7 @@ mcus_main_window_new (void)
 	priv->output_single_ssd_segment_option = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, "mw_output_single_ssd_segment_option"));
 
 	/* Set up the simulation state */
-	mcus->simulation_state = SIMULATION_STOPPED;
+	priv->simulation_state = SIMULATION_STOPPED;
 	update_ui (MCUS_MAIN_WINDOW (main_window));
 
 	/* Create the highlighting tags */
@@ -397,9 +424,9 @@ mcus_main_window_new (void)
 	g_signal_connect (text_buffer, "notify::has-selection", (GCallback) notify_has_selection_cb, main_window);
 
 	/* Watch for changes in the simulation */
-	g_signal_connect (mcus->simulation, "notify::program-counter", (GCallback) notify_program_counter_cb, main_window);
-	g_signal_connect (mcus->simulation, "notify::zero-flag", (GCallback) notify_zero_flag_cb, main_window);
-	g_signal_connect (mcus->simulation, "notify::output-port", (GCallback) notify_output_port_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::program-counter", (GCallback) notify_program_counter_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::zero-flag", (GCallback) notify_zero_flag_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::output-port", (GCallback) notify_output_port_cb, main_window);
 
 	/* Watch for modification of the code buffer */
 	g_signal_connect (text_buffer, "modified-changed", (GCallback) buffer_modified_changed_cb, main_window);
@@ -425,22 +452,20 @@ mcus_main_window_new (void)
 	}
 	language_dirs[i + 2] = NULL;
 
-	if (mcus->debug) {
-		g_debug ("Current language manager search path:");
-		for (i = 0; language_dirs[i] != NULL; i++)
-			g_debug ("\t%s", language_dirs[i]);
-	}
+	/* Debug */
+	g_debug ("Current language manager search path:");
+	for (i = 0; language_dirs[i] != NULL; i++)
+		g_debug ("\t%s", language_dirs[i]);
 
 	gtk_source_language_manager_set_search_path (priv->language_manager, (gchar**) language_dirs);
 	g_free (language_dirs);
 
-	if (mcus->debug) {
-		const gchar * const *language_ids = gtk_source_language_manager_get_language_ids (priv->language_manager);
+	/* Debug */
+	language_ids = gtk_source_language_manager_get_language_ids (priv->language_manager);
 
-		g_debug ("Languages installed:");
-		for (i = 0; language_ids[i] != NULL; i++)
-			g_debug ("\t%s", language_ids[i]);
-	}
+	g_debug ("Languages installed:");
+	for (i = 0; language_ids[i] != NULL; i++)
+		g_debug ("\t%s", language_ids[i]);
 
 	language = gtk_source_language_manager_get_language (priv->language_manager, "ocr-assembly");
 	if (language == NULL)
@@ -666,8 +691,8 @@ update_ui (MCUSMainWindow *self)
 	MCUSMainWindowPrivate *priv = self->priv;
 	gboolean stopped, not_running, has_selection;
 
-	stopped = mcus->simulation_state == SIMULATION_STOPPED;
-	not_running = mcus->simulation_state != SIMULATION_RUNNING;
+	stopped = priv->simulation_state == SIMULATION_STOPPED;
+	not_running = priv->simulation_state != SIMULATION_RUNNING;
 	has_selection = gtk_text_buffer_get_has_selection (self->priv->code_buffer);
 	source_buffer = GTK_SOURCE_BUFFER (self->priv->code_buffer);
 
@@ -694,9 +719,9 @@ update_ui (MCUSMainWindow *self)
 	SET_SENSITIVITY_A (delete_action, not_running && has_selection);
 
 	SET_SENSITIVITY_A (run_action, not_running);
-	SET_SENSITIVITY_A (pause_action, mcus->simulation_state == SIMULATION_RUNNING);
-	SET_SENSITIVITY_A (stop_action, mcus->simulation_state != SIMULATION_STOPPED);
-	SET_SENSITIVITY_A (step_forward_action, mcus->simulation_state == SIMULATION_PAUSED);
+	SET_SENSITIVITY_A (pause_action, priv->simulation_state == SIMULATION_RUNNING);
+	SET_SENSITIVITY_A (stop_action, priv->simulation_state != SIMULATION_STOPPED);
+	SET_SENSITIVITY_A (step_forward_action, priv->simulation_state == SIMULATION_PAUSED);
 
 #undef SET_SENSITIVITY_A
 #undef SET_SENSITIVITY_W
@@ -765,7 +790,7 @@ input_port_read_entry (MCUSMainWindow *self, GError **error)
 	}
 	input_port += digit_value;
 
-	mcus_simulation_set_input_port (mcus->simulation, input_port);
+	mcus_simulation_set_input_port (self->priv->simulation, input_port);
 
 	return TRUE;
 }
@@ -773,7 +798,7 @@ input_port_read_entry (MCUSMainWindow *self, GError **error)
 static void
 input_port_update_entry (MCUSMainWindow *self)
 {
-	gchar *output = g_strdup_printf ("%02X", mcus_simulation_get_input_port (mcus->simulation));
+	gchar *output = g_strdup_printf ("%02X", mcus_simulation_get_input_port (self->priv->simulation));
 	gtk_entry_set_text (self->priv->input_port_entry, output);
 	g_free (output);
 }
@@ -791,14 +816,14 @@ input_port_read_check_buttons (MCUSMainWindow *self)
 		input_port = gtk_toggle_button_get_active (self->priv->input_check_button[7 - i]) | (input_port << 1);
 	}
 
-	mcus_simulation_set_input_port (mcus->simulation, input_port);
+	mcus_simulation_set_input_port (self->priv->simulation, input_port);
 }
 
 static void
 input_port_update_check_buttons (MCUSMainWindow *self)
 {
 	guint i;
-	guchar input_port = mcus_simulation_get_input_port (mcus->simulation);
+	guchar input_port = mcus_simulation_get_input_port (self->priv->simulation);
 
 	/* 0 is LSB, 7 is MSB */
 	for (i = 0; i < 8; i++) {
@@ -812,10 +837,10 @@ update_single_ssd_output (MCUSMainWindow *self)
 {
 	if (gtk_toggle_button_get_active (self->priv->output_single_ssd_segment_option) == TRUE) {
 		/* Each bit in the output corresponds to one segment */
-		mcus_seven_segment_display_set_segment_mask (self->priv->output_single_ssd, mcus_simulation_get_output_port (mcus->simulation));
+		mcus_seven_segment_display_set_segment_mask (self->priv->output_single_ssd, mcus_simulation_get_output_port (self->priv->simulation));
 	} else {
 		/* The output is BCD-encoded, and we should display that number */
-		guint digit = mcus_simulation_get_output_port (mcus->simulation) & 0x0F;
+		guint digit = mcus_simulation_get_output_port (self->priv->simulation) & 0x0F;
 
 		if (digit > 9)
 			digit = 0;
@@ -828,7 +853,7 @@ static void
 update_multi_ssd_output (MCUSMainWindow *self)
 {
 	guint i;
-	guchar output_port = mcus_simulation_get_output_port (mcus->simulation);
+	guchar output_port = mcus_simulation_get_output_port (self->priv->simulation);
 
 	for (i = 0; i < 16; i++) {
 		/* Work out which SSD we're setting */
@@ -852,7 +877,7 @@ static void
 update_outputs (MCUSMainWindow *self)
 {
 	guint i;
-	guchar output_port = mcus_simulation_get_output_port (mcus->simulation);
+	guchar output_port = mcus_simulation_get_output_port (self->priv->simulation);
 
 	/* Only update outputs if they're visible */
 	switch (self->priv->output_device) {
@@ -903,10 +928,10 @@ update_simulation_ui (MCUSMainWindow *self)
 	MCUSStackFrame *stack_frame, *stack;
 	guchar *memory, *registers, program_counter;
 
-	memory = mcus_simulation_get_memory (mcus->simulation);
-	registers = mcus_simulation_get_registers (mcus->simulation);
-	stack = mcus_simulation_get_stack_head (mcus->simulation);
-	program_counter = mcus_simulation_get_program_counter (mcus->simulation);
+	memory = mcus_simulation_get_memory (self->priv->simulation);
+	registers = mcus_simulation_get_registers (self->priv->simulation);
+	stack = mcus_simulation_get_stack_head (self->priv->simulation);
+	program_counter = mcus_simulation_get_program_counter (self->priv->simulation);
 
 	/* Update the memory label */
 	for (i = 0; i < MEMORY_SIZE; i++) {
@@ -959,14 +984,14 @@ update_simulation_ui (MCUSMainWindow *self)
 	update_outputs (self);
 
 	/* Move the current line mark */
-	if (mcus->offset_map != NULL) {
+	if (self->priv->offset_map != NULL) {
 		tag_range (self, self->priv->current_instruction_tag,
-		           mcus->offset_map[program_counter].offset,
-		           mcus->offset_map[program_counter].offset + mcus->offset_map[program_counter].length,
+		           self->priv->offset_map[program_counter].offset,
+		           self->priv->offset_map[program_counter].offset + self->priv->offset_map[program_counter].length,
 		           TRUE);
 	}
 
-	mcus_simulation_print_debug_data (mcus->simulation);
+	mcus_simulation_print_debug_data (self->priv->simulation);
 }
 
 static void
@@ -974,7 +999,7 @@ read_analogue_input (MCUSMainWindow *self)
 {
 	MCUSMainWindowPrivate *priv = self->priv;
 	gdouble amplitude, frequency, phase, offset, analogue_input;
-	guint iteration = mcus_simulation_get_iteration (mcus->simulation);
+	guint iteration = mcus_simulation_get_iteration (priv->simulation);
 
 	/* Update the analogue input from the function generator */
 	amplitude = gtk_adjustment_get_value (priv->adc_amplitude_adjustment);
@@ -987,26 +1012,26 @@ read_analogue_input (MCUSMainWindow *self)
 		analogue_input = offset;
 	} else if (gtk_toggle_button_get_active (priv->adc_sine_wave_option) == TRUE) {
 		/* Sine wave */
-		analogue_input = amplitude * sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * mcus->clock_speed / 1000.0) + phase) + offset;
+		analogue_input = amplitude * sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * priv->clock_speed / 1000.0) + phase) + offset;
 	} else if (gtk_toggle_button_get_active (priv->adc_square_wave_option) == TRUE) {
 		/* Square wave */
-		gdouble sine = sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * mcus->clock_speed / 1000.0) + phase);
+		gdouble sine = sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * priv->clock_speed / 1000.0) + phase);
 		analogue_input = (sine > 0) ? 1.0 : (sine == 0) ? 0.0 : -1.0;
 		analogue_input = amplitude * analogue_input + offset;
 	} else if (gtk_toggle_button_get_active (priv->adc_triangle_wave_option) == TRUE) {
 		/* Triangle wave */
-		analogue_input = amplitude * asin (sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * mcus->clock_speed / 1000.0) + phase)) + offset;
+		analogue_input = amplitude * asin (sin (2.0 * M_PI * frequency *
+		                                        ((gdouble)(iteration) * priv->clock_speed / 1000.0) + phase)) + offset;
 	} else {
 		/* Sawtooth wave */
-		gdouble t = ((gdouble)(iteration) * mcus->clock_speed / 1000.0) * frequency;
+		gdouble t = ((gdouble)(iteration) * priv->clock_speed / 1000.0) * frequency;
 		analogue_input = amplitude * 2.0 * (t - floor (t + 0.5)) + offset;
 	}
 
 	/* Clamp the value to 0--5V and set it */
-	mcus_simulation_set_analogue_input (mcus->simulation, CLAMP (analogue_input, 0.0, 5.0));
+	mcus_simulation_set_analogue_input (priv->simulation, CLAMP (analogue_input, 0.0, 5.0));
 
-	if (mcus->debug == TRUE)
-		g_debug ("Analogue input: %f", analogue_input);
+	g_debug ("Analogue input: %f", analogue_input);
 }
 
 static void
@@ -1115,7 +1140,7 @@ mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, MCUSMainWindow *ma
 	}
 
 	/* Toggle the relevant bit in the input port */
-	mcus_simulation_set_input_port (mcus->simulation, mcus_simulation_get_input_port (mcus->simulation) ^ (1 << shift));
+	mcus_simulation_set_input_port (main_window->priv->simulation, mcus_simulation_get_input_port (main_window->priv->simulation) ^ (1 << shift));
 
 	/* Update the UI (updating the check buttons updates the entry too) */
 	input_port_update_check_buttons (main_window);
@@ -1173,25 +1198,25 @@ simulation_iterate_cb (MCUSMainWindow *main_window)
 {
 	GError *error = NULL;
 
-	if (mcus->simulation_state != SIMULATION_RUNNING)
+	if (main_window->priv->simulation_state != SIMULATION_RUNNING)
 		return FALSE;
 
 	read_analogue_input (main_window);
 
-	if (mcus_simulation_iterate (mcus->simulation, &error) == FALSE) {
+	if (mcus_simulation_iterate (main_window->priv->simulation, &error) == FALSE) {
 		/* Get out of simulation UI mode */
-		mcus->simulation_state = SIMULATION_STOPPED;
-		mcus_simulation_finish (mcus->simulation);
+		main_window->priv->simulation_state = SIMULATION_STOPPED;
+		mcus_simulation_finish (main_window->priv->simulation);
 		update_ui (main_window);
 
 		if (error != NULL) {
 			GtkWidget *dialog;
-			guchar program_counter = mcus_simulation_get_program_counter (mcus->simulation);
+			guchar program_counter = mcus_simulation_get_program_counter (main_window->priv->simulation);
 
 			/* Highlight the offending line */
 			tag_range (main_window, main_window->priv->error_tag,
-			           mcus->offset_map[program_counter].offset,
-			           mcus->offset_map[program_counter].offset + mcus->offset_map[program_counter].length,
+			           main_window->priv->offset_map[program_counter].offset,
+			           main_window->priv->offset_map[program_counter].offset + main_window->priv->offset_map[program_counter].length,
 			           FALSE);
 
 			/* Display an error message */
@@ -1236,7 +1261,7 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	gtk_text_buffer_get_bounds (code_buffer, &start_iter, &end_iter);
 	code = gtk_text_buffer_get_text (code_buffer, &start_iter, &end_iter, FALSE);
 
-	mcus_simulation_print_debug_data (mcus->simulation);
+	mcus_simulation_print_debug_data (main_window->priv->simulation);
 
 	/* Parse it */
 	compiler = mcus_compiler_new ();
@@ -1245,26 +1270,26 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 
 	if (error != NULL)
 		goto compiler_error;
-	mcus_simulation_print_debug_data (mcus->simulation);
+	mcus_simulation_print_debug_data (main_window->priv->simulation);
 
 	/* Compile it */
-	mcus_compiler_compile (compiler, mcus->simulation, &error);
+	mcus_compiler_compile (compiler, main_window->priv->simulation, &(main_window->priv->offset_map), &error);
 
 	if (error != NULL)
 		goto compiler_error;
 	g_object_unref (compiler);
 
 	/* Initialise the simulator */
-	if (mcus->simulation_state == SIMULATION_STOPPED)
-		mcus_simulation_start (mcus->simulation);
+	if (main_window->priv->simulation_state == SIMULATION_STOPPED)
+		mcus_simulation_start (main_window->priv->simulation);
 	update_simulation_ui (main_window);
 
 	/* Enter simulation UI mode */
-	mcus->simulation_state = SIMULATION_RUNNING;
+	main_window->priv->simulation_state = SIMULATION_RUNNING;
 	update_ui (main_window);
 
 	/* Add the timeout for the simulation iterations */
-	g_timeout_add (mcus->clock_speed, (GSourceFunc) simulation_iterate_cb, main_window);
+	g_timeout_add (main_window->priv->clock_speed, (GSourceFunc) simulation_iterate_cb, main_window);
 
 	return;
 
@@ -1290,30 +1315,30 @@ compiler_error:
 G_MODULE_EXPORT void
 mw_pause_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	mcus->simulation_state = SIMULATION_PAUSED;
+	main_window->priv->simulation_state = SIMULATION_PAUSED;
 	update_ui (main_window);
 }
 
 G_MODULE_EXPORT void
 mw_stop_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	mcus->simulation_state = SIMULATION_STOPPED;
-	mcus_simulation_finish (mcus->simulation);
+	main_window->priv->simulation_state = SIMULATION_STOPPED;
+	mcus_simulation_finish (main_window->priv->simulation);
 	update_ui (main_window);
 }
 
 G_MODULE_EXPORT void
 mw_step_forward_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	mcus->simulation_state = SIMULATION_RUNNING;
+	main_window->priv->simulation_state = SIMULATION_RUNNING;
 	if (simulation_iterate_cb (NULL) == TRUE)
-		mcus->simulation_state = SIMULATION_PAUSED;
+		main_window->priv->simulation_state = SIMULATION_PAUSED;
 }
 
 G_MODULE_EXPORT void
 mw_clock_speed_spin_button_value_changed_cb (GtkSpinButton *self, MCUSMainWindow *main_window)
 {
-	mcus->clock_speed = 1000 / gtk_spin_button_get_value (self);
+	main_window->priv->clock_speed = 1000 / gtk_spin_button_get_value (self);
 }
 
 G_MODULE_EXPORT void

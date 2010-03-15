@@ -232,6 +232,12 @@ mcus_simulation_set_property (GObject *object, guint property_id, const GValue *
 	}
 }
 
+MCUSSimulation *
+mcus_simulation_new (void)
+{
+	return g_object_new (MCUS_TYPE_SIMULATION, NULL);
+}
+
 void
 mcus_simulation_start (MCUSSimulation *self)
 {

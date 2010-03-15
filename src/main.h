@@ -19,7 +19,6 @@
 
 #include <glib.h>
 
-#include "simulation.h"
 #include "main-window.h"
 
 #ifndef MCUS_MAIN_H
@@ -27,27 +26,10 @@
 
 G_BEGIN_DECLS
 
-typedef enum {
-	SIMULATION_STOPPED,
-	SIMULATION_PAUSED,
-	SIMULATION_RUNNING
-} MCUSSimulationState;
-
 typedef struct {
 	gint offset;
 	guint length;
 } MCUSInstructionOffset;
-
-typedef struct {
-	/* Simulation state */
-	MCUSSimulation *simulation;
-	MCUSSimulationState simulation_state;
-	gulong clock_speed;
-	gboolean debug;
-	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
-} MCUS;
-
-MCUS *mcus;
 
 const gchar *mcus_get_data_directory (void);
 void mcus_quit (MCUSMainWindow *main_window);

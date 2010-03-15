@@ -22,8 +22,6 @@
 
 #include "compiler.h"
 #include "instructions.h"
-/* TODO: remove this */
-#include "main.h"
 
 typedef struct {
 	guchar *table;
@@ -90,6 +88,17 @@ const MCUSInstructionData const mcus_instruction_data[] = {
 		N_("SHR Sx — logically shift the bits in the register right one place.") }
 };
 
+GQuark
+mcus_compiler_error_quark (void)
+{
+	static GQuark q = 0;
+
+	if (q == 0)
+		q = g_quark_from_static_string ("mcus-compiler-error-quark");
+
+	return q;
+}
+
 static void mcus_compiler_finalize (GObject *object);
 static void reset_state (MCUSCompiler *self);
 
@@ -148,17 +157,6 @@ mcus_compiler_finalize (GObject *object)
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (mcus_compiler_parent_class)->finalize (object);
-}
-
-GQuark
-mcus_compiler_error_quark (void)
-{
-	static GQuark q = 0;
-
-	if (q == 0)
-		q = g_quark_from_static_string ("mcus-compiler-error-quark");
-
-	return q;
 }
 
 static const gchar *
@@ -251,12 +249,10 @@ store_label (MCUSCompiler *self, const MCUSLabel *label, GError **error)
 						sizeof (MCUSLabel) * (self->priv->label_count - self->priv->label_count % LABEL_BLOCK_SIZE + 1) * LABEL_BLOCK_SIZE);
 		self->priv->label_count++;
 
-		if (mcus->debug == TRUE) {
-			g_debug ("Reallocating label memory block to %lu bytes due to having to store label %u (\"%s\").",
-				 (gulong)(sizeof (MCUSLabel) * (self->priv->label_count - self->priv->label_count % LABEL_BLOCK_SIZE + 1) * LABEL_BLOCK_SIZE),
-				 self->priv->label_count,
-				 label->label);
-		}
+		g_debug ("Reallocating label memory block to %lu bytes due to having to store label %u (\"%s\").",
+		         (gulong) (sizeof (MCUSLabel) * (self->priv->label_count - self->priv->label_count % LABEL_BLOCK_SIZE + 1) * LABEL_BLOCK_SIZE),
+		         self->priv->label_count,
+		         label->label);
 	} else {
 		self->priv->label_count++;
 	}
@@ -272,8 +268,7 @@ resolve_label (MCUSCompiler *self, guint instruction_number, const gchar *label_
 {
 	guint i;
 
-	if (mcus->debug == TRUE)
-		g_debug ("Resolving label \"%s\".", label_string);
+	g_debug ("Resolving label \"%s\".", label_string);
 
 	/* Resolve labels for the built-in subroutines to some special (hacky) locations:
 	 *  * readtable: Copies the byte in the lookup table pointed at by S7 into S0. The lookup table is
@@ -316,15 +311,13 @@ store_instruction (MCUSCompiler *self, const MCUSInstruction *instruction)
 	/* If our instruction array is full, extend it */
 	if (self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE == 0) {
 		self->priv->instructions = g_realloc (self->priv->instructions,
-						      sizeof (MCUSInstruction) * (self->priv->instruction_count - self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE + 1) * INSTRUCTION_BLOCK_SIZE);
+		                                      sizeof (MCUSInstruction) * (self->priv->instruction_count - self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE + 1) * INSTRUCTION_BLOCK_SIZE);
 		self->priv->instruction_count++;
 
-		if (mcus->debug == TRUE) {
-			g_debug ("Reallocating instruction memory block to %lu bytes due to having to store instruction %u (\"%s\").",
-				 (gulong)(sizeof (MCUSInstruction) * (self->priv->instruction_count - self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE + 1) * INSTRUCTION_BLOCK_SIZE),
-				 self->priv->instruction_count,
-				 mcus_instruction_data[instruction->opcode].mnemonic);
-		}
+		g_debug ("Reallocating instruction memory block to %lu bytes due to having to store instruction %u (\"%s\").",
+		         (gulong) (sizeof (MCUSInstruction) * (self->priv->instruction_count - self->priv->instruction_count % INSTRUCTION_BLOCK_SIZE + 1) * INSTRUCTION_BLOCK_SIZE),
+		         self->priv->instruction_count,
+		         mcus_instruction_data[instruction->opcode].mnemonic);
 	} else {
 		self->priv->instruction_count++;
 	}
@@ -557,8 +550,7 @@ lex_operand (MCUSCompiler *self, MCUSOperand *operand, GError **error)
 	operand_string[length] = '\0';
 	self->priv->i += length;
 
-	if (mcus->debug == TRUE)
-		g_debug ("Lexing suspected operand \"%s\".", operand_string);
+	g_debug ("Lexing suspected operand \"%s\".", operand_string);
 
 	/* There are several different types of operands we can lex/tokenise:
 	 *  - Constant: in hexadecimal from 00..FF (e.g. "F7", "05" or "AB")
@@ -665,8 +657,7 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 		return FALSE;
 	}
 
-	if (mcus->debug == TRUE)
-		g_debug ("Lexing suspected mnemonic \"%s\".", mnemonic_string);
+	g_debug ("Lexing suspected mnemonic \"%s\".", mnemonic_string);
 
 	/* Tokenise the mnemonic string to produce an MCUSOpcode */
 	for (i = 0; i < G_N_ELEMENTS (mcus_instruction_data); i++) {
@@ -827,7 +818,7 @@ throw_error:
 }
 
 gboolean
-mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, GError **error)
+mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstructionOffset **offset_map, GError **error)
 {
 	guint i;
 	guchar *memory, *lookup_table;
@@ -842,11 +833,10 @@ mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, GError **
 	memset (lookup_table, 0, LOOKUP_TABLE_SIZE);
 
 	/* Allocate the line number map's memory */
-	g_free (mcus->offset_map);
-	mcus->offset_map = g_malloc (sizeof (*mcus->offset_map) * (self->priv->compiled_size + 1));
+	g_free (*offset_map);
+	*offset_map = g_malloc (sizeof (MCUSInstructionOffset) * (self->priv->compiled_size + 1));
 
-	if (mcus->debug == TRUE)
-		g_debug ("Allocating line number map of %lu bytes.", (gulong)(sizeof (guint) * self->priv->compiled_size));
+	g_debug ("Allocating line number map of %lu bytes.", (gulong) (sizeof (guint) * self->priv->compiled_size));
 
 	/* Compile it to memory */
 	self->priv->compiled_size = PROGRAM_START_ADDRESS;
@@ -874,8 +864,8 @@ mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, GError **
 		}
 
 		/* Store the line number mapping for the instruction */
-		mcus->offset_map[self->priv->compiled_size].offset = instruction->offset;
-		mcus->offset_map[self->priv->compiled_size].length = instruction->length;
+		(*offset_map)[self->priv->compiled_size].offset = instruction->offset;
+		(*offset_map)[self->priv->compiled_size].length = instruction->length;
 
 		/* Store the opcode first, as that's easy */
 		memory[self->priv->compiled_size++] = instruction->opcode;
@@ -930,8 +920,8 @@ mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, GError **
 	}
 
 	/* Set the last element in the line number map to -1 for safety */
-	mcus->offset_map[self->priv->compiled_size].offset = -1;
-	mcus->offset_map[self->priv->compiled_size].length = 0;
+	(*offset_map)[self->priv->compiled_size].offset = -1;
+	(*offset_map)[self->priv->compiled_size].length = 0;
 
 	/* Copy across the lookup table */
 	g_memmove (lookup_table, self->priv->lookup_table.table, sizeof (guchar) * self->priv->lookup_table.length);

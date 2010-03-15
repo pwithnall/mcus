@@ -24,6 +24,7 @@
 #include <glib-object.h>
 
 #include "simulation.h"
+#include "main.h" /* TODO: remove this */
 
 G_BEGIN_DECLS
 
@@ -66,7 +67,7 @@ GQuark mcus_compiler_error_quark (void) G_GNUC_CONST;
 
 MCUSCompiler *mcus_compiler_new (void) G_GNUC_WARN_UNUSED_RESULT;
 gboolean mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error);
-gboolean mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, GError **error);
+gboolean mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstructionOffset **offset_map, GError **error);
 guint mcus_compiler_get_offset (MCUSCompiler *self);
 void mcus_compiler_get_error_location (MCUSCompiler *self, guint *start, guint *end);
 
