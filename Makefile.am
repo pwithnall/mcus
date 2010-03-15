@@ -11,14 +11,12 @@ src_mcus_SOURCES = \
 	src/compiler.c				\
 	src/compiler.h				\
 	src/instructions.h			\
+	src/input-port.c			\
+	src/input-port.h			\
 	src/main-window.c			\
 	src/main-window.h			\
 	src/simulation.c			\
 	src/simulation.h			\
-	src/analogue-input.c			\
-	src/analogue-input.h			\
-	src/input-port.c			\
-	src/input-port.h			\
 	src/widgets/seven-segment-display.c	\
 	src/widgets/seven-segment-display.h	\
 	src/widgets/led.c			\

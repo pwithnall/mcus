@@ -19,20 +19,12 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <glib/gprintf.h>
 #include <gtk/gtk.h>
-#include <string.h>
+#include <limits.h>
 
 #include "main.h"
 #include "instructions.h"
 #include "simulation.h"
-#include "interface.h"
-#include "analogue-input.h"
-#include "widgets/led.h"
-#include "widgets/seven-segment-display.h"
-
-G_MODULE_EXPORT void mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, gpointer user_data);
-G_MODULE_EXPORT void mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data);
 
 GQuark
 mcus_simulation_error_quark (void)
@@ -45,30 +37,417 @@ mcus_simulation_error_quark (void)
 	return q;
 }
 
-void
-mcus_simulation_init (void)
+static void mcus_simulation_finalize (GObject *object);
+static void mcus_simulation_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+static void mcus_simulation_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+
+#define REGISTER_COUNT 8
+#define MEMORY_SIZE 256
+#define LOOKUP_TABLE_SIZE 256
+#define PROGRAM_START_ADDRESS 0
+
+/* This is also in the UI file (in Volts) */
+#define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
+
+struct _MCUSSimulationPrivate {
+	/* Simulated hardware */
+	guchar program_counter;
+	gboolean zero_flag;
+	guchar registers[REGISTER_COUNT];
+	guchar input_port;
+	guchar output_port;
+	gdouble analogue_input;
+	guchar memory[MEMORY_SIZE];
+	guchar lookup_table[LOOKUP_TABLE_SIZE];
+	MCUSStackFrame *stack;
+
+	/* Simulation metadata */
+	guint iteration;
+};
+
+enum {
+	PROP_ITERATION = 1,
+	PROP_PROGRAM_COUNTER,
+	PROP_ZERO_FLAG,
+	PROP_INPUT_PORT,
+	PROP_OUTPUT_PORT,
+	PROP_ANALOGUE_INPUT
+};
+
+enum {
+	SIGNAL_ITERATION_FINISHED,
+	LAST_SIGNAL
+};
+
+static int signals[LAST_SIGNAL] = { 0 };
+
+G_DEFINE_TYPE (MCUSSimulation, mcus_simulation, G_TYPE_OBJECT)
+
+static void
+mcus_simulation_class_init (MCUSSimulationClass *klass)
 {
-	guint i;
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-	mcus->iteration = 0;
-	mcus->program_counter = PROGRAM_START_ADDRESS;
-	mcus->zero_flag = 0;
+	g_type_class_add_private (klass, sizeof (MCUSSimulationPrivate));
 
-	for (i = 0; i < REGISTER_COUNT; i++)
-		mcus->registers[i] = 0;
-	mcus->stack = NULL;
+	gobject_class->get_property = mcus_simulation_get_property;
+	gobject_class->set_property = mcus_simulation_set_property;
+	gobject_class->finalize = mcus_simulation_finalize;
 
-	/* Remove previous errors */
-	mcus_remove_tag (mcus->error_tag);
+	/**
+	 * MCUSSimulation:iteration:
+	 *
+	 * The current (zero-based) iteration of the simulation.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_ITERATION,
+				g_param_spec_uint ("iteration",
+					"Iteration", "The current (zero-based) iteration of the simulation.",
+					0, G_MAXUINT, 0,
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:program-counter:
+	 *
+	 * The address of the opcode of the currently executing instruction in the microcontroller memory.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_PROGRAM_COUNTER,
+				g_param_spec_uchar ("program-counter",
+					"Program Counter", "The address of the opcode of the currently executing instruction in memory.",
+					0, UCHAR_MAX, PROGRAM_START_ADDRESS,
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:zero-flag:
+	 *
+	 * A flag indicating whether the result of the last arithmetical instruction was zero.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_ZERO_FLAG,
+				g_param_spec_boolean ("zero-flag",
+					"Zero Flag", "A flag indicating whether the result of the last arithmetical instruction was zero.",
+					FALSE,
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:input-port:
+	 *
+	 * A byte-wide input port for the microcontroller.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_INPUT_PORT,
+				g_param_spec_uchar ("input-port",
+					"Input Port", "A byte-wide input port for the microcontroller.",
+					0, UCHAR_MAX, 0,
+					G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:output-port:
+	 *
+	 * A byte-wide output port from the microcontroller.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_OUTPUT_PORT,
+				g_param_spec_uchar ("output-port",
+					"Output Port", "A byte-wide output port from the microcontroller.",
+					0, UCHAR_MAX, 0,
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:analogue-input:
+	 *
+	 * An analogue voltage input to an ADC in the microcontroller.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_ANALOGUE_INPUT,
+				g_param_spec_double ("analogue-input",
+					"Analogue Input", "An analogue voltage input to an ADC in the microcontroller.",
+					0.0, ANALOGUE_INPUT_MAX_VOLTAGE, 0.0,
+					G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation::iteration-finished:
+	 * @simulation: the #MCUSSimulation which has finished an iteration
+	 *
+	 * Emitted when an iteration of the simulation has been finished and output data is ready to be pushed to the UI.
+	 **/
+	signals[SIGNAL_ITERATION_FINISHED] = g_signal_new ("iteration-finished",
+				G_TYPE_FROM_CLASS (klass),
+				G_SIGNAL_RUN_LAST,
+				0,
+				NULL, NULL,
+				g_cclosure_marshal_VOID__VOID,
+				G_TYPE_NONE, 0);
+}
+
+static void
+mcus_simulation_init (MCUSSimulation *self)
+{
+	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MCUS_TYPE_SIMULATION, MCUSSimulationPrivate);
+}
+
+static void
+mcus_simulation_finalize (GObject *object)
+{
+	mcus_simulation_finish (MCUS_SIMULATION (object));
+
+	/* Chain up to the parent class */
+	G_OBJECT_CLASS (mcus_simulation_parent_class)->finalize (object);
+}
+
+static void
+mcus_simulation_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+	MCUSSimulationPrivate *priv = MCUS_SIMULATION (object)->priv;
+
+	switch (property_id) {
+		case PROP_ITERATION:
+			g_value_set_uint (value, priv->iteration);
+			break;
+		case PROP_PROGRAM_COUNTER:
+			g_value_set_uchar (value, priv->program_counter);
+			break;
+		case PROP_ZERO_FLAG:
+			g_value_set_boolean (value, priv->zero_flag);
+			break;
+		case PROP_INPUT_PORT:
+			g_value_set_uchar (value, priv->input_port);
+			break;
+		case PROP_OUTPUT_PORT:
+			g_value_set_uchar (value, priv->output_port);
+			break;
+		case PROP_ANALOGUE_INPUT:
+			g_value_set_double (value, priv->analogue_input);
+			break;
+		default:
+			/* We don't have any other property... */
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+			break;
+	}
+}
+
+static void
+mcus_simulation_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+	switch (property_id) {
+		case PROP_INPUT_PORT:
+			mcus_simulation_set_input_port (MCUS_SIMULATION (object), g_value_get_uchar (value));
+			break;
+		case PROP_ANALOGUE_INPUT:
+			mcus_simulation_set_analogue_input (MCUS_SIMULATION (object), g_value_get_double (value));
+			break;
+		default:
+			/* We don't have any other property... */
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+			break;
+	}
 }
 
 void
-mcus_simulation_finalise (void)
+mcus_simulation_start (MCUSSimulation *self)
+{
+	MCUSSimulationPrivate *priv = self->priv;
+
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
+
+	g_object_freeze_notify (G_OBJECT (self));
+
+	priv->iteration = 0;
+	g_object_notify (G_OBJECT (self), "iteration");
+
+	priv->program_counter = PROGRAM_START_ADDRESS;
+	g_object_notify (G_OBJECT (self), "program-counter");
+
+	priv->zero_flag = 0;
+	g_object_notify (G_OBJECT (self), "zero-flag");
+
+	memset (priv->registers, 0, sizeof (guchar) * REGISTER_COUNT);
+	priv->stack = NULL;
+
+	g_object_thaw_notify (G_OBJECT (self));
+}
+
+/* Returns FALSE on error or if the simulation's ended */
+gboolean
+mcus_simulation_iterate (MCUSSimulation *self, GError **error)
+{
+	guchar opcode, operand1, operand2;
+	MCUSStackFrame *stack_frame;
+	MCUSSimulationPrivate *priv = self->priv;
+
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), FALSE);
+
+	/* Can't check it with >= as it does a check against guchar, which
+	 * is always true due to the datatype's range. */
+	if (priv->program_counter + 1 > MEMORY_SIZE) {
+		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
+		             _("The program counter overflowed available memory in simulation iteration %u."),
+		             priv->iteration);
+		mcus_simulation_finish (self);
+		return FALSE;
+	}
+
+	opcode = priv->memory[priv->program_counter];
+	operand1 = (priv->program_counter + 1 < MEMORY_SIZE) ? priv->memory[priv->program_counter + 1] : 0;
+	operand2 = (priv->program_counter + 2 < MEMORY_SIZE) ? priv->memory[priv->program_counter + 2] : 0;
+
+	g_object_freeze_notify (G_OBJECT (self));
+
+	switch (opcode) {
+	case OPCODE_HALT:
+		mcus_simulation_finish (self);
+		g_object_thaw_notify (G_OBJECT (self));
+		return FALSE;
+	case OPCODE_MOVI:
+		priv->registers[operand1] = operand2;
+		break;
+	case OPCODE_MOV:
+		priv->registers[operand1] = priv->registers[operand2];
+		break;
+	case OPCODE_ADD:
+		priv->registers[operand1] += priv->registers[operand2];
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_SUB:
+		priv->registers[operand1] -= priv->registers[operand2];
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_AND:
+		priv->registers[operand1] &= priv->registers[operand2];
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_EOR:
+		priv->registers[operand1] ^= priv->registers[operand2];
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_INC:
+		priv->registers[operand1] += 1;
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_DEC:
+		priv->registers[operand1] -= 1;
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_IN:
+		priv->registers[operand1] = priv->input_port; /* only one operand is stored */
+		break;
+	case OPCODE_OUT:
+		priv->output_port = priv->registers[operand1]; /* only one operand is stored */
+		g_object_notify (G_OBJECT (self), "output-port");
+		break;
+	case OPCODE_JP:
+		priv->program_counter = operand1;
+		g_object_notify (G_OBJECT (self), "program-counter");
+		goto update_and_exit;
+	case OPCODE_JZ:
+		if (priv->zero_flag == TRUE) {
+			priv->program_counter = operand1;
+			g_object_notify (G_OBJECT (self), "program-counter");
+			goto update_and_exit;
+		}
+		break;
+	case OPCODE_JNZ:
+		if (priv->zero_flag == FALSE) {
+			priv->program_counter = operand1;
+			g_object_notify (G_OBJECT (self), "program-counter");
+			goto update_and_exit;
+		}
+		break;
+	case OPCODE_RCALL:
+		/* Check for calling the built-in subroutines */
+		if (operand1 == priv->program_counter) {
+			/* readtable */
+			priv->registers[0] = priv->lookup_table[priv->registers[7]];
+			break;
+		} else if (operand1 == priv->program_counter + 1) {
+			/* wait1ms */
+			g_usleep (1000);
+			break;
+		} else if (operand1 == priv->program_counter + 2) {
+			/* readadc */
+			priv->registers[0] = 255.0 * priv->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;
+			break;
+		}
+
+		/* If we're just calling a normal subroutine, push the
+		 * current state as a new frame onto the stack */
+		stack_frame = g_new (MCUSStackFrame, 1);
+		stack_frame->prev = priv->stack;
+		stack_frame->program_counter = priv->program_counter + mcus_instruction_data[opcode].size;
+		memcpy (stack_frame->registers, priv->registers, sizeof (guchar) * REGISTER_COUNT);
+
+		priv->stack = stack_frame;
+
+		/* Jump to the subroutine */
+		priv->program_counter = operand1;
+		g_object_notify (G_OBJECT (self), "program-counter");
+		goto update_and_exit;
+	case OPCODE_RET:
+		/* Check for underflows */
+		if (priv->stack == NULL) {
+			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
+			             _("The stack pointer underflowed available stack space in simulation iteration %u."),
+			             priv->iteration);
+			mcus_simulation_finish (self);
+			g_object_thaw_notify (G_OBJECT (self));
+			return FALSE;
+		}
+
+		/* Pop the old state off the stack */
+		stack_frame = priv->stack;
+		priv->stack = stack_frame->prev;
+		priv->program_counter = stack_frame->program_counter;
+		g_object_notify (G_OBJECT (self), "program-counter");
+		memcpy (priv->registers, stack_frame->registers, sizeof (guchar) * REGISTER_COUNT);
+		g_free (stack_frame);
+
+		goto update_and_exit;
+	case OPCODE_SHL:
+		priv->registers[operand1] <<= 1;
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	case OPCODE_SHR:
+		priv->registers[operand1] >>= 1;
+		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
+		g_object_notify (G_OBJECT (self), "zero-flag");
+		break;
+	default:
+		/* We've encountered some data? */
+		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_INVALID_OPCODE,
+		             _("An invalid opcode \"%02X\" was encountered at address %02X in simulation iteration %u."),
+		             (guint) opcode,
+		             (guint) priv->program_counter,
+		             priv->iteration);
+		mcus_simulation_finish (self);
+		g_object_thaw_notify (G_OBJECT (self));
+		return FALSE;
+	}
+
+	/* Don't forget to increment the PC */
+	priv->program_counter += mcus_instruction_data[opcode].size;
+	g_object_notify (G_OBJECT (self), "program-counter");
+
+	g_object_thaw_notify (G_OBJECT (self));
+
+update_and_exit:
+	g_signal_emit (self, signals[SIGNAL_ITERATION_FINISHED], 0);
+	priv->iteration++;
+
+	return TRUE;
+}
+
+void
+mcus_simulation_finish (MCUSSimulation *self)
 {
 	MCUSStackFrame *stack_frame;
+	MCUSSimulationPrivate *priv = self->priv;
+
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
 
 	/* Free up any remaining frames on the stack */
-	stack_frame = mcus->stack;
+	stack_frame = priv->stack;
 	while (stack_frame != NULL) {
 		MCUSStackFrame *prev_frame;
 		prev_frame = stack_frame->prev;
@@ -77,341 +456,91 @@ mcus_simulation_finalise (void)
 	}
 }
 
-/* Returns FALSE on error or if the simulation's ended */
+guchar *
+mcus_simulation_get_memory (MCUSSimulation *self)
+{
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), NULL);
+	return self->priv->memory;
+}
+
+guchar *
+mcus_simulation_get_lookup_table (MCUSSimulation *self)
+{
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), NULL);
+	return self->priv->lookup_table;
+}
+
+guchar *
+mcus_simulation_get_registers (MCUSSimulation *self)
+{
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), NULL);
+	return self->priv->registers;
+}
+
+MCUSStackFrame *
+mcus_simulation_get_stack_head (MCUSSimulation *self)
+{
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), NULL);
+	return self->priv->stack;
+}
+
+guint
+mcus_simulation_get_iteration (MCUSSimulation *self)
+{
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), 0);
+	return self->priv->iteration;
+}
+
+guchar
+mcus_simulation_get_program_counter (MCUSSimulation *self)
+{
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), 0);
+	return self->priv->program_counter;
+}
+
 gboolean
-mcus_simulation_iterate (GError **error)
+mcus_simulation_get_zero_flag (MCUSSimulation *self)
 {
-	guchar opcode, operand1, operand2;
-	MCUSStackFrame *stack_frame;
-
-	mcus_read_analogue_input ();
-
-	mcus->iteration++;
-
-	/* Can't check it with >= as it does a check against guchar, which
-	 * is always true due to the datatype's range. */
-	if (mcus->program_counter + 1 > MEMORY_SIZE) {
-		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_MEMORY_OVERFLOW,
-			     _("The program counter overflowed available memory in simulation iteration %u."),
-			     mcus->iteration);
-		mcus_simulation_finalise ();
-		return FALSE;
-	}
-
-	opcode = mcus->memory[mcus->program_counter];
-	operand1 = (mcus->program_counter + 1 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter + 1] : 0;
-	operand2 = (mcus->program_counter + 2 < MEMORY_SIZE) ? mcus->memory[mcus->program_counter + 2] : 0;
-
-	switch (opcode) {
-	case OPCODE_HALT:
-		mcus_simulation_finalise ();
-		return FALSE;
-		break;
-	case OPCODE_MOVI:
-		mcus->registers[operand1] = operand2;
-		break;
-	case OPCODE_MOV:
-		mcus->registers[operand1] = mcus->registers[operand2];
-		break;
-	case OPCODE_ADD:
-		mcus->registers[operand1] += mcus->registers[operand2];
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_SUB:
-		mcus->registers[operand1] -= mcus->registers[operand2];
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_AND:
-		mcus->registers[operand1] &= mcus->registers[operand2];
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_EOR:
-		mcus->registers[operand1] ^= mcus->registers[operand2];
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_INC:
-		mcus->registers[operand1] += 1;
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_DEC:
-		mcus->registers[operand1] -= 1;
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_IN:
-		mcus->registers[operand1] = mcus->input_port; /* only one operand is stored */
-		break;
-	case OPCODE_OUT:
-		mcus->output_port = mcus->registers[operand1]; /* only one operand is stored */
-		break;
-	case OPCODE_JP:
-		mcus->program_counter = operand1;
-		goto update_and_exit;
-	case OPCODE_JZ:
-		if (mcus->zero_flag == TRUE) {
-			mcus->program_counter = operand1;
-			goto update_and_exit;
-		}
-		break;
-	case OPCODE_JNZ:
-		if (mcus->zero_flag == FALSE) {
-			mcus->program_counter = operand1;
-			goto update_and_exit;
-		}
-		break;
-	case OPCODE_RCALL:
-		/* Check for calling the built-in subroutines */
-		if (operand1 == mcus->program_counter) {
-			/* readtable */
-			mcus->registers[0] = mcus->lookup_table[mcus->registers[7]];
-			break;
-		} else if (operand1 == mcus->program_counter + 1) {
-			/* wait1ms */
-			g_usleep (1000);
-			break;
-		} else if (operand1 == mcus->program_counter + 2) {
-			/* readadc */
-			mcus->registers[0] = 255.0 * mcus->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;
-			break;
-		}
-
-		/* If we're just calling a normal subroutine, push the
-		 * current state as a new frame onto the stack */
-		stack_frame = g_new (MCUSStackFrame, 1);
-		stack_frame->prev = mcus->stack;
-		stack_frame->program_counter = mcus->program_counter + mcus_instruction_data[opcode].size;
-		memcpy (stack_frame->registers, mcus->registers, sizeof (guchar) * REGISTER_COUNT);
-
-		mcus->stack = stack_frame;
-
-		/* Jump to the subroutine */
-		mcus->program_counter = operand1;
-		goto update_and_exit;
-	case OPCODE_RET:
-		/* Check for underflows */
-		if (mcus->stack == NULL) {
-			g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_STACK_UNDERFLOW,
-				     _("The stack pointer underflowed available stack space in simulation iteration %u."),
-				     mcus->iteration);
-			mcus_simulation_finalise ();
-			return FALSE;
-		}
-
-		/* Pop the old state off the stack */
-		stack_frame = mcus->stack;
-		mcus->stack = stack_frame->prev;
-		mcus->program_counter = stack_frame->program_counter;
-		memcpy (mcus->registers, stack_frame->registers, sizeof (guchar) * REGISTER_COUNT);
-		g_free (stack_frame);
-
-		goto update_and_exit;
-	case OPCODE_SHL:
-		mcus->registers[operand1] <<= 1;
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	case OPCODE_SHR:
-		mcus->registers[operand1] >>= 1;
-		mcus->zero_flag = (mcus->registers[operand1] == 0) ? TRUE : FALSE;
-		break;
-	default:
-		/* We've encountered some data? */
-		g_set_error (error, MCUS_SIMULATION_ERROR, MCUS_SIMULATION_ERROR_INVALID_OPCODE,
-			     _("An invalid opcode \"%02X\" was encountered at address %02X in simulation iteration %u."),
-			     (guint)opcode,
-			     (guint)mcus->program_counter,
-			     mcus->iteration);
-		mcus_simulation_finalise ();
-		return FALSE;
-	}
-
-	/* Don't forget to increment the PC */
-	mcus->program_counter += mcus_instruction_data[opcode].size;
-
-update_and_exit:
-	mcus_simulation_update_ui ();
-	return TRUE;
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), FALSE);
+	return self->priv->zero_flag;
 }
 
-static void
-update_single_ssd_output (void)
+guchar
+mcus_simulation_get_output_port (MCUSSimulation *self)
 {
-	MCUSSevenSegmentDisplay *ssd = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd"));
-
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd_segment_option"))) == TRUE) {
-		/* Each bit in the output corresponds to one segment */
-		mcus_seven_segment_display_set_segment_mask (ssd, mcus->output_port);
-	} else {
-		/* The output is BCD-encoded, and we should display that number */
-		guint digit = mcus->output_port & 0x0F;
-
-		if (digit > 9)
-			digit = 0;
-
-		mcus_seven_segment_display_set_digit (ssd, digit);
-	}
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), 0);
+	return self->priv->output_port;
 }
 
-G_MODULE_EXPORT void
-mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, gpointer user_data)
+guchar
+mcus_simulation_get_input_port (MCUSSimulation *self)
 {
-	update_single_ssd_output ();
-}
-
-static void
-update_multi_ssd_output (void)
-{
-	guint i;
-	gchar object_id[21];
-
-	for (i = 0; i < 16; i++) {
-		/* Work out which SSD we're setting */
-		g_sprintf (object_id, "mw_output_multi_ssd%u", i);
-
-		if (i == mcus->output_port >> 4) {
-			guint digit;
-
-			/* Get the new value */
-			digit = mcus->output_port & 0x0F;
-			if (digit > 9)
-				digit = 0;
-
-			mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), digit);
-		} else {
-			/* Blank the display */
-			mcus_seven_segment_display_set_segment_mask (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), 0);
-		}
-	}
-}
-
-static void
-update_outputs (void)
-{
-	guint i;
-
-	/* Only update outputs if they're visible */
-	switch (mcus->output_device) {
-	case OUTPUT_LED_DEVICE:
-		/* Update the LED outputs */
-		for (i = 0; i < 8; i++) {
-			gchar object_id[16];
-
-			g_sprintf (object_id, "mw_output_led_%u", i);
-			mcus_led_set_enabled (MCUS_LED (gtk_builder_get_object (mcus->builder, object_id)),
-					      mcus->output_port & (1 << i));
-		}
-		break;
-	case OUTPUT_SINGLE_SSD_DEVICE:
-		/* Update the single SSD output */
-		update_single_ssd_output ();
-		break;
-	case OUTPUT_DUAL_SSD_DEVICE:
-		/* Update the dual-SSD output */
-		i = mcus->output_port >> 4;
-		if (i > 9)
-			i = 0;
-		mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd1")), i);
-
-		i = mcus->output_port & 0x0F;
-		if (i > 9)
-			i = 0;
-		mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd0")), i);
-		break;
-	case OUTPUT_MULTIPLEXED_SSD_DEVICE:
-		/* Update the multi-SSD output */
-		update_multi_ssd_output ();
-		break;
-	default:
-		g_assert_not_reached ();
-	}
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), 0);
+	return self->priv->input_port;
 }
 
 void
-mcus_simulation_update_ui (void)
+mcus_simulation_set_input_port (MCUSSimulation *self, guchar input_port)
 {
-	guint i;
-	/* 3 characters for each memory byte (two hexadecimal digits plus either a space, newline or \0)
-	 * plus 7 characters for <b></b> around the byte pointed to by the program counter. */
-	gchar memory_markup[3 * MEMORY_SIZE + 7];
-	/* 3 characters for each register as above */
-	gchar register_text[3 * REGISTER_COUNT];
-	/* 3 characters for each stack byte as above */
-	gchar stack_text[3 * STACK_PREVIEW_SIZE];
-	/* 3 characters for one byte as above */
-	gchar byte_text[3];
-	gchar *f = memory_markup;
-	MCUSStackFrame *stack_frame;
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
 
-	/* Update the memory label */
-	for (i = 0; i < MEMORY_SIZE; i++) {
-		g_sprintf (f, G_UNLIKELY (i == mcus->program_counter) ? "<b>%02X</b> " : "%02X ", mcus->memory[i]);
-		f += 3;
-
-		if (G_UNLIKELY (i == mcus->program_counter))
-			f += 7;
-		if (G_UNLIKELY (i % 16 == 15))
-			*(f - 1) = '\n';
-	}
-	*(f - 1) = '\0';
-
-	gtk_label_set_markup (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_memory_label")), memory_markup);
-
-	/* Update the register label */
-	f = register_text;
-	for (i = 0; i < REGISTER_COUNT; i++) {
-		g_sprintf (f, "%02X ", mcus->registers[i]);
-		f += 3;
-	}
-	*(f - 1) = '\0';
-
-	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_registers_label")), register_text);
-
-	/* Update the stack label */
-	f = stack_text;
-	i = 0;
-	stack_frame = mcus->stack;
-	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
-		g_sprintf (f, "%02X ", stack_frame->program_counter);
-		f += 3;
-
-		if (G_UNLIKELY (i % 16 == 15))
-			*(f - 1) = '\n';
-
-		i++;
-		stack_frame = stack_frame->prev;
-	}
-	if (i == 0)
-		g_sprintf (f, "(Empty)");
-	*(f - 1) = '\0';
-
-	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_label")), stack_text);
-
-	/* Update the output port label */
-	g_sprintf (byte_text, "%02X", mcus->output_port);
-	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_output_port_label")), byte_text);
-
-	/* Update the program counter label */
-	g_sprintf (byte_text, "%02X", mcus->program_counter);
-	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_program_counter_label")), byte_text);
-
-	/* Update the stack pointer label */
-	g_sprintf (byte_text, "%02X", (mcus->stack == NULL) ? 0 : mcus->stack->program_counter);
-	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
-
-	update_outputs ();
-
-	/* Move the current line mark */
-	if (mcus->offset_map != NULL) {
-		mcus_tag_range (mcus->current_instruction_tag,
-				mcus->offset_map[mcus->program_counter].offset,
-				mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length,
-				TRUE);
-	}
-
-	mcus_print_debug_data ();
+	self->priv->input_port = input_port;
+	g_object_notify (G_OBJECT (self), "input-port");
 }
 
-G_MODULE_EXPORT void
-mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data)
+gdouble
+mcus_simulation_get_analogue_input (MCUSSimulation *self)
 {
-	mcus->output_device = page_num;
-	update_outputs ();
+	g_return_val_if_fail (MCUS_IS_SIMULATION (self), 0.0);
+	return self->priv->analogue_input;
+}
+
+void
+mcus_simulation_set_analogue_input (MCUSSimulation *self, gdouble analogue_input)
+{
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
+	g_return_if_fail (analogue_input >= 0.0 && analogue_input <= 5.0);
+
+	self->priv->analogue_input = analogue_input;
+	g_object_notify (G_OBJECT (self), "analogue-input");
 }

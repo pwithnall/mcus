@@ -828,14 +828,19 @@ throw_error:
 }
 
 gboolean
-mcus_compiler_compile (MCUSCompiler *self, GError **error)
+mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, GError **error)
 {
 	guint i;
+	guchar *memory, *lookup_table;
+
 	self->priv->dirty = TRUE;
 
+	memory = mcus_simulation_get_memory (simulation);
+	lookup_table = mcus_simulation_get_lookup_table (simulation);
+
 	/* Empty the current contents of memory and the lookup table before starting */
-	memset (mcus->memory, 0, MEMORY_SIZE);
-	memset (mcus->lookup_table, 0, LOOKUP_TABLE_SIZE);
+	memset (memory, 0, MEMORY_SIZE);
+	memset (lookup_table, 0, LOOKUP_TABLE_SIZE);
 
 	/* Allocate the line number map's memory */
 	g_free (mcus->offset_map);
@@ -874,16 +879,16 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 		mcus->offset_map[self->priv->compiled_size].length = instruction->length;
 
 		/* Store the opcode first, as that's easy */
-		mcus->memory[self->priv->compiled_size++] = instruction->opcode;
+		memory[self->priv->compiled_size++] = instruction->opcode;
 		self->priv->i += strlen (instruction_data->mnemonic) + 1;
 
 		/* Store the operands, although we have to special-case IN and OUT instructions */
 		switch (instruction->opcode) {
 		case OPCODE_IN:
-			mcus->memory[self->priv->compiled_size++] = instruction->operands[0].number;
+			memory[self->priv->compiled_size++] = instruction->operands[0].number;
 			break;
 		case OPCODE_OUT:
-			mcus->memory[self->priv->compiled_size++] = instruction->operands[1].number;
+			memory[self->priv->compiled_size++] = instruction->operands[1].number;
 			break;
 		case OPCODE_HALT:
 		case OPCODE_MOVI:
@@ -907,7 +912,7 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 					GError *child_error = NULL;
 
 					/* We need to resolve the label first */
-					mcus->memory[self->priv->compiled_size++] = resolve_label (self, i, instruction->operands[f].label, &child_error);
+					memory[self->priv->compiled_size++] = resolve_label (self, i, instruction->operands[f].label, &child_error);
 					g_free (instruction->operands[f].label);
 
 					if (child_error != NULL) {
@@ -916,7 +921,7 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 					}
 				} else {
 					/* Just store the operand */
-					mcus->memory[self->priv->compiled_size++] = instruction->operands[f].number;
+					memory[self->priv->compiled_size++] = instruction->operands[f].number;
 				}
 			}
 			break;
@@ -930,7 +935,7 @@ mcus_compiler_compile (MCUSCompiler *self, GError **error)
 	mcus->offset_map[self->priv->compiled_size].length = 0;
 
 	/* Copy across the lookup table */
-	g_memmove (&(mcus->lookup_table), self->priv->lookup_table.table, sizeof (guchar) * self->priv->lookup_table.length);
+	g_memmove (lookup_table, self->priv->lookup_table.table, sizeof (guchar) * self->priv->lookup_table.length);
 
 	reset_state (self);
 

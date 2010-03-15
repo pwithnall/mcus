@@ -40,6 +40,7 @@ gboolean
 mcus_input_port_read_entry (GError **error)
 {
 	gint digit_value;
+	guchar input_port;
 	const gchar *entry_text;
 
 	entry_text = gtk_entry_get_text (GTK_ENTRY (gtk_builder_get_object (mcus->builder, "mw_input_port_entry")));
@@ -57,7 +58,7 @@ mcus_input_port_read_entry (GError **error)
 			     entry_text[0]);
 		return FALSE;
 	}
-	mcus->input_port = digit_value * 16;
+	input_port = digit_value * 16;
 
 	/* Deal with the second digit */
 	digit_value = g_ascii_xdigit_value (entry_text[1]);
@@ -67,7 +68,9 @@ mcus_input_port_read_entry (GError **error)
 			     entry_text[1]);
 		return FALSE;
 	}
-	mcus->input_port += digit_value;
+	input_port += digit_value;
+
+	mcus_simulation_set_input_port (mcus->simulation, input_port);
 
 	return TRUE;
 }
@@ -75,7 +78,7 @@ mcus_input_port_read_entry (GError **error)
 void
 mcus_input_port_update_entry (void)
 {
-	gchar *output = g_strdup_printf ("%02X", mcus->input_port);
+	gchar *output = g_strdup_printf ("%02X", mcus_simulation_get_input_port (mcus->simulation));
 	gtk_entry_set_text (GTK_ENTRY (gtk_builder_get_object (mcus->builder, "mw_input_port_entry")), output);
 	g_free (output);
 }
@@ -84,9 +87,7 @@ void
 mcus_input_port_read_check_buttons (void)
 {
 	guint i;
-
-	/* Clear the old value */
-	mcus->input_port = 0;
+	guchar input_port = 0;
 
 	/* 0 is LSB, 7 is MSB */
 	for (i = 0; i < 8; i++) {
@@ -98,14 +99,17 @@ mcus_input_port_read_check_buttons (void)
 		button = GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, button_id));
 
 		/* Shift the new bit in as the LSB */
-		mcus->input_port = gtk_toggle_button_get_active (button) | (mcus->input_port << 1);
+		input_port = gtk_toggle_button_get_active (button) | (input_port << 1);
 	}
+
+	mcus_simulation_set_input_port (mcus->simulation, input_port);
 }
 
 void
 mcus_input_port_update_check_buttons (void)
 {
 	guint i;
+	guchar input_port = mcus_simulation_get_input_port (mcus->simulation);
 
 	/* 0 is LSB, 7 is MSB */
 	for (i = 0; i < 8; i++) {
@@ -117,6 +121,6 @@ mcus_input_port_update_check_buttons (void)
 		button = GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, button_id));
 
 		/* Mask out everything except the interesting bit */
-		gtk_toggle_button_set_active (button, mcus->input_port & (1 << i));
+		gtk_toggle_button_set_active (button, input_port & (1 << i));
 	}
 }

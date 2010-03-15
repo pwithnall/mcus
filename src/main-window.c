@@ -26,6 +26,7 @@
 #include <gtksourceview/gtksourceprintcompositor.h>
 #include <gtksourceview/gtksourcelanguagemanager.h>
 #include <pango/pango.h>
+#include <math.h>
 
 #ifdef G_OS_WIN32
 #include <gio/gio.h>
@@ -38,12 +39,20 @@
 #include "config.h"
 #include "input-port.h"
 #include "main-window.h"
+#include "widgets/seven-segment-display.h"
+#include "widgets/led.h"
 
 G_MODULE_EXPORT void mw_input_entry_changed (GtkEntry *self, gpointer user_data);
 G_MODULE_EXPORT void mw_input_check_button_toggled (GtkToggleButton *self, gpointer user_data);
+G_MODULE_EXPORT void mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, gpointer user_data);
+G_MODULE_EXPORT void mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data);
+G_MODULE_EXPORT void mw_adc_constant_option_toggled_cb (GtkToggleButton *self, gpointer user_data);
 G_MODULE_EXPORT void notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
 G_MODULE_EXPORT void notify_can_redo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
 G_MODULE_EXPORT void notify_has_selection_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
+static void notify_program_counter_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
+static void notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
+static void notify_output_port_cb (GObject *object, GParamSpec *param_spec, gpointer user_data);
 G_MODULE_EXPORT void buffer_modified_changed_cb (GtkTextBuffer *self, gpointer user_data);
 G_MODULE_EXPORT gboolean mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data);
 G_MODULE_EXPORT gboolean mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, gpointer user_data);
@@ -66,6 +75,9 @@ G_MODULE_EXPORT void mw_open_activate_cb (GtkAction *self, gpointer user_data);
 G_MODULE_EXPORT void mw_save_activate_cb (GtkAction *self, gpointer user_data);
 G_MODULE_EXPORT void mw_save_as_activate_cb (GtkAction *self, gpointer user_data);
 G_MODULE_EXPORT void mw_print_activate_cb (GtkAction *self, gpointer user_data);
+
+static void update_simulation_ui (void);
+static void read_analogue_input (void);
 
 G_MODULE_EXPORT void
 notify_can_undo_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
@@ -96,6 +108,36 @@ notify_has_selection_cb (GObject *object, GParamSpec *param_spec, gpointer user_
 	g_object_set (gtk_builder_get_object (mcus->builder, "mcus_delete_action"),
 		      "sensitive", sensitive,
 		      NULL);
+}
+
+static void
+notify_program_counter_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
+{
+	/* 3 characters for two hexadecimal characters and one \0 */
+	gchar byte_text[3];
+	guchar program_counter = mcus_simulation_get_program_counter (MCUS_SIMULATION (object));
+
+	/* Update the program counter label */
+	g_sprintf (byte_text, "%02X", program_counter);
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_program_counter_label")), byte_text);
+}
+
+static void
+notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
+{
+	
+}
+
+static void
+notify_output_port_cb (GObject *object, GParamSpec *param_spec, gpointer user_data)
+{
+	/* 3 characters for two hexadecimal characters and one \0 */
+	gchar byte_text[3];
+	guchar output_port = mcus_simulation_get_output_port (MCUS_SIMULATION (object));
+
+	/* Update the output port label */
+	g_sprintf (byte_text, "%02X", output_port);
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_output_port_label")), byte_text);
 }
 
 G_MODULE_EXPORT void
@@ -140,6 +182,11 @@ mcus_main_window_init (void)
 	g_signal_connect (text_buffer, "notify::can-undo", G_CALLBACK (notify_can_undo_cb), NULL);
 	g_signal_connect (text_buffer, "notify::can-redo", G_CALLBACK (notify_can_redo_cb), NULL);
 	g_signal_connect (text_buffer, "notify::has-selection", G_CALLBACK (notify_has_selection_cb), NULL);
+
+	/* Watch for changes in the simulation */
+	g_signal_connect (mcus->simulation, "notify::program-counter", G_CALLBACK (notify_program_counter_cb), NULL);
+	g_signal_connect (mcus->simulation, "notify::zero-flag", G_CALLBACK (notify_zero_flag_cb), NULL);
+	g_signal_connect (mcus->simulation, "notify::output-port", G_CALLBACK (notify_output_port_cb), NULL);
 
 	/* Watch for modification of the code buffer */
 	g_signal_connect (text_buffer, "modified-changed", G_CALLBACK (buffer_modified_changed_cb), NULL);
@@ -238,7 +285,7 @@ mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, gpointer user_data
 	}
 
 	/* Toggle the relevant bit in the input port */
-	mcus->input_port ^= (1 << shift);
+	mcus_simulation_set_input_port (mcus->simulation, mcus_simulation_get_input_port (mcus->simulation) ^ (1 << shift));
 
 	/* Update the UI (updating the check buttons updates the entry too) */
 	mcus_input_port_update_check_buttons ();
@@ -299,19 +346,22 @@ simulation_iterate_cb (gpointer user_data)
 	if (mcus->simulation_state != SIMULATION_RUNNING)
 		return FALSE;
 
-	if (mcus_simulation_iterate (&error) == FALSE) {
+	read_analogue_input ();
+
+	if (mcus_simulation_iterate (mcus->simulation, &error) == FALSE) {
 		/* Get out of simulation UI mode */
 		mcus->simulation_state = SIMULATION_STOPPED;
-		mcus_simulation_finalise ();
+		mcus_simulation_finish (mcus->simulation);
 		mcus_update_ui ();
 
 		if (error != NULL) {
 			GtkWidget *dialog;
+			guchar program_counter = mcus_simulation_get_program_counter (mcus->simulation);
 
 			/* Highlight the offending line */
 			mcus_tag_range (mcus->error_tag,
-					mcus->offset_map[mcus->program_counter].offset,
-					mcus->offset_map[mcus->program_counter].offset + mcus->offset_map[mcus->program_counter].length,
+					mcus->offset_map[program_counter].offset,
+					mcus->offset_map[program_counter].offset + mcus->offset_map[program_counter].length,
 					FALSE);
 
 			/* Display an error message */
@@ -331,6 +381,8 @@ simulation_iterate_cb (gpointer user_data)
 
 		return FALSE;
 	}
+
+	update_simulation_ui ();
 
 	return TRUE;
 }
@@ -366,7 +418,7 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 	mcus_print_debug_data ();
 
 	/* Compile it */
-	mcus_compiler_compile (compiler, &error);
+	mcus_compiler_compile (compiler, mcus->simulation, &error);
 
 	if (error != NULL)
 		goto compiler_error;
@@ -374,15 +426,15 @@ mw_run_activate_cb (GtkAction *self, gpointer user_data)
 
 	/* Initialise the simulator */
 	if (mcus->simulation_state == SIMULATION_STOPPED)
-		mcus_simulation_init ();
-	mcus_simulation_update_ui ();
+		mcus_simulation_start (mcus->simulation);
+	update_simulation_ui ();
 
 	/* Enter simulation UI mode */
 	mcus->simulation_state = SIMULATION_RUNNING;
 	mcus_update_ui ();
 
 	/* Add the timeout for the simulation iterations */
-	g_timeout_add (mcus->clock_speed, (GSourceFunc)simulation_iterate_cb, NULL);
+	g_timeout_add (mcus->clock_speed, (GSourceFunc) simulation_iterate_cb, NULL);
 
 	return;
 
@@ -416,7 +468,7 @@ G_MODULE_EXPORT void
 mw_stop_activate_cb (GtkAction *self, gpointer user_data)
 {
 	mcus->simulation_state = SIMULATION_STOPPED;
-	mcus_simulation_finalise ();
+	mcus_simulation_finish (mcus->simulation);
 	mcus_update_ui ();
 }
 
@@ -653,4 +705,238 @@ mw_input_entry_changed (GtkEntry *self, gpointer user_data)
 		mcus_input_port_update_check_buttons ();
 
 	set_input_check_button_signal_state (FALSE);
+}
+
+static void
+update_single_ssd_output (void)
+{
+	MCUSSevenSegmentDisplay *ssd = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd"));
+
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_output_single_ssd_segment_option"))) == TRUE) {
+		/* Each bit in the output corresponds to one segment */
+		mcus_seven_segment_display_set_segment_mask (ssd, mcus_simulation_get_output_port (mcus->simulation));
+	} else {
+		/* The output is BCD-encoded, and we should display that number */
+		guint digit = mcus_simulation_get_output_port (mcus->simulation) & 0x0F;
+
+		if (digit > 9)
+			digit = 0;
+
+		mcus_seven_segment_display_set_digit (ssd, digit);
+	}
+}
+
+G_MODULE_EXPORT void
+mw_output_single_ssd_option_changed_cb (GtkToggleButton *self, gpointer user_data)
+{
+	update_single_ssd_output ();
+}
+
+static void
+update_multi_ssd_output (void)
+{
+	guint i;
+	gchar object_id[21];
+	guchar output_port = mcus_simulation_get_output_port (mcus->simulation);
+
+	for (i = 0; i < 16; i++) {
+		/* Work out which SSD we're setting */
+		g_sprintf (object_id, "mw_output_multi_ssd%u", i);
+
+		if (i == output_port >> 4) {
+			guint digit;
+
+			/* Get the new value */
+			digit = output_port & 0x0F;
+			if (digit > 9)
+				digit = 0;
+
+			mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), digit);
+		} else {
+			/* Blank the display */
+			mcus_seven_segment_display_set_segment_mask (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, object_id)), 0);
+		}
+	}
+}
+
+static void
+update_outputs (void)
+{
+	guint i;
+	guchar output_port = mcus_simulation_get_output_port (mcus->simulation);
+
+	/* Only update outputs if they're visible */
+	switch (mcus->output_device) {
+	case OUTPUT_LED_DEVICE:
+		/* Update the LED outputs */
+		for (i = 0; i < 8; i++) {
+			gchar object_id[16];
+
+			g_sprintf (object_id, "mw_output_led_%u", i);
+			mcus_led_set_enabled (MCUS_LED (gtk_builder_get_object (mcus->builder, object_id)),
+			                      output_port & (1 << i));
+		}
+		break;
+	case OUTPUT_SINGLE_SSD_DEVICE:
+		/* Update the single SSD output */
+		update_single_ssd_output ();
+		break;
+	case OUTPUT_DUAL_SSD_DEVICE:
+		/* Update the dual-SSD output */
+		i = output_port >> 4;
+		if (i > 9)
+			i = 0;
+		mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd1")), i);
+
+		i = output_port & 0x0F;
+		if (i > 9)
+			i = 0;
+		mcus_seven_segment_display_set_digit (MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (mcus->builder, "mw_output_dual_ssd0")), i);
+		break;
+	case OUTPUT_MULTIPLEXED_SSD_DEVICE:
+		/* Update the multi-SSD output */
+		update_multi_ssd_output ();
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+static void
+update_simulation_ui (void)
+{
+	guint i;
+	/* 3 characters for each memory byte (two hexadecimal digits plus either a space, newline or \0)
+	 * plus 7 characters for <b></b> around the byte pointed to by the program counter. */
+	gchar memory_markup[3 * MEMORY_SIZE + 7];
+	/* 3 characters for each register as above */
+	gchar register_text[3 * REGISTER_COUNT];
+	/* 3 characters for each stack byte as above */
+	gchar stack_text[3 * STACK_PREVIEW_SIZE];
+	/* 3 characters for one byte as above */
+	gchar byte_text[3];
+	gchar *f = memory_markup;
+	MCUSStackFrame *stack_frame, *stack;
+	guchar *memory, *registers, program_counter;
+
+	memory = mcus_simulation_get_memory (mcus->simulation);
+	registers = mcus_simulation_get_registers (mcus->simulation);
+	stack = mcus_simulation_get_stack_head (mcus->simulation);
+	program_counter = mcus_simulation_get_program_counter (mcus->simulation);
+
+	/* Update the memory label */
+	for (i = 0; i < MEMORY_SIZE; i++) {
+		g_sprintf (f, G_UNLIKELY (i == program_counter) ? "<b>%02X</b> " : "%02X ", memory[i]);
+		f += 3;
+
+		if (G_UNLIKELY (i == program_counter))
+			f += 7;
+		if (G_UNLIKELY (i % 16 == 15))
+			*(f - 1) = '\n';
+	}
+	*(f - 1) = '\0';
+
+	gtk_label_set_markup (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_memory_label")), memory_markup);
+
+	/* Update the register label */
+	f = register_text;
+	for (i = 0; i < REGISTER_COUNT; i++) {
+		g_sprintf (f, "%02X ", registers[i]);
+		f += 3;
+	}
+	*(f - 1) = '\0';
+
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_registers_label")), register_text);
+
+	/* Update the stack label */
+	f = stack_text;
+	i = 0;
+	stack_frame = stack;
+	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
+		g_sprintf (f, "%02X ", stack_frame->program_counter);
+		f += 3;
+
+		if (G_UNLIKELY (i % 16 == 15))
+			*(f - 1) = '\n';
+
+		i++;
+		stack_frame = stack_frame->prev;
+	}
+	if (i == 0)
+		g_sprintf (f, "(Empty)");
+	*(f - 1) = '\0';
+
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_label")), stack_text);
+
+	/* Update the stack pointer label */
+	g_sprintf (byte_text, "%02X", (stack == NULL) ? 0 : stack->program_counter);
+	gtk_label_set_text (GTK_LABEL (gtk_builder_get_object (mcus->builder, "mw_stack_pointer_label")), byte_text);
+
+	update_outputs ();
+
+	/* Move the current line mark */
+	if (mcus->offset_map != NULL) {
+		mcus_tag_range (mcus->current_instruction_tag,
+				mcus->offset_map[program_counter].offset,
+				mcus->offset_map[program_counter].offset + mcus->offset_map[program_counter].length,
+				TRUE);
+	}
+
+	mcus_print_debug_data ();
+}
+
+G_MODULE_EXPORT void
+mw_output_notebook_switch_page_cb (GtkNotebook *self, GtkNotebookPage *page, guint page_num, gpointer user_data)
+{
+	mcus->output_device = page_num;
+	update_outputs ();
+}
+
+static void
+read_analogue_input (void)
+{
+	gdouble amplitude, frequency, phase, offset, analogue_input;
+	guint iteration = mcus_simulation_get_iteration (mcus->simulation);
+
+	/* Update the analogue input from the function generator */
+	amplitude = gtk_adjustment_get_value (mcus->analogue_input_amplitude_adjustment);
+	frequency = gtk_adjustment_get_value (mcus->analogue_input_frequency_adjustment);
+	phase = gtk_adjustment_get_value (mcus->analogue_input_phase_adjustment);
+	offset = gtk_adjustment_get_value (mcus->analogue_input_offset_adjustment);
+
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_adc_constant_option"))) == TRUE) {
+		/* Constant signal */
+		analogue_input = offset;
+	} else if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_adc_sine_wave_option"))) == TRUE) {
+		/* Sine wave */
+		analogue_input = amplitude * sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * mcus->clock_speed / 1000.0) + phase) + offset;
+	} else if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_adc_square_wave_option"))) == TRUE) {
+		/* Square wave */
+		gdouble sine = sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * mcus->clock_speed / 1000.0) + phase);
+		analogue_input = (sine > 0) ? 1.0 : (sine == 0) ? 0.0 : -1.0;
+		analogue_input = amplitude * analogue_input + offset;
+	} else if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (gtk_builder_get_object (mcus->builder, "mw_adc_triangle_wave_option"))) == TRUE) {
+		/* Triangle wave */
+		analogue_input = amplitude * asin (sin (2.0 * M_PI * frequency * ((gdouble)(iteration) * mcus->clock_speed / 1000.0) + phase)) + offset;
+	} else {
+		/* Sawtooth wave */
+		gdouble t = ((gdouble)(iteration) * mcus->clock_speed / 1000.0) * frequency;
+		analogue_input = amplitude * 2.0 * (t - floor (t + 0.5)) + offset;
+	}
+
+	/* Clamp the value to 0--5V and set it */
+	mcus_simulation_set_analogue_input (mcus->simulation, CLAMP (analogue_input, 0.0, 5.0));
+
+	if (mcus->debug == TRUE)
+		g_debug ("Analogue input: %f", analogue_input);
+}
+
+G_MODULE_EXPORT void
+mw_adc_constant_option_toggled_cb (GtkToggleButton *self, gpointer user_data)
+{
+	gboolean constant_signal = gtk_toggle_button_get_active (self);
+
+	gtk_widget_set_sensitive (GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mw_adc_frequency_spin_button")), !constant_signal);
+	gtk_widget_set_sensitive (GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mw_adc_amplitude_spin_button")), !constant_signal);
+	gtk_widget_set_sensitive (GTK_WIDGET (gtk_builder_get_object (mcus->builder, "mw_adc_phase_spin_button")), !constant_signal);
 }

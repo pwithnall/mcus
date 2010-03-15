@@ -21,6 +21,8 @@
 #include <glib.h>
 #include <gtksourceview/gtksourcelanguagemanager.h>
 
+#include "simulation.h"
+
 #ifndef MCUS_MAIN_H
 #define MCUS_MAIN_H
 
@@ -50,16 +52,17 @@ typedef enum {
 	OUTPUT_MULTIPLEXED_SSD_DEVICE
 } MCUSOutputDevice;
 
-#define REGISTER_COUNT 8
-#define MEMORY_SIZE 256
-#define LOOKUP_TABLE_SIZE 256
 /* The number of stack frames to show */
 #define STACK_PREVIEW_SIZE 5
-#define PROGRAM_START_ADDRESS 0
-/* This is also in the UI file (in Volts) */
-#define ANALOGUE_INPUT_MAX_VOLTAGE 5.0
 /* This is also in the UI file (in Hz) */
 #define DEFAULT_CLOCK_SPEED 1
+/* TODO: Duplicate */
+#define REGISTER_COUNT 8
+/* TODO: Duplicate */
+#define PROGRAM_START_ADDRESS 0
+/* TODO: Duplicate */
+#define LOOKUP_TABLE_SIZE 256
+#define MEMORY_SIZE 256
 
 typedef struct _MCUSStackFrame MCUSStackFrame;
 
@@ -73,21 +76,10 @@ typedef struct {
 	GtkWidget *main_window;
 	GtkBuilder *builder;
 
-	/* Microcontroller components */
-	guchar program_counter;
-	gboolean zero_flag;
-	guchar registers[REGISTER_COUNT];
-	guchar input_port;
-	guchar output_port;
-	gdouble analogue_input;
-	guchar memory[MEMORY_SIZE];
-	guchar lookup_table[LOOKUP_TABLE_SIZE];
-	MCUSStackFrame *stack;
-
 	/* Simulation state */
+	MCUSSimulation *simulation;
 	gulong clock_speed;
 	gboolean debug;
-	guint iteration;
 	MCUSSimulationState simulation_state;
 	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
 	MCUSAnalogueInputDevice analogue_input_device;

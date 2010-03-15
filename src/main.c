@@ -262,6 +262,8 @@ mcus_quit (void)
 		g_object_unref (mcus->builder);
 	if (mcus->main_window != NULL)
 		gtk_widget_destroy (mcus->main_window);
+	if (mcus->simulation != NULL)
+		g_object_unref (mcus->simulation);
 
 	g_free (mcus->offset_map);
 	g_free (mcus->current_filename);
@@ -443,6 +445,7 @@ main (int argc, char *argv[])
 	mcus = g_new0 (MCUS, 1);
 	mcus->debug = debug;
 	mcus->clock_speed = 1000 / DEFAULT_CLOCK_SPEED; /* time between iterations in ms */
+	mcus->simulation = g_object_new (MCUS_TYPE_SIMULATION, NULL);
 
 #ifdef G_OS_WIN32
 	set_paths ();

@@ -72,6 +72,8 @@ mcus_create_interface (void)
 void
 mcus_print_debug_data (void)
 {
+#if 0
+	/* TODO */
 	guint i;
 	MCUSStackFrame *stack_frame;
 
@@ -125,6 +127,7 @@ mcus_print_debug_data (void)
 			g_printf ("\n");
 	}
 	g_printf ("\n");
+#endif
 }
 
 void
