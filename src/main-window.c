@@ -71,7 +71,6 @@ static void notify_program_counter_cb (GObject *object, GParamSpec *param_spec, 
 static void notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_input_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
-static void buffer_modified_changed_cb (GtkTextBuffer *self, MCUSMainWindow *main_window);
 
 /* GtkBuilder callbacks */
 G_MODULE_EXPORT void mw_stack_list_store_row_activated (GtkTreeView *tree_view, GtkTreePath *path,
@@ -193,8 +192,6 @@ struct _MCUSMainWindowPrivate {
 
 	/* Menus */
 	GtkActionGroup *file_action_group;
-	GtkAction *save_action;
-	GtkAction *save_as_action;
 	GtkAction *undo_action;
 	GtkAction *redo_action;
 	GtkAction *cut_action;
@@ -350,8 +347,6 @@ mcus_main_window_new (void)
 
 	/* Menus */
 	priv->file_action_group = GTK_ACTION_GROUP (gtk_builder_get_object (builder, "mw_file_action_group"));
-	priv->save_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_save_action"));
-	priv->save_as_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_save_as_action"));
 	priv->undo_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_undo_action"));
 	priv->redo_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_redo_action"));
 	priv->cut_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_cut_action"));
@@ -460,10 +455,6 @@ mcus_main_window_new (void)
 	gtk_widget_modify_font (GTK_WIDGET (priv->input_port_entry), font_desc);
 	pango_font_description_free (font_desc);
 
-	/* Watch for modification of the code buffer */
-	g_signal_connect (text_buffer, "modified-changed", (GCallback) buffer_modified_changed_cb, main_window);
-	gtk_text_buffer_set_modified (text_buffer, FALSE);
-
 	/* Set up the syntax highlighting */
 	priv->language_manager = gtk_source_language_manager_new ();
 
@@ -537,10 +528,13 @@ save_changes (MCUSMainWindow *self, gboolean open_or_close)
 		gtk_widget_destroy (dialog);
 		return TRUE;
 	case GTK_RESPONSE_CANCEL:
+	case GTK_RESPONSE_DELETE_EVENT:
 		gtk_widget_destroy (dialog);
 		return FALSE;
 	default:
 		gtk_widget_destroy (dialog);
+		if (self->priv->current_filename == NULL)
+			return mcus_main_window_save_program_as (self);
 		mcus_main_window_save_program (self);
 		return TRUE;
 	}
@@ -593,8 +587,10 @@ mcus_main_window_save_program (MCUSMainWindow *self)
 	gchar *file_contents = NULL;
 	GError *error = NULL;
 
-	if (self->priv->current_filename == NULL)
-		return mcus_main_window_save_program_as (self);
+	if (self->priv->current_filename == NULL) {
+		mcus_main_window_save_program_as (self);
+		return;
+	}
 
 	channel = g_io_channel_new_file (self->priv->current_filename, "w", &error);
 	if (error != NULL)
@@ -633,10 +629,12 @@ file_error:
 		g_free (file_contents);
 }
 
-void
+/* Returns %FALSE if the dialogue was closed, %TRUE otherwise */
+gboolean
 mcus_main_window_save_program_as (MCUSMainWindow *self)
 {
 	GtkWidget *dialog;
+	gboolean retval = TRUE;
 
 	dialog = gtk_file_chooser_dialog_new (_("Save File"), GTK_WINDOW (self), GTK_FILE_CHOOSER_ACTION_SAVE,
 	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -660,8 +658,14 @@ mcus_main_window_save_program_as (MCUSMainWindow *self)
 		}
 
 		mcus_main_window_save_program (self);
+	} else {
+		/* Dialogue was cancelled */
+		retval = FALSE;
 	}
+
 	gtk_widget_destroy (dialog);
+
+	return retval;
 }
 
 /* Takes ownership of filename */
@@ -1154,13 +1158,6 @@ notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *
 
 	/* Update the other outputs */
 	update_outputs (main_window);
-}
-
-static void
-buffer_modified_changed_cb (GtkTextBuffer *self, MCUSMainWindow *main_window)
-{
-	gtk_action_set_sensitive (main_window->priv->save_action, gtk_text_buffer_get_modified (self));
-	gtk_action_set_sensitive (main_window->priv->save_as_action, TRUE);
 }
 
 G_MODULE_EXPORT gboolean

@@ -58,7 +58,7 @@ GtkWindow *mcus_main_window_new (void) G_GNUC_WARN_UNUSED_RESULT;
 void mcus_main_window_new_program (MCUSMainWindow *self);
 void mcus_main_window_open_program (MCUSMainWindow *self);
 void mcus_main_window_save_program (MCUSMainWindow *self);
-void mcus_main_window_save_program_as (MCUSMainWindow *self);
+gboolean mcus_main_window_save_program_as (MCUSMainWindow *self);
 void mcus_main_window_open_file (MCUSMainWindow *self, const gchar *filename);
 gboolean mcus_main_window_quit (MCUSMainWindow *self);
 
