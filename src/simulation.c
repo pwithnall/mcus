@@ -81,6 +81,8 @@ enum {
 enum {
 	SIGNAL_ITERATION_STARTED,
 	SIGNAL_ITERATION_FINISHED,
+	SIGNAL_STACK_PUSHED,
+	SIGNAL_STACK_POPPED,
 	LAST_SIGNAL
 };
 
@@ -217,6 +219,37 @@ mcus_simulation_class_init (MCUSSimulationClass *klass)
 				NULL, NULL,
 				g_cclosure_marshal_VOID__POINTER,
 				G_TYPE_NONE, 1, G_TYPE_POINTER /* GError */);
+
+	/**
+	 * MCUSSimulation::stack-pushed:
+	 * @simulation: the #MCUSSimulation which has had a new frame pushed onto its stack
+	 * @frame: the #MCUSStackFrame which was pushed onto the stack
+	 *
+	 * Emitted when a new frame is pushed onto the simulation's stack.
+	 **/
+	signals[SIGNAL_STACK_PUSHED] = g_signal_new ("stack-pushed",
+				G_TYPE_FROM_CLASS (klass),
+				G_SIGNAL_RUN_LAST,
+				0,
+				NULL, NULL,
+				g_cclosure_marshal_VOID__POINTER,
+				G_TYPE_NONE, 1, G_TYPE_POINTER /* MCUSStackFrame */);
+
+	/**
+	 * MCUSSimulation::stack-popped:
+	 * @simulation: the #MCUSSimulation which has had a frame popped off its stack
+	 * @frame: the #MCUSStackFrame which is the new head of the stack, or %NULL
+	 *
+	 * Emitted when a frame is popped off the simulation's stack. The @frame passed to the signal
+	 * handler is the frame which is now at the top of the stack, or %NULL if the stack is now empty.
+	 **/
+	signals[SIGNAL_STACK_POPPED] = g_signal_new ("stack-popped",
+				G_TYPE_FROM_CLASS (klass),
+				G_SIGNAL_RUN_LAST,
+				0,
+				NULL, NULL,
+				g_cclosure_marshal_VOID__POINTER,
+				G_TYPE_NONE, 1, G_TYPE_POINTER /* MCUSStackFrame */);
 }
 
 static void
@@ -493,6 +526,9 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 
 		priv->stack = stack_frame;
 
+		/* Signal that the stack's changed */
+		g_signal_emit (self, signals[SIGNAL_STACK_PUSHED], 0, stack_frame);
+
 		/* Jump to the subroutine */
 		priv->program_counter = operand1;
 		g_object_notify (G_OBJECT (self), "program-counter");
@@ -518,6 +554,9 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		g_object_notify (G_OBJECT (self), "program-counter");
 		memcpy (priv->registers, stack_frame->registers, sizeof (guchar) * REGISTER_COUNT);
 		g_free (stack_frame);
+
+		/* Signal that the stack's changed */
+		g_signal_emit (self, signals[SIGNAL_STACK_POPPED], 0, priv->stack);
 
 		goto update_and_exit;
 	case OPCODE_SHL:
@@ -549,9 +588,9 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 	priv->program_counter += mcus_instruction_data[opcode].size;
 	g_object_notify (G_OBJECT (self), "program-counter");
 
+update_and_exit:
 	g_object_thaw_notify (G_OBJECT (self));
 
-update_and_exit:
 	/* Reset the simulation state if we changed it to step forward */
 	if (old_state == MCUS_SIMULATION_PAUSED) {
 		priv->state = MCUS_SIMULATION_PAUSED;
@@ -602,11 +641,8 @@ mcus_simulation_finish (MCUSSimulation *self)
 		g_free (stack_frame);
 		stack_frame = prev_frame;
 	}
+	priv->stack = NULL;
 }
-
-/* TODO: Remove this */
-/* The number of stack frames to show */
-#define STACK_PREVIEW_SIZE 5
 
 void
 mcus_simulation_print_debug_data (MCUSSimulation *self)
@@ -634,7 +670,7 @@ mcus_simulation_print_debug_data (MCUSSimulation *self)
 	g_printf ("Stack:\n ");
 	stack_frame = priv->stack;
 	i = 0;
-	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
+	while (stack_frame != NULL) {
 		g_printf (" %02X", (guint) stack_frame->program_counter);
 
 		if (i % 16 == 15)

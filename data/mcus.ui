@@ -261,6 +261,14 @@
 		<property name="step-increment">0.1</property>
 	</object>
 
+	<object class="GtkListStore" id="mw_stack_list_store">
+		<columns>
+			<column type="guint"/><!-- Index -->
+			<column type="guchar"/><!-- Program counter -->
+			<column type="gchararray"/><!-- Registers -->
+		</columns>
+	</object>
+
 	<object class="MCUSMainWindow" type-func="mcus_main_window_get_type" id="mcus_main_window">
 		<property name="title" translatable="yes">Microcontroller Simulator</property>
 		<signal name="delete-event" handler="mw_delete_event_cb"/>
@@ -1695,18 +1703,57 @@
 											<object class="GtkAlignment" id="mw_stack_alignment">
 												<property name="left-padding">12</property>
 												<child>
-													<object class="GtkLabel" id="mw_stack_label">
-														<property name="selectable">True</property>
-														<property name="label" translatable="yes">(Empty)</property>
-														<property name="xpad">6</property>
-														<property name="ypad">6</property>
+													<object class="GtkScrolledWindow" id="mw_stack_scrolled_window">
+														<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+														<property name="vscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
+														<property name="shadow-type">GTK_SHADOW_IN</property>
+														<child>
+															<object class="GtkTreeView" id="mw_stack_tree_view">
+																<property name="model">mw_stack_list_store</property>
+																<property name="enable-search">False</property>
+																<signal name="row-activated" handler="mw_stack_list_store_row_activated"/>
+																<child>
+																	<object class="GtkTreeViewColumn" id="mw_stack_tree_view_index_column">
+																		<property name="title"> </property>
+																		<child>
+																			<object class="GtkCellRendererText" id="mw_stack_index_renderer"/>
+																			<attributes>
+																				<attribute name="text">0</attribute>
+																			</attributes>
+																		</child>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkTreeViewColumn" id="mw_stack_tree_view_program_counter_column">
+																		<property name="title" translatable="yes" comments="Translators: This stands for 'program counter'.">PC</property>
+																		<child>
+																			<object class="GtkCellRendererText" id="mw_stack_program_counter_renderer"/>
+																			<attributes>
+																				<attribute name="text">1</attribute>
+																			</attributes>
+																		</child>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkTreeViewColumn" id="mw_stack_tree_view_registers_column">
+																		<property name="title" translatable="yes">Registers</property>
+																		<child>
+																			<object class="GtkCellRendererText" id="mw_stack_registers_renderer"/>
+																			<attributes>
+																				<attribute name="text">2</attribute>
+																			</attributes>
+																		</child>
+																	</object>
+																</child>
+															</object>
+														</child>
 													</object>
 												</child>
 											</object>
 										</child>
 									</object>
 									<packing>
-										<property name="expand">False</property>
+										<property name="expand">True</property>
 									</packing>
 								</child>
 							</object>

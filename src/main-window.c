@@ -56,8 +56,12 @@ static void remove_tag (MCUSMainWindow *self, GtkTextTag *tag);
 static void tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
 
 /* Normal callbacks */
+static void stack_program_counter_data_cb (GtkTreeViewColumn *column, GtkCellRenderer *cell,
+                                           GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data);
 static void simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindow *main_window);
 static void simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainWindow *main_window);
+static void simulation_stack_pushed_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, MCUSMainWindow *main_window);
+static void simulation_stack_popped_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, MCUSMainWindow *main_window);
 static void notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_can_undo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_can_redo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
@@ -69,6 +73,8 @@ static void notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUS
 static void buffer_modified_changed_cb (GtkTextBuffer *self, MCUSMainWindow *main_window);
 
 /* GtkBuilder callbacks */
+G_MODULE_EXPORT void mw_stack_list_store_row_activated (GtkTreeView *tree_view, GtkTreePath *path,
+                                                        GtkTreeViewColumn *column, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_input_entry_changed (GtkEntry *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_input_entry_insert_text (GtkEditable *editable, gchar *new_text, gint new_text_length,
                                                  gint *position, MCUSMainWindow *main_window);
@@ -98,10 +104,6 @@ G_MODULE_EXPORT void mw_save_activate_cb (GtkAction *self, MCUSMainWindow *main_
 G_MODULE_EXPORT void mw_save_as_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_print_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 
-/* The number of stack frames to show */
-/* TODO: Shouldn't have this */
-#define STACK_PREVIEW_SIZE 5
-
 typedef enum {
 	OUTPUT_LED_DEVICE = 0,
 	OUTPUT_SINGLE_SSD_DEVICE,
@@ -116,10 +118,11 @@ struct _MCUSMainWindowPrivate {
 	/* Displays */
 	GtkLabel *registers_label;
 	GtkLabel *memory_label;
-	GtkLabel *stack_label;
 	GtkLabel *stack_pointer_label;
 	GtkLabel *program_counter_label;
 	GtkLabel *output_port_label;
+	GtkListStore *stack_list_store;
+	GtkTreeView *stack_tree_view;
 
 	/* Analogue input interface */
 	GtkAdjustment *adc_frequency_adjustment;
@@ -260,6 +263,7 @@ mcus_main_window_new (void)
 	GError *error = NULL;
 	GtkTextBuffer *text_buffer;
 	GtkSourceLanguage *language;
+	GtkTreeViewColumn *tree_column;
 	const gchar * const *old_language_dirs;
 	const gchar * const *language_ids;
 	const gchar **language_dirs;
@@ -305,10 +309,16 @@ mcus_main_window_new (void)
 	priv->code_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "mw_code_buffer"));
 	priv->registers_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_registers_label"));
 	priv->memory_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_memory_label"));
-	priv->stack_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_stack_label"));
 	priv->stack_pointer_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_stack_pointer_label"));
 	priv->program_counter_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_program_counter_label"));
 	priv->output_port_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_output_port_label"));
+	priv->stack_list_store = GTK_LIST_STORE (gtk_builder_get_object (builder, "mw_stack_list_store"));
+	priv->stack_tree_view = GTK_TREE_VIEW (gtk_builder_get_object (builder, "mw_stack_tree_view"));
+
+	/* Set a custom data function on the program counter column of the stack list tree view */
+	tree_column = gtk_tree_view_get_column (priv->stack_tree_view, 1);
+	gtk_tree_view_column_set_cell_data_func (tree_column, gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (tree_column))->data,
+	                                         (GtkTreeCellDataFunc) stack_program_counter_data_cb, NULL, NULL);
 
 	/* Grab widgets which only need their sensitivity changing */
 	priv->code_view = GTK_WIDGET (gtk_builder_get_object (builder, "mw_code_view"));
@@ -386,6 +396,8 @@ mcus_main_window_new (void)
 	/* Set up the simulation state */
 	g_signal_connect (priv->simulation, "iteration-started", (GCallback) simulation_iteration_started_cb, main_window);
 	g_signal_connect (priv->simulation, "iteration-finished", (GCallback) simulation_iteration_finished_cb, main_window);
+	g_signal_connect (priv->simulation, "stack-pushed", (GCallback) simulation_stack_pushed_cb, main_window);
+	g_signal_connect (priv->simulation, "stack-popped", (GCallback) simulation_stack_popped_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::state", (GCallback) notify_simulation_state_cb, main_window);
 
 	/* Create the highlighting tags */
@@ -778,17 +790,11 @@ update_simulation_ui (MCUSMainWindow *self)
 	gchar memory_markup[3 * MEMORY_SIZE + 7];
 	/* 3 characters for each register as above */
 	gchar register_text[3 * REGISTER_COUNT];
-	/* 3 characters for each stack byte as above */
-	gchar stack_text[3 * STACK_PREVIEW_SIZE];
-	/* 3 characters for one byte as above */
-	gchar byte_text[3];
 	gchar *f = memory_markup;
-	MCUSStackFrame *stack_frame, *stack;
 	guchar *memory, *registers, program_counter;
 
 	memory = mcus_simulation_get_memory (self->priv->simulation);
 	registers = mcus_simulation_get_registers (self->priv->simulation);
-	stack = mcus_simulation_get_stack_head (self->priv->simulation);
 	program_counter = mcus_simulation_get_program_counter (self->priv->simulation);
 
 	/* Update the memory label */
@@ -815,30 +821,6 @@ update_simulation_ui (MCUSMainWindow *self)
 
 	gtk_label_set_text (self->priv->registers_label, register_text);
 
-	/* Update the stack label */
-	f = stack_text;
-	i = 0;
-	stack_frame = stack;
-	while (stack_frame != NULL && i < STACK_PREVIEW_SIZE) {
-		g_sprintf (f, "%02X ", stack_frame->program_counter);
-		f += 3;
-
-		if (G_UNLIKELY (i % 16 == 15))
-			*(f - 1) = '\n';
-
-		i++;
-		stack_frame = stack_frame->prev;
-	}
-	if (i == 0)
-		g_sprintf (f, "(Empty)");
-	*(f - 1) = '\0';
-
-	gtk_label_set_text (self->priv->stack_label, stack_text);
-
-	/* Update the stack pointer label */
-	g_sprintf (byte_text, "%02X", (stack == NULL) ? 0 : stack->program_counter);
-	gtk_label_set_text (self->priv->stack_pointer_label, byte_text);
-
 	/* Move the current line mark */
 	if (self->priv->offset_map != NULL) {
 		tag_range (self, self->priv->current_instruction_tag,
@@ -848,6 +830,19 @@ update_simulation_ui (MCUSMainWindow *self)
 	}
 
 	mcus_simulation_print_debug_data (self->priv->simulation);
+}
+
+/* Data function to format the program counter column of the stack tree view properly */
+static void
+stack_program_counter_data_cb (GtkTreeViewColumn *column, GtkCellRenderer *cell, GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+{
+	guchar program_counter;
+	/* 2 characters and one \0 */
+	gchar byte_text[3];
+
+	gtk_tree_model_get (model, iter, 1, &program_counter, -1);
+	g_sprintf (byte_text, "%02X", program_counter);
+	g_object_set (G_OBJECT (cell), "text", byte_text, NULL);
 }
 
 static void
@@ -922,6 +917,70 @@ simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainW
 	} else {
 		update_simulation_ui (main_window);
 	}
+}
+
+static void
+update_stack_pointer_label (MCUSMainWindow *self, MCUSStackFrame *stack_frame)
+{
+	/* 3 characters for one byte (two characters plus \0) */
+	gchar byte_text[3];
+
+	/* Update the stack pointer label */
+	g_sprintf (byte_text, "%02X", (stack_frame == NULL) ? 0 : stack_frame->program_counter);
+	gtk_label_set_text (self->priv->stack_pointer_label, byte_text);
+}
+
+static void
+simulation_stack_pushed_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, MCUSMainWindow *main_window)
+{
+	GtkTreeIter iter;
+	GtkTreePath *path;
+	guint i;
+	gchar register_text[3 * REGISTER_COUNT], *f;
+
+	/* Build a string representing the registers; 3 characters for each register */
+	f = register_text;
+	for (i = 0; i < REGISTER_COUNT; i++) {
+		g_sprintf (f, "%02X ", stack_frame->registers[i]);
+		f += 3;
+	}
+	*(f - 1) = '\0';
+
+	/* Add the new stack frame to the top of the stack list */
+	gtk_list_store_prepend (main_window->priv->stack_list_store, &iter);
+	gtk_list_store_set (main_window->priv->stack_list_store, &iter,
+	                    0, gtk_tree_model_iter_n_children (GTK_TREE_MODEL (main_window->priv->stack_list_store), NULL) - 1,
+	                    1, stack_frame->program_counter,
+	                    2, register_text,
+	                    -1);
+
+	/* Scroll to the top of the tree view */
+	path = gtk_tree_model_get_path (GTK_TREE_MODEL (main_window->priv->stack_list_store), &iter);
+	gtk_tree_view_scroll_to_cell (main_window->priv->stack_tree_view, path, NULL, TRUE, 0.0, 0.0);
+	gtk_tree_path_free (path);
+
+	/* Update the stack pointer label */
+	update_stack_pointer_label (main_window, stack_frame);
+}
+
+static void
+simulation_stack_popped_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, MCUSMainWindow *main_window)
+{
+	GtkTreeIter iter;
+
+	/* Remove a stack frame from the top of the stack list */
+	if (gtk_tree_model_get_iter_first (GTK_TREE_MODEL (main_window->priv->stack_list_store), &iter) == TRUE)
+		gtk_list_store_remove (main_window->priv->stack_list_store, &iter);
+
+	/* Scroll to the top of the tree view */
+	if (gtk_tree_model_get_iter_first (GTK_TREE_MODEL (main_window->priv->stack_list_store), &iter) == TRUE) {
+		GtkTreePath *path = gtk_tree_model_get_path (GTK_TREE_MODEL (main_window->priv->stack_list_store), &iter);
+		gtk_tree_view_scroll_to_cell (main_window->priv->stack_tree_view, path, NULL, TRUE, 0.0, 0.0);
+		gtk_tree_path_free (path);
+	}
+
+	/* Update the stack pointer label */
+	update_stack_pointer_label (main_window, stack_frame);
 }
 
 static void
@@ -1218,6 +1277,9 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	if (error != NULL)
 		goto compiler_error;
 	g_object_unref (compiler);
+
+	/* Empty the displayed stack */
+	gtk_list_store_clear (main_window->priv->stack_list_store);
 
 	/* Initialise the simulator */
 	mcus_simulation_start (main_window->priv->simulation);
@@ -1516,4 +1578,32 @@ mw_adc_constant_option_toggled_cb (GtkToggleButton *self, MCUSMainWindow *main_w
 	gtk_widget_set_sensitive (main_window->priv->adc_frequency_spin_button, non_constant_signal);
 	gtk_widget_set_sensitive (main_window->priv->adc_amplitude_spin_button, non_constant_signal);
 	gtk_widget_set_sensitive (main_window->priv->adc_phase_spin_button, non_constant_signal);
+}
+
+G_MODULE_EXPORT void
+mw_stack_list_store_row_activated (GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, MCUSMainWindow *main_window)
+{
+	MCUSMainWindowPrivate *priv = main_window->priv;
+	GtkTreeIter tree_iter;
+	GtkTextIter text_iter;
+	GtkTreeModel *model;
+	guchar program_counter;
+	gint offset;
+
+	model = gtk_tree_view_get_model (tree_view);
+	if (gtk_tree_model_get_iter (model, &tree_iter, path) == FALSE)
+		return;
+
+	/* Get the program counter from the stack frame which was activated */
+	gtk_tree_model_get (model, &tree_iter, 1, &program_counter, -1);
+
+	/* Scroll to the instruction in the code view which compiled to that memory address */
+	offset = priv->offset_map[program_counter].offset;
+	gtk_text_buffer_get_iter_at_offset (priv->code_buffer, &text_iter, offset);
+	if (gtk_text_iter_is_end (&text_iter) == TRUE)
+		gtk_text_iter_backward_char (&text_iter);
+
+	gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (priv->code_view), &text_iter, 0.0, FALSE, 0.0, 0.5);
+	gtk_text_buffer_place_cursor (priv->code_buffer, &text_iter);
+	gtk_widget_grab_focus (priv->code_view);
 }
