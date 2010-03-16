@@ -13,6 +13,7 @@
 		<style id="io-register" _name="I/O Register" map-to="def:special-constant"/>
 		<style id="constant" _name="Constant" map-to="def:base-n-integer"/>
 		<style id="label" _name="Label" map-to="def:identifier"/>
+		<style id="lookup-table" _name="Lookup Table" map-to="def:preprocessor"/>
 	</styles>
 	<definitions>
 		<context id="ocr-assembly">
@@ -47,6 +48,9 @@
 					<keyword>readtable</keyword>
 					<keyword>wait1ms</keyword>
 					<keyword>readadc</keyword>
+				</context>
+				<context id="lookup-table" style-ref="lookup-table">
+					<keyword>table</keyword>
 				</context>
 				<context id="register" style-ref="register">
 					<match>S[0-7]</match>
