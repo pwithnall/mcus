@@ -1385,7 +1385,7 @@
 												<property name="left-padding">12</property>
 												<child>
 													<object class="GtkTable" id="mw_general_table">
-														<property name="n-rows">3</property>
+														<property name="n-rows">4</property>
 														<property name="n-columns">3</property>
 														<property name="column-spacing">6</property>
 														<property name="border-width">6</property>
@@ -1456,6 +1456,39 @@
 															</packing>
 														</child>
 														<child>
+															<object class="GtkLabel" id="mw_zero_flag_label2">
+																<property name="label" translatable="yes">Zero flag:</property>
+																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_zero_flag_label" type="label-for"/>
+																</accessibility>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">0</property>
+																<property name="right-attach">1</property>
+															</packing>
+														</child>
+														<child>
+															<object class="GtkLabel" id="mw_zero_flag_label">
+																<property name="label">0</property>
+																<property name="xalign">0</property>
+																<attributes>
+																	<attribute name="family" value="monospace"/>
+																</attributes>
+																<accessibility>
+																	<relation target="mw_zero_flag_label2" type="labelled-by"/>
+																</accessibility>
+															</object>
+															<packing>
+																<property name="top-attach">2</property>
+																<property name="bottom-attach">3</property>
+																<property name="left-attach">1</property>
+																<property name="right-attach">3</property>
+															</packing>
+														</child>
+														<child>
 															<object class="GtkLabel" id="label8">
 																<property name="label" translatable="yes">Clock _speed:</property>
 																<property name="xalign">0</property>
@@ -1463,8 +1496,8 @@
 																<property name="mnemonic-widget">mw_clock_speed_spin_button</property>
 															</object>
 															<packing>
-																<property name="top-attach">2</property>
-																<property name="bottom-attach">3</property>
+																<property name="top-attach">3</property>
+																<property name="bottom-attach">4</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
 															</packing>
@@ -1477,8 +1510,8 @@
 																<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>
 															</object>
 															<packing>
-																<property name="top-attach">2</property>
-																<property name="bottom-attach">3</property>
+																<property name="top-attach">3</property>
+																<property name="bottom-attach">4</property>
 																<property name="left-attach">1</property>
 																<property name="right-attach">2</property>
 															</packing>
@@ -1489,8 +1522,8 @@
 																<property name="xalign">0</property>
 															</object>
 															<packing>
-																<property name="top-attach">2</property>
-																<property name="bottom-attach">3</property>
+																<property name="top-attach">3</property>
+																<property name="bottom-attach">4</property>
 																<property name="left-attach">2</property>
 																<property name="right-attach">3</property>
 															</packing>

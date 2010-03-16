@@ -130,6 +130,7 @@ struct _MCUSMainWindowPrivate {
 	MCUSByteArray *lookup_table_array;
 	GtkLabel *stack_pointer_label;
 	GtkLabel *program_counter_label;
+	GtkLabel *zero_flag_label;
 	GtkLabel *output_port_label;
 	GtkListStore *stack_list_store;
 	GtkTreeView *stack_tree_view;
@@ -325,6 +326,7 @@ mcus_main_window_new (void)
 	priv->lookup_table_array = MCUS_BYTE_ARRAY (gtk_builder_get_object (builder, "mw_lookup_table_array"));
 	priv->stack_pointer_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_stack_pointer_label"));
 	priv->program_counter_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_program_counter_label"));
+	priv->zero_flag_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_zero_flag_label"));
 	priv->output_port_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_output_port_label"));
 	priv->stack_list_store = GTK_LIST_STORE (gtk_builder_get_object (builder, "mw_stack_list_store"));
 	priv->stack_tree_view = GTK_TREE_VIEW (gtk_builder_get_object (builder, "mw_stack_tree_view"));
@@ -1097,7 +1099,7 @@ notify_program_counter_cb (GObject *object, GParamSpec *param_spec, MCUSMainWind
 static void
 notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
-	/* TODO */
+	gtk_label_set_text (main_window->priv->zero_flag_label, mcus_simulation_get_zero_flag (MCUS_SIMULATION (object)) ? "1" : "0");
 }
 
 static void
@@ -1289,6 +1291,7 @@ mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		modify_widget_font_size (GTK_WIDGET (priv->lookup_table_array), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->output_port_label), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->program_counter_label), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->zero_flag_label), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->stack_pointer_label), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->input_port_entry), 1.0 / FULLSCREEN_FONT_SCALE);
 
@@ -1306,6 +1309,7 @@ mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		modify_widget_font_size (GTK_WIDGET (priv->lookup_table_array), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->output_port_label), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->program_counter_label), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->zero_flag_label), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->stack_pointer_label), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->input_port_entry), FULLSCREEN_FONT_SCALE);
 
