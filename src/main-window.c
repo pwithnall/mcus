@@ -175,6 +175,7 @@ struct _MCUSMainWindowPrivate {
 	GtkTextTag *current_instruction_tag;
 	GtkTextTag *error_tag;
 	GtkSourceLanguageManager *language_manager;
+	guchar lookup_table_length; /* number of bytes defined for the lookup table */
 
 	/* File choosing */
 	gchar *current_filename;
@@ -1044,6 +1045,9 @@ notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWin
 		mcus_byte_array_update (priv->memory_array);
 		mcus_byte_array_update (priv->registers_array);
 		mcus_byte_array_update (priv->lookup_table_array);
+
+		/* Display all the defined values of the lookup table, plus two more for context */
+		mcus_byte_array_set_display_length (priv->lookup_table_array, MIN (priv->lookup_table_length + 2, LOOKUP_TABLE_SIZE));
 	}
 }
 
@@ -1344,7 +1348,8 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	mcus_simulation_print_debug_data (main_window->priv->simulation);
 
 	/* Compile it */
-	mcus_compiler_compile (compiler, main_window->priv->simulation, &(main_window->priv->offset_map), &error);
+	mcus_compiler_compile (compiler, main_window->priv->simulation, &(main_window->priv->offset_map),
+	                       &(main_window->priv->lookup_table_length), &error);
 
 	if (error != NULL)
 		goto compiler_error;

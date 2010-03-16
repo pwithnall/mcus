@@ -818,7 +818,7 @@ throw_error:
 }
 
 gboolean
-mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstructionOffset **offset_map, GError **error)
+mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstructionOffset **offset_map, guchar *lookup_table_length, GError **error)
 {
 	guint i;
 	guchar *memory, *lookup_table;
@@ -925,6 +925,8 @@ mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstr
 
 	/* Copy across the lookup table */
 	g_memmove (lookup_table, self->priv->lookup_table.table, sizeof (guchar) * self->priv->lookup_table.length);
+	if (lookup_table_length != NULL)
+		*lookup_table_length = self->priv->lookup_table.length;
 
 	reset_state (self);
 
