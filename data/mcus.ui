@@ -307,6 +307,7 @@
 												<property name="show-line-numbers">True</property>
 												<property name="show-line-marks">True</property>
 												<property name="has-focus">True</property>
+												<property name="auto-indent">True</property>
 												<child internal-child="accessible">
 													<object class="AtkObject" id="a11y-mw_code_view">
 														<property name="accessible-name" translatable="yes">Code Editor</property>

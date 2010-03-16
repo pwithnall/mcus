@@ -269,6 +269,8 @@ mcus_main_window_new (void)
 	GtkTextBuffer *text_buffer;
 	GtkSourceLanguage *language;
 	GtkTreeViewColumn *tree_column;
+	GtkStyle *style;
+	PangoFontDescription *font_desc;
 	const gchar * const *old_language_dirs;
 	const gchar * const *language_ids;
 	const gchar **language_dirs;
@@ -433,6 +435,19 @@ mcus_main_window_new (void)
 	g_signal_connect (priv->simulation, "notify::zero-flag", (GCallback) notify_zero_flag_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::input-port", (GCallback) notify_input_port_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::output-port", (GCallback) notify_output_port_cb, main_window);
+
+	/* Make some widgets monospaced */
+	style = gtk_widget_get_style (priv->code_view);
+	font_desc = pango_font_description_copy_static (style->font_desc);
+	pango_font_description_set_family_static (font_desc, "monospace");
+	gtk_widget_modify_font (priv->code_view, font_desc);
+	pango_font_description_free (font_desc);
+
+	style = gtk_widget_get_style (GTK_WIDGET (priv->input_port_entry));
+	font_desc = pango_font_description_copy_static (style->font_desc);
+	pango_font_description_set_family_static (font_desc, "monospace");
+	gtk_widget_modify_font (GTK_WIDGET (priv->input_port_entry), font_desc);
+	pango_font_description_free (font_desc);
 
 	/* Watch for modification of the code buffer */
 	g_signal_connect (text_buffer, "modified-changed", (GCallback) buffer_modified_changed_cb, main_window);
