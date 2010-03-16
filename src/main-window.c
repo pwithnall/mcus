@@ -277,10 +277,10 @@ mcus_main_window_new (void)
 	if (gtk_builder_add_from_file (builder, interface_filename, &error) == FALSE) {
 		/* Show an error */
 		GtkWidget *dialog = gtk_message_dialog_new (NULL,
-				GTK_DIALOG_MODAL,
-				GTK_MESSAGE_ERROR,
-				GTK_BUTTONS_OK,
-				_("UI file \"%s\" could not be loaded"), interface_filename);
+		                                            GTK_DIALOG_MODAL,
+		                                            GTK_MESSAGE_ERROR,
+		                                            GTK_BUTTONS_OK,
+		                                            _("UI file \"%s\" could not be loaded"), interface_filename);
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
@@ -913,7 +913,6 @@ simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainW
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
-		g_error_free (error);
 	} else {
 		update_simulation_ui (main_window);
 	}
@@ -1600,9 +1599,6 @@ mw_stack_list_store_row_activated (GtkTreeView *tree_view, GtkTreePath *path, Gt
 	/* Scroll to the instruction in the code view which compiled to that memory address */
 	offset = priv->offset_map[program_counter].offset;
 	gtk_text_buffer_get_iter_at_offset (priv->code_buffer, &text_iter, offset);
-	if (gtk_text_iter_is_end (&text_iter) == TRUE)
-		gtk_text_iter_backward_char (&text_iter);
-
 	gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (priv->code_view), &text_iter, 0.0, FALSE, 0.0, 0.5);
 	gtk_text_buffer_place_cursor (priv->code_buffer, &text_iter);
 	gtk_widget_grab_focus (priv->code_view);

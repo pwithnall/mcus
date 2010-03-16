@@ -519,7 +519,7 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 
 		/* If we're just calling a normal subroutine, push the
 		 * current state as a new frame onto the stack */
-		stack_frame = g_new (MCUSStackFrame, 1);
+		stack_frame = g_slice_new (MCUSStackFrame);
 		stack_frame->prev = priv->stack;
 		stack_frame->program_counter = priv->program_counter + mcus_instruction_data[opcode].size;
 		memcpy (stack_frame->registers, priv->registers, sizeof (guchar) * REGISTER_COUNT);
@@ -553,7 +553,7 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		priv->program_counter = stack_frame->program_counter;
 		g_object_notify (G_OBJECT (self), "program-counter");
 		memcpy (priv->registers, stack_frame->registers, sizeof (guchar) * REGISTER_COUNT);
-		g_free (stack_frame);
+		g_slice_free (MCUSStackFrame, stack_frame);
 
 		/* Signal that the stack's changed */
 		g_signal_emit (self, signals[SIGNAL_STACK_POPPED], 0, priv->stack);
@@ -638,7 +638,7 @@ mcus_simulation_finish (MCUSSimulation *self)
 	while (stack_frame != NULL) {
 		MCUSStackFrame *prev_frame;
 		prev_frame = stack_frame->prev;
-		g_free (stack_frame);
+		g_slice_free (MCUSStackFrame, stack_frame);
 		stack_frame = prev_frame;
 	}
 	priv->stack = NULL;
