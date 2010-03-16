@@ -46,7 +46,9 @@ src_mcus_SOURCES = \
 	src/widgets/seven-segment-display.c	\
 	src/widgets/seven-segment-display.h	\
 	src/widgets/led.c			\
-	src/widgets/led.h
+	src/widgets/led.h			\
+	src/widgets/byte-array.c		\
+	src/widgets/byte-array.h
 
 src_mcus_CPPFLAGS = \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\

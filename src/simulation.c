@@ -650,7 +650,7 @@ mcus_simulation_print_debug_data (MCUSSimulation *self)
 	MCUSSimulationPrivate *priv = self->priv;
 	guint i;
 	MCUSStackFrame *stack_frame;
-
+return;
 	/* TODO if (mcus->debug == FALSE)
 		return;*/
 

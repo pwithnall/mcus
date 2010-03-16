@@ -36,6 +36,7 @@
 #include "simulation.h"
 #include "widgets/led.h"
 #include "widgets/seven-segment-display.h"
+#include "widgets/byte-array.h"
 
 GQuark
 mcus_io_error_quark (void)
@@ -111,13 +112,17 @@ typedef enum {
 	OUTPUT_MULTIPLEXED_SSD_DEVICE
 } OutputDevice;
 
+/* Number of bytes to show of the lookup table by default (i.e. when it's empty) */
+#define DEFAULT_LOOKUP_TABLE_LENGTH 8
+
 struct _MCUSMainWindowPrivate {
 	/* Simulation */
 	MCUSSimulation *simulation;
 
 	/* Displays */
-	GtkLabel *registers_label;
-	GtkLabel *memory_label;
+	MCUSByteArray *registers_array;
+	MCUSByteArray *memory_array;
+	MCUSByteArray *lookup_table_array;
 	GtkLabel *stack_pointer_label;
 	GtkLabel *program_counter_label;
 	GtkLabel *output_port_label;
@@ -307,8 +312,9 @@ mcus_main_window_new (void)
 
 	/* Grab our child widgets */
 	priv->code_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "mw_code_buffer"));
-	priv->registers_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_registers_label"));
-	priv->memory_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_memory_label"));
+	priv->registers_array = MCUS_BYTE_ARRAY (gtk_builder_get_object (builder, "mw_registers_array"));
+	priv->memory_array = MCUS_BYTE_ARRAY (gtk_builder_get_object (builder, "mw_memory_array"));
+	priv->lookup_table_array = MCUS_BYTE_ARRAY (gtk_builder_get_object (builder, "mw_lookup_table_array"));
 	priv->stack_pointer_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_stack_pointer_label"));
 	priv->program_counter_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_program_counter_label"));
 	priv->output_port_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_output_port_label"));
@@ -371,7 +377,7 @@ mcus_main_window_new (void)
 
 	/* Grab the multi SSD outputs */
 	for (i = 0; i < 16; i++) {
-		gchar ssd_id[21];
+		gchar ssd_id[22];
 
 		/* Grab the control */
 		g_sprintf (ssd_id, "mw_output_multi_ssd%u", i);
@@ -399,6 +405,14 @@ mcus_main_window_new (void)
 	g_signal_connect (priv->simulation, "stack-pushed", (GCallback) simulation_stack_pushed_cb, main_window);
 	g_signal_connect (priv->simulation, "stack-popped", (GCallback) simulation_stack_popped_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::state", (GCallback) notify_simulation_state_cb, main_window);
+
+	/* Set up the byte arrays */
+	mcus_byte_array_set_array (priv->memory_array, mcus_simulation_get_memory (priv->simulation), MEMORY_SIZE);
+	mcus_byte_array_set_display_length (priv->memory_array, MEMORY_SIZE);
+	mcus_byte_array_set_array (priv->lookup_table_array, mcus_simulation_get_lookup_table (priv->simulation), LOOKUP_TABLE_SIZE);
+	mcus_byte_array_set_display_length (priv->lookup_table_array, DEFAULT_LOOKUP_TABLE_LENGTH);
+	mcus_byte_array_set_array (priv->registers_array, mcus_simulation_get_registers (priv->simulation), REGISTER_COUNT);
+	mcus_byte_array_set_display_length (priv->registers_array, REGISTER_COUNT);
 
 	/* Create the highlighting tags */
 	text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "mw_code_buffer"));
@@ -786,42 +800,11 @@ update_outputs (MCUSMainWindow *self)
 static void
 update_simulation_ui (MCUSMainWindow *self)
 {
-	guint i;
-	/* 3 characters for each memory byte (two hexadecimal digits plus either a space, newline or \0)
-	 * plus 7 characters for <b></b> around the byte pointed to by the program counter. */
-	gchar memory_markup[3 * MEMORY_SIZE + 7];
-	/* 3 characters for each register as above */
-	gchar register_text[3 * REGISTER_COUNT];
-	gchar *f = memory_markup;
-	guchar *memory, *registers, program_counter;
+	guchar program_counter = mcus_simulation_get_program_counter (self->priv->simulation);
 
-	memory = mcus_simulation_get_memory (self->priv->simulation);
-	registers = mcus_simulation_get_registers (self->priv->simulation);
-	program_counter = mcus_simulation_get_program_counter (self->priv->simulation);
-
-	/* Update the memory label */
-	for (i = 0; i < MEMORY_SIZE; i++) {
-		g_sprintf (f, G_UNLIKELY (i == program_counter) ? "<b>%02X</b> " : "%02X ", memory[i]);
-		f += 3;
-
-		if (G_UNLIKELY (i == program_counter))
-			f += 7;
-		if (G_UNLIKELY (i % 16 == 15))
-			*(f - 1) = '\n';
-	}
-	*(f - 1) = '\0';
-
-	gtk_label_set_markup (self->priv->memory_label, memory_markup);
-
-	/* Update the register label */
-	f = register_text;
-	for (i = 0; i < REGISTER_COUNT; i++) {
-		g_sprintf (f, "%02X ", registers[i]);
-		f += 3;
-	}
-	*(f - 1) = '\0';
-
-	gtk_label_set_text (self->priv->registers_label, register_text);
+	/* Update the memory and register labels */
+	mcus_byte_array_set_highlight_byte (self->priv->memory_array, program_counter);
+	mcus_byte_array_update (self->priv->registers_array);
 
 	/* Move the current line mark */
 	if (self->priv->offset_map != NULL) {
@@ -942,7 +925,8 @@ simulation_stack_pushed_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, M
 	/* Build a string representing the registers; 3 characters for each register */
 	f = register_text;
 	for (i = 0; i < REGISTER_COUNT; i++) {
-		g_sprintf (f, "%02X ", stack_frame->registers[i]);
+		g_sprintf (f, "%02X", stack_frame->registers[i]);
+		*(f + 2) = ' ';
 		f += 3;
 	}
 	*(f - 1) = '\0';
@@ -1029,7 +1013,12 @@ notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWin
 
 	if (stopped) {
 		/* If we're finished, remove the current instruction tag */
-		remove_tag (main_window, main_window->priv->current_instruction_tag);
+		remove_tag (main_window, priv->current_instruction_tag);
+	} else if (state == MCUS_SIMULATION_RUNNING) {
+		/* Update the registers, memory and lookup table */
+		mcus_byte_array_update (priv->memory_array);
+		mcus_byte_array_update (priv->registers_array);
+		mcus_byte_array_update (priv->lookup_table_array);
 	}
 }
 

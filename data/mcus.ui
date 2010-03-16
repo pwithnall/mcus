@@ -1629,9 +1629,7 @@
 											<object class="GtkAlignment" id="mw_registers_alignment">
 												<property name="left-padding">12</property>
 												<child>
-													<object class="GtkLabel" id="mw_registers_label">
-														<property name="selectable">True</property>
-														<property name="label">00 00 00 00 00 00 00 00</property>
+													<object class="MCUSByteArray" type-func="mcus_byte_array_get_type" id="mw_registers_array">
 														<property name="xpad">6</property>
 														<property name="ypad">6</property>
 													</object>
@@ -1658,25 +1656,34 @@
 											<object class="GtkAlignment" id="mw_memory_alignment">
 												<property name="left-padding">12</property>
 												<child>
-													<object class="GtkLabel" id="mw_memory_label">
-														<property name="selectable">True</property>
-														<property name="use-markup">True</property>
-														<property name="label">&lt;b&gt;00&lt;/b&gt; 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</property>
+													<object class="MCUSByteArray" type-func="mcus_byte_array_get_type" id="mw_memory_array">
+														<property name="xpad">6</property>
+														<property name="ypad">6</property>
+													</object>
+												</child>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="expand">False</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkFrame" id="mw_lookup_table_frame">
+										<property name="shadow-type">GTK_SHADOW_NONE</property>
+										<child type="label">
+											<object class="GtkLabel" id="mw_lookup_table_label2">
+												<property name="label" translatable="yes">Lookup Table</property>
+												<attributes>
+													<attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+												</attributes>
+											</object>
+										</child>
+										<child>
+											<object class="GtkAlignment" id="mw_lookup_table_alignment">
+												<property name="left-padding">12</property>
+												<child>
+													<object class="MCUSByteArray" type-func="mcus_byte_array_get_type" id="mw_lookup_table_array">
 														<property name="xpad">6</property>
 														<property name="ypad">6</property>
 													</object>
