@@ -37,6 +37,7 @@ static void mcus_byte_array_set_property (GObject *object, guint property_id, co
 static void mcus_byte_array_size_request (GtkWidget *widget, GtkRequisition *requisition);
 static gint mcus_byte_array_expose_event (GtkWidget *widget, GdkEventExpose *event);
 static gboolean mcus_byte_array_query_tooltip (GtkWidget *widget, gint x, gint y, gboolean keyboard_tooltip, GtkTooltip *tooltip);
+static void mcus_byte_array_style_set (GtkWidget *widget, GtkStyle *previous_style);
 static void ensure_layout (MCUSByteArray *self);
 static gint get_width_pu (MCUSByteArray *self);
 static void get_layout_location (MCUSByteArray *self, gint *xp, gint *yp);
@@ -80,6 +81,7 @@ mcus_byte_array_class_init (MCUSByteArrayClass *klass)
 	widget_class->size_request = mcus_byte_array_size_request;
 	widget_class->expose_event = mcus_byte_array_expose_event;
 	widget_class->query_tooltip = mcus_byte_array_query_tooltip;
+	widget_class->style_set = mcus_byte_array_style_set;
 
 	g_object_class_install_property (gobject_class, PROP_ARRAY,
 				g_param_spec_pointer ("array",
@@ -281,6 +283,25 @@ mcus_byte_array_query_tooltip (GtkWidget *widget, gint x, gint y, gboolean keybo
 }
 
 static void
+mcus_byte_array_style_set (GtkWidget *widget, GtkStyle *previous_style)
+{
+	GtkStyle *style;
+	MCUSByteArrayPrivate *priv = MCUS_BYTE_ARRAY (widget)->priv;
+
+	if (priv->layout != NULL) {
+		/* Update the layout's font description */
+		style = gtk_widget_get_style (widget);
+		pango_font_description_free (priv->font_desc);
+		priv->font_desc = pango_font_description_copy (style->font_desc);
+		pango_font_description_set_family_static (priv->font_desc, "monospace");
+		pango_layout_set_font_description (priv->layout, priv->font_desc);
+	}
+
+	/* Queue a resize, as the font size might have changed */
+	gtk_widget_queue_resize (widget);
+}
+
+static void
 ensure_layout (MCUSByteArray *self)
 {
 	MCUSByteArrayPrivate *priv = self->priv;
@@ -294,6 +315,7 @@ ensure_layout (MCUSByteArray *self)
 
 	/* Set the font description */
 	style = gtk_widget_get_style (GTK_WIDGET (self));
+	pango_font_description_free (priv->font_desc);
 	priv->font_desc = pango_font_description_copy (style->font_desc);
 	pango_font_description_set_family_static (priv->font_desc, "monospace");
 	pango_layout_set_font_description (priv->layout, priv->font_desc);

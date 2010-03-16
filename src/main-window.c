@@ -92,6 +92,7 @@ G_MODULE_EXPORT void mw_cut_activate_cb (GtkAction *self, MCUSMainWindow *main_w
 G_MODULE_EXPORT void mw_copy_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_paste_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_delete_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
+G_MODULE_EXPORT void mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_pause_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
 G_MODULE_EXPORT void mw_stop_activate_cb (GtkAction *self, MCUSMainWindow *main_window);
@@ -114,6 +115,11 @@ typedef enum {
 
 /* Number of bytes to show of the lookup table by default (i.e. when it's empty) */
 #define DEFAULT_LOOKUP_TABLE_LENGTH 8
+
+/* The scaling to apply to the fonts of various widgets when going to fullscreen mode */
+#define FULLSCREEN_FONT_SCALE 1.4
+/* The registers get special treatment, as there's free space around them, and they're particularly important */
+#define FULLSCREEN_REGISTERS_FONT_SCALE 2.0
 
 struct _MCUSMainWindowPrivate {
 	/* Simulation */
@@ -163,6 +169,7 @@ struct _MCUSMainWindowPrivate {
 	MCUSLED *output_led[8];
 
 	/* Code editing/highlighting */
+	GtkWidget *code_view;
 	GtkTextBuffer *code_buffer;
 	MCUSInstructionOffset *offset_map; /* maps memory locations to the text buffer offsets where the corresponding instructions are */
 	GtkTextTag *current_instruction_tag;
@@ -173,8 +180,7 @@ struct _MCUSMainWindowPrivate {
 	gchar *current_filename;
 	GtkFileFilter *filter;
 
-	/* Widgets which only need their sensitivity changing */
-	GtkWidget *code_view;
+	/* Widgets which only need their sensitivity/visibility changing */
 	GtkWidget *adc_spin_button;
 	GtkWidget *clock_speed_spin_button;
 	GtkWidget *adc_hbox;
@@ -182,6 +188,7 @@ struct _MCUSMainWindowPrivate {
 	GtkWidget *adc_frequency_spin_button;
 	GtkWidget *adc_amplitude_spin_button;
 	GtkWidget *adc_phase_spin_button;
+	GtkWidget *menu_bar;
 
 	/* Menus */
 	GtkActionGroup *file_action_group;
@@ -197,6 +204,7 @@ struct _MCUSMainWindowPrivate {
 	GtkAction *pause_action;
 	GtkAction *stop_action;
 	GtkAction *step_forward_action;
+	GtkAction *fullscreen_action;
 };
 
 G_DEFINE_TYPE (MCUSMainWindow, mcus_main_window, GTK_TYPE_WINDOW)
@@ -337,6 +345,7 @@ mcus_main_window_new (void)
 	priv->adc_frequency_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_frequency_spin_button"));
 	priv->adc_amplitude_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_amplitude_spin_button"));
 	priv->adc_phase_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_phase_spin_button"));
+	priv->menu_bar = GTK_WIDGET (gtk_builder_get_object (builder, "mw_menu_bar"));
 
 	/* Menus */
 	priv->file_action_group = GTK_ACTION_GROUP (gtk_builder_get_object (builder, "mw_file_action_group"));
@@ -352,6 +361,7 @@ mcus_main_window_new (void)
 	priv->pause_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_pause_action"));
 	priv->stop_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_stop_action"));
 	priv->step_forward_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_step_forward_action"));
+	priv->fullscreen_action = GTK_ACTION (gtk_builder_get_object (builder, "mcus_fullscreen_action"));
 
 	/* Grab the ADC controls */
 	priv->adc_frequency_adjustment = GTK_ADJUSTMENT (gtk_builder_get_object (builder, "mw_adc_frequency_adjustment"));
@@ -1244,6 +1254,63 @@ G_MODULE_EXPORT void
 mw_delete_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
 	gtk_text_buffer_delete_selection (main_window->priv->code_buffer, TRUE, TRUE);
+}
+
+static void
+modify_widget_font_size (GtkWidget *widget, gdouble scale)
+{
+	GtkStyle *style;
+	PangoFontDescription *font_desc;
+
+	style = gtk_widget_get_style (widget);
+	font_desc = pango_font_description_copy_static (style->font_desc);
+
+	pango_font_description_set_size (font_desc, pango_font_description_get_size (font_desc) * scale);
+	gtk_widget_modify_font (widget, font_desc);
+
+	pango_font_description_free (font_desc);
+}
+
+G_MODULE_EXPORT void
+mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
+{
+	MCUSMainWindowPrivate *priv = main_window->priv;
+
+	if (gdk_window_get_state (gtk_widget_get_window (GTK_WIDGET (main_window))) & GDK_WINDOW_STATE_FULLSCREEN) {
+		/* Unfullscreening */
+		gtk_window_unfullscreen (GTK_WINDOW (main_window));
+		gtk_action_set_stock_id (priv->fullscreen_action, GTK_STOCK_FULLSCREEN);
+		gtk_widget_show (priv->menu_bar);
+
+		/* Scale down the font sizes of various widgets */
+		modify_widget_font_size (priv->code_view, 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->memory_array), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->lookup_table_array), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->output_port_label), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->program_counter_label), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->stack_pointer_label), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->input_port_entry), 1.0 / FULLSCREEN_FONT_SCALE);
+
+		/* The registers get special treatment */
+		modify_widget_font_size (GTK_WIDGET (priv->registers_array), 1.0 / FULLSCREEN_REGISTERS_FONT_SCALE);
+	} else {
+		/* Fullscreening */
+		gtk_widget_hide (priv->menu_bar);
+		gtk_action_set_stock_id (priv->fullscreen_action, GTK_STOCK_LEAVE_FULLSCREEN);
+		gtk_window_fullscreen (GTK_WINDOW (main_window));
+
+		/* Scale up the font sizes of various widgets */
+		modify_widget_font_size (priv->code_view, FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->memory_array), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->lookup_table_array), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->output_port_label), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->program_counter_label), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->stack_pointer_label), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->input_port_entry), FULLSCREEN_FONT_SCALE);
+
+		/* The registers get special treatment */
+		modify_widget_font_size (GTK_WIDGET (priv->registers_array), FULLSCREEN_REGISTERS_FONT_SCALE);
+	}
 }
 
 G_MODULE_EXPORT void

@@ -115,6 +115,14 @@
 					</object>
 				</child>
 				<child>
+					<object class="GtkAction" id="mcus_fullscreen_action">
+						<property name="stock-id">gtk-fullscreen</property>
+						<property name="name">edit-fullscreen</property>
+						<signal name="activate" handler="mw_fullscreen_activate_cb"/>
+					</object>
+					<accelerator key="F11"/>
+				</child>
+				<child>
 					<object class="GtkAction" id="mcus_program_action">
 						<property name="name">program</property>
 						<property name="label">_Program</property>
@@ -201,6 +209,8 @@
 					<menuitem action="mcus_copy_action"/>
 					<menuitem action="mcus_paste_action"/>
 					<menuitem action="mcus_delete_action"/>
+					<separator/>
+					<menuitem action="mcus_fullscreen_action"/>
 				</menu>
 				<menu action="mcus_program_action">
 					<menuitem action="mcus_run_action"/>
@@ -218,6 +228,8 @@
 				<toolitem action="mcus_cut_action"/>
 				<toolitem action="mcus_copy_action"/>
 				<toolitem action="mcus_paste_action"/>
+				<separator/>
+				<toolitem action="mcus_fullscreen_action"/>
 				<separator/>
 				<toolitem action="mcus_run_action"/>
 				<toolitem action="mcus_pause_action"/>
