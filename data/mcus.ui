@@ -1397,6 +1397,9 @@
 															<object class="GtkLabel" id="mw_program_counter_label">
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<attributes>
+																	<attribute name="family" value="monospace"/>
+																</attributes>
 																<accessibility>
 																	<relation target="mw_program_counter_label2" type="labelled-by"/>
 																</accessibility>
@@ -1427,6 +1430,9 @@
 															<object class="GtkLabel" id="mw_stack_pointer_label">
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<attributes>
+																	<attribute name="family" value="monospace"/>
+																</attributes>
 																<accessibility>
 																	<relation target="mw_stack_pointer_label2" type="labelled-by"/>
 																</accessibility>
@@ -1556,6 +1562,9 @@
 																<property name="selectable">True</property>
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<attributes>
+																	<attribute name="family" value="monospace"/>
+																</attributes>
 																<accessibility>
 																	<relation target="mw_output_port_label2" type="labelled-by"/>
 																</accessibility>
@@ -1734,7 +1743,9 @@
 																	<object class="GtkTreeViewColumn" id="mw_stack_tree_view_program_counter_column">
 																		<property name="title" translatable="yes" comments="Translators: This stands for 'program counter'.">PC</property>
 																		<child>
-																			<object class="GtkCellRendererText" id="mw_stack_program_counter_renderer"/>
+																			<object class="GtkCellRendererText" id="mw_stack_program_counter_renderer">
+																				<property name="family">monospace</property>
+																			</object>
 																			<attributes>
 																				<attribute name="text">1</attribute>
 																			</attributes>
@@ -1745,7 +1756,9 @@
 																	<object class="GtkTreeViewColumn" id="mw_stack_tree_view_registers_column">
 																		<property name="title" translatable="yes">Registers</property>
 																		<child>
-																			<object class="GtkCellRendererText" id="mw_stack_registers_renderer"/>
+																			<object class="GtkCellRendererText" id="mw_stack_registers_renderer">
+																				<property name="family">monospace</property>
+																			</object>
 																			<attributes>
 																				<attribute name="text">2</attribute>
 																			</attributes>
