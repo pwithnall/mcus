@@ -17,7 +17,6 @@
  * along with MCUS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <config.h>
 #include <stdlib.h>
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -28,24 +27,9 @@
 #include <windows.h>
 #endif
 
+#include "config.h"
 #include "main.h"
 #include "main-window.h"
-
-void
-mcus_quit (MCUSMainWindow *main_window)
-{
-	/* Try and save the file first */
-	if (mcus_main_window_quit (main_window) == FALSE)
-		return;
-
-	if (main_window != NULL)
-		gtk_widget_destroy (GTK_WIDGET (main_window));
-
-	if (gtk_main_level () > 0)
-		gtk_main_quit ();
-
-	exit (0);
-}
 
 #ifdef G_OS_WIN32
 static void
@@ -226,7 +210,7 @@ main (int argc, char *argv[])
 	/* Create and show the interface */
 	main_window = mcus_main_window_new ();
 	if (main_window == NULL)
-		mcus_quit (MCUS_MAIN_WINDOW (main_window));
+		exit (0);
 	gtk_widget_show_all (GTK_WIDGET (main_window));
 
 	/* See if a file to load has been specified on the command line */

@@ -27,6 +27,7 @@
 #include <gtksourceview/gtksourceprintcompositor.h>
 #include <gtksourceview/gtksourcelanguagemanager.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "main-window.h"
 #include "config.h"
@@ -222,9 +223,6 @@ mcus_main_window_dispose (GObject *object)
 {
 	MCUSMainWindowPrivate *priv = MCUS_MAIN_WINDOW (object)->priv;
 
-	/* TODO */
-	/*g_object_unref (priv->current_instruction_tag);
-	g_object_unref (priv->error_tag);*/
 	if (priv->language_manager != NULL)
 		g_object_unref (priv->language_manager);
 	priv->language_manager = NULL;
@@ -348,7 +346,6 @@ mcus_main_window_new (void)
 	priv->adc_square_wave_option = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, "mw_adc_square_wave_option"));
 	priv->adc_triangle_wave_option = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, "mw_adc_triangle_wave_option"));
 
-	/* TODO: define? */
 	/* Grab the input check buttons */
 	for (i = 0; i < 8; i++) {
 		gchar button_id[24];
@@ -358,12 +355,10 @@ mcus_main_window_new (void)
 		priv->input_check_button[i] = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, button_id));
 	}
 
-	/* TODO: Define? */
 	/* Grab the dual SSD outputs */
 	priv->output_dual_ssd[0] = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (builder, "mw_output_dual_ssd0"));
 	priv->output_dual_ssd[1] = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (builder, "mw_output_dual_ssd1"));
 
-	/* TODO: Define? */
 	/* Grab the multi SSD outputs */
 	for (i = 0; i < 16; i++) {
 		gchar ssd_id[21];
@@ -373,7 +368,6 @@ mcus_main_window_new (void)
 		priv->output_multi_ssd[i] = MCUS_SEVEN_SEGMENT_DISPLAY (gtk_builder_get_object (builder, ssd_id));
 	}
 
-	/* TODO: Define? */
 	/* Grab the LED outputs */
 	for (i = 0; i < 8; i++) {
 		gchar led_id[16];
@@ -664,11 +658,19 @@ file_error:
 gboolean
 mcus_main_window_quit (MCUSMainWindow *self)
 {
-	/* Ask to save old files */
+	/* Try and save the file first */
 	if (gtk_text_buffer_get_modified (self->priv->code_buffer) == TRUE &&
 	    save_changes (self) == FALSE) {
 		return FALSE;
 	}
+
+	if (self != NULL)
+		gtk_widget_destroy (GTK_WIDGET (self));
+
+	if (gtk_main_level () > 0)
+		gtk_main_quit ();
+
+	exit (0);
 
 	return TRUE;
 }
@@ -1086,7 +1088,7 @@ buffer_modified_changed_cb (GtkTextBuffer *self, MCUSMainWindow *main_window)
 G_MODULE_EXPORT gboolean
 mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, MCUSMainWindow *main_window)
 {
-	mcus_quit (main_window);
+	mcus_main_window_quit (main_window);
 	return TRUE;
 }
 
@@ -1138,7 +1140,7 @@ mw_key_press_event_cb (GtkWidget *widget, GdkEventKey *event, MCUSMainWindow *ma
 G_MODULE_EXPORT void
 mw_quit_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
-	mcus_quit (main_window);
+	mcus_main_window_quit (main_window);
 }
 
 G_MODULE_EXPORT void

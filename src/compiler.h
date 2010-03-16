@@ -24,9 +24,13 @@
 #include <glib-object.h>
 
 #include "simulation.h"
-#include "main.h" /* TODO: remove this */
 
 G_BEGIN_DECLS
+
+typedef struct {
+	gint offset;
+	guint length;
+} MCUSInstructionOffset;
 
 #define MCUS_TYPE_COMPILER		(mcus_compiler_get_type ())
 #define MCUS_COMPILER(o)		(G_TYPE_CHECK_INSTANCE_CAST ((o), MCUS_TYPE_COMPILER, MCUSCompiler))

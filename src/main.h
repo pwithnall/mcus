@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
 /*
  * MCUS
- * Copyright (C) Philip Withnall 2008 <philip@tecnocode.co.uk>
+ * Copyright (C) Philip Withnall 2008–2010 <philip@tecnocode.co.uk>
  *
  * MCUS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,12 @@
 
 #include <glib.h>
 
-#include "main-window.h"
-
 #ifndef MCUS_MAIN_H
 #define MCUS_MAIN_H
 
 G_BEGIN_DECLS
 
-typedef struct {
-	gint offset;
-	guint length;
-} MCUSInstructionOffset;
-
 const gchar *mcus_get_data_directory (void);
-void mcus_quit (MCUSMainWindow *main_window);
 
 G_END_DECLS
 
