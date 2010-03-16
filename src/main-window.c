@@ -476,18 +476,20 @@ mcus_main_window_new (void)
 }
 
 /* Returns TRUE if changes were saved, or FALSE if the operation was cancelled */
+/* @open_or_close is %TRUE if we're opening a new file over the top of the current one and %FALSE if we're closing the program altogether */
 static gboolean
-save_changes (MCUSMainWindow *self)
+save_changes (MCUSMainWindow *self, gboolean open_or_close)
 {
 	GtkWidget *dialog;
 
 	dialog = gtk_message_dialog_new (GTK_WINDOW (self), GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
-	                                 _("Save changes to the program before closing?"));
+	                                 (open_or_close == TRUE) ? _("Save changes to the program before opening a new file?")
+	                                                         : _("Save changes to the program before closing?"));
 	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
-				_("Close without Saving"), GTK_RESPONSE_CLOSE,
-				"gtk-cancel", GTK_RESPONSE_CANCEL,
-				(self->priv->current_filename == NULL) ? "gtk-save-as" : "gtk-save", GTK_RESPONSE_OK,
-				NULL);
+	                        _("Continue without Saving"), GTK_RESPONSE_CLOSE,
+	                        "gtk-cancel", GTK_RESPONSE_CANCEL,
+	                        (self->priv->current_filename == NULL) ? "gtk-save-as" : "gtk-save", GTK_RESPONSE_OK,
+	                        NULL);
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("If you don't save, your changes will be permanently lost."));
 
 	switch (gtk_dialog_run (GTK_DIALOG (dialog))) {
@@ -511,7 +513,7 @@ mcus_main_window_new_program (MCUSMainWindow *self)
 
 	/* Ask to save old files */
 	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    save_changes (self) == TRUE) {
+	    save_changes (self, TRUE) == TRUE) {
 		gtk_text_buffer_set_text (text_buffer, "", -1);
 		gtk_text_buffer_set_modified (text_buffer, FALSE);
 	}
@@ -525,7 +527,7 @@ mcus_main_window_open_program (MCUSMainWindow *self)
 
 	/* Ask to save old files */
 	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    save_changes (self) == TRUE) {
+	    save_changes (self, TRUE) == TRUE) {
 		/* Get a filename to open */
 		dialog = gtk_file_chooser_dialog_new (_("Open File"), GTK_WINDOW (self), GTK_FILE_CHOOSER_ACTION_OPEN,
 		                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -672,7 +674,7 @@ mcus_main_window_quit (MCUSMainWindow *self)
 {
 	/* Try and save the file first */
 	if (gtk_text_buffer_get_modified (self->priv->code_buffer) == TRUE &&
-	    save_changes (self) == FALSE) {
+	    save_changes (self, FALSE) == FALSE) {
 		return FALSE;
 	}
 
@@ -1359,7 +1361,7 @@ mw_contents_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		                                            GTK_BUTTONS_OK,
 		                                            _("Error displaying help"));
 		if (error == NULL)
-			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("Couldn't find a program to open .pdf files."));
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("Couldn't find a program to open PDF files."));
 		else
 			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 
@@ -1408,7 +1410,7 @@ mw_about_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 
 	gtk_show_about_dialog (GTK_WINDOW (main_window),
 	                       "version", VERSION,
-	                       "copyright", _("Copyright \xc2\xa9 2008 Philip Withnall"),
+	                       "copyright", _("Copyright © 2008–2010 Philip Withnall"),
 	                       "comments", _(description),
 	                       "authors", authors,
 	                       /* Translators: please include your names here to be credited for your hard work!
