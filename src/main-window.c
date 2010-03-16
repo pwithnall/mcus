@@ -552,6 +552,8 @@ mcus_main_window_new_program (MCUSMainWindow *self)
 	    save_changes (self, TRUE) == TRUE) {
 		gtk_text_buffer_set_text (text_buffer, "", -1);
 		gtk_text_buffer_set_modified (text_buffer, FALSE);
+		g_free (self->priv->current_filename);
+		self->priv->current_filename = NULL;
 	}
 }
 
@@ -845,8 +847,6 @@ update_simulation_ui (MCUSMainWindow *self)
 		           self->priv->offset_map[program_counter].offset + self->priv->offset_map[program_counter].length,
 		           TRUE);
 	}
-
-	mcus_simulation_print_debug_data (self->priv->simulation);
 }
 
 /* Data function to format the program counter column of the stack tree view properly */
@@ -1337,8 +1337,6 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	gtk_text_buffer_get_bounds (code_buffer, &start_iter, &end_iter);
 	code = gtk_text_buffer_get_text (code_buffer, &start_iter, &end_iter, FALSE);
 
-	mcus_simulation_print_debug_data (main_window->priv->simulation);
-
 	/* Parse it */
 	compiler = mcus_compiler_new ();
 	mcus_compiler_parse (compiler, code, &error);
@@ -1346,7 +1344,6 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 
 	if (error != NULL)
 		goto compiler_error;
-	mcus_simulation_print_debug_data (main_window->priv->simulation);
 
 	/* Compile it */
 	mcus_compiler_compile (compiler, main_window->priv->simulation, &(main_window->priv->offset_map),
@@ -1558,13 +1555,26 @@ mw_print_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	GtkPrintOperationResult res;
 	GtkSourcePrintCompositor *source_compositor;
 	static GtkPrintSettings *settings;
+	gchar *header;
 
-	/* TODO: Header/Footer? */
+	/* Set up the print compositor */
 	operation = gtk_print_operation_new ();
 	source_compositor = gtk_source_print_compositor_new (GTK_SOURCE_BUFFER (main_window->priv->code_buffer));
 	gtk_source_print_compositor_set_print_line_numbers (source_compositor, 1);
 	gtk_source_print_compositor_set_highlight_syntax (source_compositor, TRUE);
 
+	/* Header */
+	header = g_strdup_printf (_("File: %s"),
+	                          (main_window->priv->current_filename != NULL) ? main_window->priv->current_filename : _("Unsaved document"));
+	gtk_source_print_compositor_set_print_header (source_compositor, TRUE);
+	gtk_source_print_compositor_set_header_format (source_compositor, TRUE, header, NULL, NULL);
+	g_free (header);
+
+	/* Footer */
+	gtk_source_print_compositor_set_print_footer (source_compositor, TRUE);
+	gtk_source_print_compositor_set_footer_format (source_compositor, TRUE, "%c", NULL, _("Page %N of %Q"));
+
+	/* Run the print operation */
 	if (settings != NULL)
 		gtk_print_operation_set_print_settings (operation, settings);
 

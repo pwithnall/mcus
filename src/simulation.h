@@ -81,7 +81,6 @@ void mcus_simulation_start (MCUSSimulation *self);
 gboolean mcus_simulation_iterate (MCUSSimulation *self, GError **error);
 void mcus_simulation_pause (MCUSSimulation *self);
 void mcus_simulation_finish (MCUSSimulation *self);
-void mcus_simulation_print_debug_data (MCUSSimulation *self);
 
 guchar *mcus_simulation_get_memory (MCUSSimulation *self);
 guchar *mcus_simulation_get_lookup_table (MCUSSimulation *self);

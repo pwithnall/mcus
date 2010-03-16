@@ -644,65 +644,6 @@ mcus_simulation_finish (MCUSSimulation *self)
 	priv->stack = NULL;
 }
 
-void
-mcus_simulation_print_debug_data (MCUSSimulation *self)
-{
-	MCUSSimulationPrivate *priv = self->priv;
-	guint i;
-	MCUSStackFrame *stack_frame;
-
-	/* TODO if (mcus->debug == FALSE)
-		return;*/
-
-	/* General data */
-	g_printf ("Program counter: %02X\nZero flag: %u\nClock speed: %luHz\n",
-	          (guint) priv->program_counter,
-	          (priv->zero_flag == TRUE) ? 1 : 0,
-	          priv->clock_speed);
-
-	/* Registers */
-	g_printf ("Registers:");
-	for (i = 0; i < REGISTER_COUNT; i++)
-		g_printf (" %02X", (guint) priv->registers[i]);
-	g_printf ("\n");
-
-	/* Stack */
-	g_printf ("Stack:\n ");
-	stack_frame = priv->stack;
-	i = 0;
-	while (stack_frame != NULL) {
-		g_printf (" %02X", (guint) stack_frame->program_counter);
-
-		if (i % 16 == 15)
-			g_printf ("\n ");
-
-		i++;
-		stack_frame = stack_frame->prev;
-	}
-	if (i == 0)
-		g_printf (" (Empty)");
-	g_printf ("\n");
-
-	/* Ports */
-	g_printf ("Input port: %02X\nOutput port: %02X\nAnalogue input: %fV\n",
-	          (guint) priv->input_port,
-	          (guint) priv->output_port,
-	          priv->analogue_input);
-
-	/* Memory */
-	g_printf ("Memory:\n ");
-	for (i = 0; i < MEMORY_SIZE; i++) {
-		if (i == priv->program_counter)
-			g_printf (" \033[1m%02X\033[0m", (guint) priv->memory[i]);
-		else
-			g_printf (" %02X", (guint) priv->memory[i]);
-
-		if (i % 16 == 15)
-			g_printf ("\n ");
-	}
-	g_printf ("\n");
-}
-
 guchar *
 mcus_simulation_get_memory (MCUSSimulation *self)
 {
