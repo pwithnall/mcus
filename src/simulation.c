@@ -327,9 +327,6 @@ mcus_simulation_start (MCUSSimulation *self)
 	/* Set up various properties */
 	g_object_freeze_notify (G_OBJECT (self));
 
-	priv->iteration = 0;
-	g_object_notify (G_OBJECT (self), "iteration");
-
 	priv->program_counter = PROGRAM_START_ADDRESS;
 	g_object_notify (G_OBJECT (self), "program-counter");
 
@@ -337,7 +334,20 @@ mcus_simulation_start (MCUSSimulation *self)
 	g_object_notify (G_OBJECT (self), "zero-flag");
 
 	memset (priv->registers, 0, sizeof (guchar) * REGISTER_COUNT);
+
+	priv->input_port = 0;
+	g_object_notify (G_OBJECT (self), "input-port");
+
+	priv->output_port = 0;
+	g_object_notify (G_OBJECT (self), "output-port");
+
+	priv->analogue_input = 0.0;
+	g_object_notify (G_OBJECT (self), "analogue-input");
+
 	priv->stack = NULL;
+
+	priv->iteration = 0;
+	g_object_notify (G_OBJECT (self), "iteration");
 
 	priv->state = MCUS_SIMULATION_RUNNING;
 	g_object_notify (G_OBJECT (self), "state");
