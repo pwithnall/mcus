@@ -1423,14 +1423,14 @@ mw_contents_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	GList list;
 	gchar *path;
 
-	path = g_build_filename (mcus_get_data_directory (), "help.pdf", NULL);
+	path = g_build_filename (mcus_get_data_directory (), "help", "index.xhtml", NULL);
 	file = g_file_new_for_path (path);
 	g_free (path);
 
 	list.data = file;
 	list.next = list.prev = NULL;
 
-	app_info = g_app_info_get_default_for_type (".pdf", FALSE);
+	app_info = g_app_info_get_default_for_type (".xhtml", FALSE);
 
 	if (app_info == NULL || g_app_info_launch (app_info, &list, NULL, &error) == FALSE) {
 #else /* !G_OS_WIN32 */
@@ -1442,7 +1442,7 @@ mw_contents_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		                                            GTK_BUTTONS_OK,
 		                                            _("Error displaying help"));
 		if (error == NULL)
-			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("Couldn't find a program to open PDF files."));
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("Couldn't find a program to open help files."));
 		else
 			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 

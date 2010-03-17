@@ -200,7 +200,8 @@ installer-copy-files:
 	cp $(top_builddir)/src/.libs/mcus.exe $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/lib; \
 	cp $(top_srcdir)/data/mcus.ui $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/; \
 	cp $(top_srcdir)/data/ocr-assembly.lang $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/; \
-	cp $(top_srcdir)/help/pdf/mcus-pdf.pdf $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/help.pdf; \
+	cp $(top_builddir)/help/C/*.xhtml $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/help/; \
+	cp $(top_srcdir)/help/C/figures/* $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/help/figures/; \
 	cp $(top_srcdir)/data/icons/16x16/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/16x16/apps; \
 	cp $(top_srcdir)/data/icons/22x22/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/22x22/apps; \
 	cp $(top_srcdir)/data/icons/32x32/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/32x32/apps; \
