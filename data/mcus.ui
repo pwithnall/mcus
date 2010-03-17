@@ -1187,6 +1187,8 @@
 																	<object class="GtkTable" id="mw_wave_options_table">
 																		<property name="n-rows">4</property>
 																		<property name="n-columns">3</property>
+																		<property name="border-width">6</property>
+																		<property name="row-spacing">6</property>
 																		<property name="column-spacing">6</property>
 																		<child>
 																			<object class="GtkLabel" id="label26">
@@ -1200,6 +1202,8 @@
 																				<property name="bottom-attach">1</property>
 																				<property name="left-attach">0</property>
 																				<property name="right-attach">1</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1215,6 +1219,7 @@
 																				<property name="bottom-attach">1</property>
 																				<property name="left-attach">1</property>
 																				<property name="right-attach">2</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1227,6 +1232,8 @@
 																				<property name="bottom-attach">1</property>
 																				<property name="left-attach">2</property>
 																				<property name="right-attach">3</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1241,6 +1248,8 @@
 																				<property name="bottom-attach">2</property>
 																				<property name="left-attach">0</property>
 																				<property name="right-attach">1</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1256,11 +1265,12 @@
 																				<property name="bottom-attach">2</property>
 																				<property name="left-attach">1</property>
 																				<property name="right-attach">2</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
 																			<object class="GtkLabel" id="label99">
-																				<property name="label" translatable="yes">V</property>
+																				<property name="label" translatable="yes" comments="Volts">V</property>
 																				<property name="xalign">0</property>
 																			</object>
 																			<packing>
@@ -1268,6 +1278,8 @@
 																				<property name="bottom-attach">2</property>
 																				<property name="left-attach">2</property>
 																				<property name="right-attach">3</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1282,6 +1294,8 @@
 																				<property name="bottom-attach">3</property>
 																				<property name="left-attach">0</property>
 																				<property name="right-attach">1</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1296,11 +1310,12 @@
 																				<property name="bottom-attach">3</property>
 																				<property name="left-attach">1</property>
 																				<property name="right-attach">2</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
 																			<object class="GtkLabel" id="label31">
-																				<property name="label" translatable="yes">V</property>
+																				<property name="label" translatable="yes" comments="Volts">V</property>
 																				<property name="xalign">0</property>
 																			</object>
 																			<packing>
@@ -1308,6 +1323,8 @@
 																				<property name="bottom-attach">3</property>
 																				<property name="left-attach">2</property>
 																				<property name="right-attach">3</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1321,6 +1338,8 @@
 																				<property name="bottom-attach">4</property>
 																				<property name="left-attach">0</property>
 																				<property name="right-attach">1</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1336,6 +1355,7 @@
 																				<property name="bottom-attach">4</property>
 																				<property name="left-attach">1</property>
 																				<property name="right-attach">2</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																		<child>
@@ -1348,6 +1368,8 @@
 																				<property name="bottom-attach">4</property>
 																				<property name="left-attach">2</property>
 																				<property name="right-attach">3</property>
+																				<property name="x-options">GTK_FILL</property>
+																				<property name="y-options">GTK_FILL</property>
 																			</packing>
 																		</child>
 																	</object>
@@ -1386,8 +1408,9 @@
 												<child>
 													<object class="GtkTable" id="mw_general_table">
 														<property name="n-rows">4</property>
-														<property name="n-columns">3</property>
-														<property name="column-spacing">6</property>
+														<property name="n-columns">2</property>
+														<property name="row-spacing">6</property>
+														<property name="column-spacing">12</property>
 														<property name="border-width">6</property>
 														<child>
 															<object class="GtkLabel" id="mw_program_counter_label2">
@@ -1402,6 +1425,8 @@
 																<property name="bottom-attach">1</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1419,7 +1444,8 @@
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
 																<property name="left-attach">1</property>
-																<property name="right-attach">3</property>
+																<property name="right-attach">2</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1435,6 +1461,8 @@
 																<property name="bottom-attach">2</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1452,7 +1480,8 @@
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
 																<property name="left-attach">1</property>
-																<property name="right-attach">3</property>
+																<property name="right-attach">2</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1468,6 +1497,8 @@
 																<property name="bottom-attach">3</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1485,7 +1516,8 @@
 																<property name="top-attach">2</property>
 																<property name="bottom-attach">3</property>
 																<property name="left-attach">1</property>
-																<property name="right-attach">3</property>
+																<property name="right-attach">2</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1500,32 +1532,37 @@
 																<property name="bottom-attach">4</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
-															<object class="GtkSpinButton" id="mw_clock_speed_spin_button">
-																<property name="adjustment">mw_clock_speed_adjustment</property>
-																<property name="digits">1</property>
-																<property name="value">1</property>
-																<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>
+															<object class="GtkHBox" id="mw_clock_speed_hbox">
+																<property name="spacing">6</property>
+																<child>
+																	<object class="GtkSpinButton" id="mw_clock_speed_spin_button">
+																		<property name="adjustment">mw_clock_speed_adjustment</property>
+																		<property name="digits">1</property>
+																		<property name="value">1</property>
+																		<signal name="value-changed" handler="mw_clock_speed_spin_button_value_changed_cb"/>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkLabel" id="label9">
+																		<property name="label" translatable="yes">Hz</property>
+																		<property name="xalign">0</property>
+																	</object>
+																	<packing>
+																		<property name="expand">False</property>
+																	</packing>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">3</property>
 																<property name="bottom-attach">4</property>
 																<property name="left-attach">1</property>
 																<property name="right-attach">2</property>
-															</packing>
-														</child>
-														<child>
-															<object class="GtkLabel" id="label9">
-																<property name="label" translatable="yes">Hz</property>
-																<property name="xalign">0</property>
-															</object>
-															<packing>
-																<property name="top-attach">3</property>
-																<property name="bottom-attach">4</property>
-																<property name="left-attach">2</property>
-																<property name="right-attach">3</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 													</object>
@@ -1554,8 +1591,9 @@
 												<child>
 													<object class="GtkTable" id="mw_io_table">
 														<property name="n-rows">3</property>
-														<property name="n-columns">3</property>
-														<property name="column-spacing">6</property>
+														<property name="n-columns">2</property>
+														<property name="row-spacing">6</property>
+														<property name="column-spacing">12</property>
 														<property name="border-width">6</property>
 														<child>
 															<object class="GtkLabel" id="mw_input_port_label">
@@ -1569,6 +1607,8 @@
 																<property name="bottom-attach">1</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1583,7 +1623,8 @@
 																<property name="top-attach">0</property>
 																<property name="bottom-attach">1</property>
 																<property name="left-attach">1</property>
-																<property name="right-attach">3</property>
+																<property name="right-attach">2</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1599,6 +1640,8 @@
 																<property name="bottom-attach">2</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1617,7 +1660,8 @@
 																<property name="top-attach">1</property>
 																<property name="bottom-attach">2</property>
 																<property name="left-attach">1</property>
-																<property name="right-attach">3</property>
+																<property name="right-attach">2</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
@@ -1632,30 +1676,35 @@
 																<property name="bottom-attach">3</property>
 																<property name="left-attach">0</property>
 																<property name="right-attach">1</property>
+																<property name="x-options">GTK_FILL</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 														<child>
-															<object class="GtkSpinButton" id="mw_analogue_input_spin_button">
-																<property name="adjustment">mw_adc_offset_adjustment</property>
-																<property name="digits">2</property>
+															<object class="GtkHBox" id="mw_analogue_input_hbox">
+																<property name="spacing">6</property>
+																<child>
+																	<object class="GtkSpinButton" id="mw_analogue_input_spin_button">
+																		<property name="adjustment">mw_adc_offset_adjustment</property>
+																		<property name="digits">2</property>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkLabel" id="label5">
+																		<property name="label" translatable="yes" comments="Volts">V</property>
+																		<property name="xalign">0</property>
+																	</object>
+																	<packing>
+																		<property name="expand">False</property>
+																	</packing>
+																</child>
 															</object>
 															<packing>
 																<property name="top-attach">2</property>
 																<property name="bottom-attach">3</property>
 																<property name="left-attach">1</property>
 																<property name="right-attach">2</property>
-															</packing>
-														</child>
-														<child>
-															<object class="GtkLabel" id="label5">
-																<property name="label" translatable="yes">volts</property>
-																<property name="xalign">0</property>
-															</object>
-															<packing>
-																<property name="top-attach">2</property>
-																<property name="bottom-attach">3</property>
-																<property name="left-attach">2</property>
-																<property name="right-attach">3</property>
+																<property name="y-options">GTK_FILL</property>
 															</packing>
 														</child>
 													</object>
@@ -1762,6 +1811,7 @@
 										<child>
 											<object class="GtkAlignment" id="mw_stack_alignment">
 												<property name="left-padding">12</property>
+												<property name="top-padding">6</property>
 												<child>
 													<object class="GtkScrolledWindow" id="mw_stack_scrolled_window">
 														<property name="hscrollbar-policy">GTK_POLICY_AUTOMATIC</property>
