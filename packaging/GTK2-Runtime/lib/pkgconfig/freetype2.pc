@@ -1,0 +1,12 @@
+prefix=c:/devel/target/d763cac309b059dc0170bb1fc1f32464
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: FreeType 2
+Description: A free, high-quality, and portable font engine.
+Version: 9.22.3
+Requires:
+Libs: -L${libdir} -lfreetype
+Libs.private:  
+Cflags: -I${includedir}/freetype2 -I${includedir}

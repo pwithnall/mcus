@@ -1497,7 +1497,7 @@ mw_about_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	                       "license", license,
 	                       "wrap-license", TRUE,
 	                       "website-label", _("MCUS Website"),
-	                       "website", "http://tecnocode.co.uk/projects/mcus",
+	                       "website", PACKAGE_URL,
 	                       NULL);
 
 	g_free (license);

@@ -77,9 +77,9 @@ src_mcus_LDADD += src/mcus_win_icon.$(OBJEXT)
 src_mcus_DEPENDENCIES = src/mcus_win_icon.$(OBJEXT)
 
 src/mcus_win_icon.$(OBJEXT): data/icons/mcus_win_icon.rc
-	$(WINDRES) \
+	$(AM_V_GEN)($(WINDRES) \
 	  --input-format rc --input $< \
-	  --output-format coff --output $@
+	  --output-format coff --output $@)
 endif
 
 # Icons
@@ -182,8 +182,61 @@ $(srcdir)/ChangeLog:
 	  (echo A git checkout and git-log is required to generate ChangeLog >&2 && \
 	  echo A git checkout and git-log is required to generate this file >> $@); \
 	fi
-.PHONY: $(srcdir)/ChangeLog
 
 MAINTAINERCLEANFILES += $(srcdir)/ChangeLog
+
+# NSIS installer
+if WITH_INSTALLER
+installer: packaging/mcus-$(PACKAGE_VERSION).zip packaging/mcus-$(PACKAGE_VERSION).exe installer-clean
+
+# Copy the generated files into our Windows build tree
+installer-copy-files:
+	@cp src/.libs/mcus.exe packaging/GTK2-Runtime/lib; \
+	cp data/mcus.ui packaging/GTK2-Runtime/share/mcus/; \
+	cp data/ocr-assembly.lang packaging/GTK2-Runtime/share/mcus/; \
+	cp help/pdf/mcus-pdf.pdf packaging/GTK2-Runtime/share/mcus/help.pdf; \
+	cp data/icons/16x16/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/16x16/apps; \
+	cp data/icons/22x22/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/22x22/apps; \
+	cp data/icons/32x32/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/32x32/apps; \
+	cp data/icons/48x48/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/48x48/apps; \
+	cp examples/*.asm packaging/GTK2-Runtime/share/mcus/examples/
+
+installer-clean:
+	@rm -f packaging/GTK2-Runtime/lib/mcus.exe packaging/GTK2-Runtime/share/mcus/mcus.ui packaging/GTK2-Runtime/share/mcus/help.pdf \
+	       packaging/GTK2-Runtime/share/icons/hicolor/*/apps/mcus.png && \
+	rm -rf packaging/GTK2-Runtime/share/mcus
+
+# Zip up the Windows build tree
+ZIPP = $(ZIPP_$(V))
+ZIPP_ = $(ZIPP_$(AM_DEFAULT_VERBOSITY))
+ZIPP_0 = echo "  ZIP   " $@; $(ZIP) -q
+ZIPP_1 = $(ZIP)
+
+packaging/mcus-$(PACKAGE_VERSION).zip: installer-copy-files
+	@rm -f $@; \
+	cd packaging; \
+	mv GTK2-Runtime mcus-$(PACKAGE_VERSION); \
+	$(ZIPP) -r mcus-$(PACKAGE_VERSION).zip mcus-$(PACKAGE_VERSION) windows.reg README.txt -x \*~; \
+	mv mcus-$(PACKAGE_VERSION) GTK2-Runtime
+
+# Building NSIS installer; do some silent-rules magic
+NSIS = $(NSIS_$(V))
+NSIS_ = $(NSIS_$(AM_DEFAULT_VERBOSITY))
+NSIS_0 = @echo "  NSIS  " $@; $(MAKENSIS) -V2
+NSIS_1 = $(MAKENSIS)
+
+packaging/mcus-$(PACKAGE_VERSION).exe: installer-copy-files
+	$(NSIS) packaging/mcus.nsi
+
+clean-local: installer-clean
+MAINTAINERCLEANFILES += $(builddir)/packaging/mcus-$(PACKAGE_VERSION).zip $(builddir)/packaging/mcus-$(PACKAGE_VERSION).exe
+else
+installer:
+	@echo "Need to reconfigure with --enable-installer to build the installer."
+endif
+
+dist-hook: installer
+distcheck-hook: installer
+.PHONY: $(srcdir)/ChangeLog installer installer-copy-files installer-clean
 
 -include $(top_srcdir)/git.mk
