@@ -31,4 +31,8 @@ OUT Q, S0</code>
 	<p>Only one lookup table can be defined in a program, but it can be defined anywhere in the program. If values of the lookup table outside the
 		defined range are read using the <link xref="reference#subroutines"><code>readtable</code></link> subroutine, <sys>00</sys> is returned
 		in <code>S0</code>.</p>
+
+	<p>The <gui style="group">Lookup Table</gui> section of the side panel in <app>MCUS</app>' main window shows the data currently stored in the
+		simulated microcontroller's lookup table. To conserve space in the window, the listing is abbreviated to only show the data which has
+		been defined using the <code>table:</code> label syntax, as the rest of the lookup table is filled with zeroes.</p>
 </page>

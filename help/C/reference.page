@@ -223,9 +223,9 @@
 				<tr id="readtable">
 					<td><p><code>readtable</code></p></td>
 					<td>
-						<p>Copies the byte in the lookup table pointed at by <code>S7</code> into <code>S0</code>. The lookup
-							table is a labelled table: when <code>S7</code> is <sys>0</sys> the first byte from the table is
-							returned in <code>S0</code>.</p>
+						<p>Copies the byte in the <link xref="lookup-tables">lookup table</link> pointed at by <code>S7</code>
+							into <code>S0</code>. The lookup table is a labelled table: when <code>S7</code> is
+							<sys>0</sys> the first byte from the table is returned in <code>S0</code>.</p>
 						<p>The lookup table itself is defined with a special label construct, <code>table:</code>, followed
 							by the constant values to be put into the table. Up to 256 values can be stored in the table,
 							which is stored separately from the program in the simulated microcontroller's memory.</p>

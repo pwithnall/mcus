@@ -19,6 +19,14 @@
 		<guiseq><gui style="menu">Program</gui><gui style="menuitem">Step Forward</gui></guiseq> or press <key>F8</key>.</p>
 	<p>To stop simulation of the program at any time, press <gui style="button">Stop</gui> on the toolbar, choose
 		<guiseq><gui style="menu">Program</gui><gui style="menuitem">Stop</gui></guiseq> or press <key>F7</key>.</p>
+
+	<note style="tip">
+		<p>If demonstrating a simulation to a large audience, it can be useful to fullscreen <app>MCUS</app>. This can be achieved by clicking the
+			<gui style="button">Fullscreen</gui> button on the toolbar, selecting
+			<guiseq><gui style="menu">Edit</gui><gui style="menuitem">Fullscreen</gui></guiseq> or pressing <key>F11</key>. In fullscreen mode,
+			the main window is maximised and the font size of key parts of the interface is increased to improve visibility.</p>
+		<p>To leave fullscreen mode, press <key>F11</key> again, or click the <gui style="button">Leave Fullscreen</gui> button on the toolbar.</p>
+	</note>
 </page>
 
 
