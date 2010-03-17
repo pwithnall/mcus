@@ -607,13 +607,17 @@ update_and_exit:
 void
 mcus_simulation_pause (MCUSSimulation *self)
 {
+	MCUSSimulationPrivate *priv = self->priv;
+
 	g_return_if_fail (MCUS_IS_SIMULATION (self));
-	g_return_if_fail (self->priv->state == MCUS_SIMULATION_RUNNING);
+	g_return_if_fail (priv->state == MCUS_SIMULATION_RUNNING);
 
 	/* Stop timeouts */
-	g_source_remove (self->priv->iteration_event);
+	if (priv->iteration_event != 0)
+		g_source_remove (priv->iteration_event);
+	priv->iteration_event = 0;
 
-	self->priv->state = MCUS_SIMULATION_PAUSED;
+	priv->state = MCUS_SIMULATION_PAUSED;
 	g_object_notify (G_OBJECT (self), "state");
 }
 
@@ -640,7 +644,9 @@ mcus_simulation_finish (MCUSSimulation *self)
 	g_return_if_fail (priv->state != MCUS_SIMULATION_STOPPED);
 
 	/* Stop timeouts */
-	g_source_remove (self->priv->iteration_event);
+	if (priv->iteration_event != 0)
+		g_source_remove (priv->iteration_event);
+	priv->iteration_event = 0;
 
 	/* Stop the simulation */
 	priv->state = MCUS_SIMULATION_STOPPED;
@@ -766,14 +772,15 @@ mcus_simulation_set_clock_speed (MCUSSimulation *self, gulong clock_speed)
 	MCUSSimulationPrivate *priv = self->priv;
 
 	g_return_if_fail (MCUS_IS_SIMULATION (self));
-	g_return_if_fail (clock_speed > MAX_CLOCK_SPEED);
+	g_return_if_fail (clock_speed <= MAX_CLOCK_SPEED);
 
 	/* Set the clock speed */
 	priv->clock_speed = clock_speed;
 
 	/* Change the events if we're running */
 	if (priv->state == MCUS_SIMULATION_RUNNING) {
-		g_source_remove (priv->iteration_event);
+		if (priv->iteration_event != 0)
+			g_source_remove (priv->iteration_event);
 		priv->iteration_event = g_timeout_add (1000 / clock_speed, (GSourceFunc) simulation_iterate_cb, self);
 	}
 }

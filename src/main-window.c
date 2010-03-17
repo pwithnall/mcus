@@ -113,7 +113,7 @@ typedef enum {
 } OutputDevice;
 
 /* Number of bytes to show of the lookup table by default (i.e. when it's empty) */
-#define DEFAULT_LOOKUP_TABLE_LENGTH 8
+#define DEFAULT_LOOKUP_TABLE_LENGTH 2
 
 /* The scaling to apply to the fonts of various widgets when going to fullscreen mode */
 #define FULLSCREEN_FONT_SCALE 1.4
