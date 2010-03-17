@@ -7,7 +7,7 @@
 ;Include Modern UI and registerExtension
 
 	!include "MUI2.nsh"
-	!include "registerExtension.nsh"
+	!include "@srcdir@/registerExtension.nsh"
 
 ;--------------------------------
 ;General
@@ -46,7 +46,7 @@
 ;Pages
 
 	!insertmacro MUI_PAGE_WELCOME
-	!insertmacro MUI_PAGE_LICENSE "../COPYING"
+	!insertmacro MUI_PAGE_LICENSE "@top_srcdir@/COPYING"
 	!insertmacro MUI_PAGE_DIRECTORY
 	!insertmacro MUI_PAGE_INSTFILES
 	!insertmacro MUI_PAGE_FINISH
@@ -68,11 +68,11 @@ Section "Install"
 
 	;Install files
 	SetOutPath "$INSTDIR"
-	File /r "GTK2-Runtime\bin"
-	File /r "GTK2-Runtime\etc"
-	File /r "GTK2-Runtime\gtk2-runtime"
-	File /r "GTK2-Runtime\lib"
-	File /r "GTK2-Runtime\share"
+	File /r "@builddir@\mcus-${VERSION}\bin"
+	File /r "@builddir@\mcus-${VERSION}\etc"
+	File /r "@builddir@\mcus-${VERSION}\gtk2-runtime"
+	File /r "@builddir@\mcus-${VERSION}\lib"
+	File /r "@builddir@\mcus-${VERSION}\share"
 
 	;Install Start Menu shortcut
 	CreateShortCut "$SMPROGRAMS\${SHORT_NAME}.lnk" "$INSTDIR\lib\${APP_NAME}" "" "$INSTDIR\lib\${APP_NAME}" 0

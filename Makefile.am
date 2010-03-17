@@ -1,4 +1,8 @@
-SUBDIRS = . po help
+SUBDIRS = . po
+
+if WITH_DOCS
+SUBDIRS += help
+endif
 
 # Enums
 MCUS_ENUM_FILES = \
@@ -6,25 +10,25 @@ MCUS_ENUM_FILES = \
 	src/simulation-enums.h
 
 src/simulation-enums.h: src/simulation.h Makefile
-	$(AM_V_GEN)(cd $(srcdir) && $(GLIB_MKENUMS) \
+	$(AM_V_GEN)($(GLIB_MKENUMS) \
 			--fhead "#ifndef __MCUS_SIMULATION_ENUMS_H__\n#define __MCUS_SIMULATION_ENUMS_H__\n\n#include <glib-object.h>\n\nG_BEGIN_DECLS\n" \
 			--fprod "/* enumerations from \"@filename@\" */\n" \
 			--vhead "GType @enum_name@_get_type (void) G_GNUC_CONST;\n#define MCUS_TYPE_@ENUMSHORT@ (@enum_name@_get_type())\n" \
 			--ftail "G_END_DECLS\n\n#endif /* __MCUS_SIMULATION_ENUMS_H__ */" \
-		src/simulation.h > $@.tmp \
-		&& sed "s/m_cus/mcus/" $@.tmp > $@.tmp2 \
-		&& sed "s/MCUS_TYPE_CUS/MCUS_TYPE/" $@.tmp2 > $@ \
+		$(srcdir)/src/simulation.h > $@.tmp \
+		&& $(SED) "s/m_cus/mcus/" $@.tmp > $@.tmp2 \
+		&& $(SED) "s/MCUS_TYPE_CUS/MCUS_TYPE/" $@.tmp2 > $(srcdir)/src/simulation-enums.h \
 		&& rm -f $@.tmp $@.tmp2)
 
 src/simulation-enums.c: src/simulation.h Makefile src/simulation-enums.h
-	$(AM_V_GEN)(cd $(srcdir) && $(GLIB_MKENUMS) \
+	$(AM_V_GEN)($(GLIB_MKENUMS) \
 			--fhead "#include \"simulation.h\"\n#include \"simulation-enums.h\"" \
 			--fprod "\n/* enumerations from \"@filename@\" */" \
 			--vhead "GType\n@enum_name@_get_type (void)\n{\n  static GType etype = 0;\n  if (etype == 0) {\n    static const G@Type@Value values[] = {" \
 			--vprod "      { @VALUENAME@, \"@VALUENAME@\", \"@valuenick@\" }," \
 			--vtail "      { 0, NULL, NULL }\n    };\n    etype = g_@type@_register_static (\"@EnumName@\", values);\n  }\n  return etype;\n}\n" \
-		src/simulation.h > $@.tmp \
-		&& sed "s/m_cus/mcus/" $@.tmp > $@ \
+		$(srcdir)/src/simulation.h > $@.tmp \
+		&& $(SED) "s/m_cus/mcus/" $@.tmp > $(srcdir)/src/simulation-enums.c \
 		&& rm -f $@.tmp)
 
 CLEANFILES = $(MCUS_ENUM_FILES)
@@ -75,12 +79,21 @@ src_mcus_LDADD = \
 if WITH_WIN_ICON
 src_mcus_LDADD += src/mcus_win_icon.$(OBJEXT)
 src_mcus_DEPENDENCIES = src/mcus_win_icon.$(OBJEXT)
+CLEANFILES += src/mcus_win_icon.$(OBJEXT)
 
 src/mcus_win_icon.$(OBJEXT): data/icons/mcus_win_icon.rc
 	$(AM_V_GEN)($(WINDRES) \
 	  --input-format rc --input $< \
 	  --output-format coff --output $@)
 endif
+
+# Example programs
+exampledir = $(datadir)/mcus/examples
+dist_example_DATA = \
+	data/examples/adc_divider.asm	\
+	data/examples/led_chaser.asm		\
+	data/examples/scrolling_message.asm	\
+	data/examples/ssd_tester.asm
 
 # Icons
 gtk_update_icon_cache = gtk-update-icon-cache -f -t $(datadir)/icons/hicolor
@@ -106,10 +119,10 @@ dist_icon32_DATA = data/icons/32x32/mcus.png
 dist_icon48_DATA = data/icons/48x48/mcus.png
 
 EXTRA_DIST = \
-	data/icons/16x16/mcus.svg	\
-	data/icons/22x22/mcus.svg	\
-	data/icons/32x32/mcus.svg	\
-	data/icons/48x48/mcus.svg
+	data/icons/16x16/mcus.svg data/icons/16x16/mcus.ico	\
+	data/icons/22x22/mcus.svg data/icons/22x22/mcus.ico	\
+	data/icons/32x32/mcus.svg data/icons/32x32/mcus.ico	\
+	data/icons/48x48/mcus.svg data/icons/48x48/mcus.ico
 
 # UI file
 uidir = $(datadir)/mcus
@@ -121,25 +134,17 @@ dist_ui_DATA = \
 @INTLTOOL_DESKTOP_RULE@
 
 if WIN32
-desktop_in_files =
-desktopdir =
-desktop_DATA =
+zdesktop_in_files =
+zdesktopdir =
+zdesktop_DATA =
 else
-desktop_in_files = data/mcus.desktop.in
-desktopdir = $(datadir)/applications
-desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
+zdesktop_in_files = data/mcus.desktop.in
+zdesktopdir = $(datadir)/applications
+zdesktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 endif
 
-EXTRA_DIST += $(desktop_in_files)
-CLEANFILES += $(desktop_DATA)
-
-# Example programs
-exampledir = $(datadir)/mcus/examples
-dist_example_DATA = \
-	examples/adc_divider.asm	\
-	examples/led_chaser.asm		\
-	examples/scrolling_message.asm	\
-	examples/ssd_tester.asm
+EXTRA_DIST += $(zdesktop_in_files)
+CLEANFILES += $(zdesktop_DATA)
 
 # Cleaning
 EXTRA_DIST += \
@@ -187,24 +192,23 @@ MAINTAINERCLEANFILES += $(srcdir)/ChangeLog
 
 # NSIS installer
 if WITH_INSTALLER
-installer: win32/mcus-$(PACKAGE_VERSION).zip win32/mcus-$(PACKAGE_VERSION).exe installer-clean
+installer: win32/mcus-$(PACKAGE_VERSION).zip win32/mcus-$(PACKAGE_VERSION).exe
 
 # Copy the generated files into our Windows build tree
 installer-copy-files:
-	@cp src/.libs/mcus.exe win32/GTK2-Runtime/lib; \
-	cp data/mcus.ui win32/GTK2-Runtime/share/mcus/; \
-	cp data/ocr-assembly.lang win32/GTK2-Runtime/share/mcus/; \
-	cp help/pdf/mcus-pdf.pdf win32/GTK2-Runtime/share/mcus/help.pdf; \
-	cp data/icons/16x16/mcus.png win32/GTK2-Runtime/share/icons/hicolor/16x16/apps; \
-	cp data/icons/22x22/mcus.png win32/GTK2-Runtime/share/icons/hicolor/22x22/apps; \
-	cp data/icons/32x32/mcus.png win32/GTK2-Runtime/share/icons/hicolor/32x32/apps; \
-	cp data/icons/48x48/mcus.png win32/GTK2-Runtime/share/icons/hicolor/48x48/apps; \
-	cp examples/*.asm win32/GTK2-Runtime/share/mcus/examples/
+	@cp -R $(top_srcdir)/win32/GTK2-Runtime $(top_builddir)/win32/mcus-$(PACKAGE_VERSION); \
+	cp $(top_builddir)/src/.libs/mcus.exe $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/lib; \
+	cp $(top_srcdir)/data/mcus.ui $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/; \
+	cp $(top_srcdir)/data/ocr-assembly.lang $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/; \
+	cp $(top_srcdir)/help/pdf/mcus-pdf.pdf $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/help.pdf; \
+	cp $(top_srcdir)/data/icons/16x16/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/16x16/apps; \
+	cp $(top_srcdir)/data/icons/22x22/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/22x22/apps; \
+	cp $(top_srcdir)/data/icons/32x32/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/32x32/apps; \
+	cp $(top_srcdir)/data/icons/48x48/mcus.png $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/icons/hicolor/48x48/apps; \
+	cp $(top_srcdir)/data/examples/*.asm $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)/share/mcus/examples/
 
 installer-clean:
-	@rm -f win32/GTK2-Runtime/lib/mcus.exe win32/GTK2-Runtime/share/mcus/mcus.ui win32/GTK2-Runtime/share/mcus/ocr-assembly.lang \
-	       win32/GTK2-Runtime/share/mcus/help.pdf win32/GTK2-Runtime/share/icons/hicolor/*/apps/mcus.png \
-	       win32/GTK2-Runtime/share/mcus/examples/*.asm
+	@rm -rf $(top_builddir)/win32/mcus-$(PACKAGE_VERSION)
 
 # Zip up the Windows build tree
 ZIPP = $(ZIPP_$(V))
@@ -215,9 +219,7 @@ ZIPP_1 = $(ZIP)
 win32/mcus-$(PACKAGE_VERSION).zip: installer-copy-files
 	@rm -f $@; \
 	cd win32; \
-	mv GTK2-Runtime mcus-$(PACKAGE_VERSION); \
-	$(ZIPP) -r mcus-$(PACKAGE_VERSION).zip mcus-$(PACKAGE_VERSION) windows.reg README.txt -x \*~; \
-	mv mcus-$(PACKAGE_VERSION) GTK2-Runtime
+	$(ZIPP) -r mcus-$(PACKAGE_VERSION).zip mcus-$(PACKAGE_VERSION) $(top_srcdir)/win32/windows.reg $(top_srcdir)/win32/README.txt -x \*~
 
 # Building NSIS installer; do some silent-rules magic
 NSIS = $(NSIS_$(V))
@@ -229,7 +231,7 @@ win32/mcus-$(PACKAGE_VERSION).exe: installer-copy-files
 	$(NSIS) win32/mcus.nsi
 
 clean-local: installer-clean
-MAINTAINERCLEANFILES += $(builddir)/win32/mcus-$(PACKAGE_VERSION).zip $(builddir)/win32/mcus-$(PACKAGE_VERSION).exe
+DISTCLEANFILES += $(builddir)/win32/mcus-$(PACKAGE_VERSION).zip $(builddir)/win32/mcus-$(PACKAGE_VERSION).exe
 else
 installer:
 	@echo "Need to reconfigure with --enable-installer to build the installer."

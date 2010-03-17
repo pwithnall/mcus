@@ -27,58 +27,47 @@ m4_ifndef([AC_PACKAGE_URL],[AC_SUBST([PACKAGE_URL],[http://tecnocode.co.uk/proje
 m4_ifndef([AC_PACKAGE_URL],[AC_DEFINE_UNQUOTED([PACKAGE_URL],["http://tecnocode.co.uk/projects/mcus/"],[Package website])])
 
 dnl ***************************************************************************
-dnl Options
-dnl ***************************************************************************
-
-AC_ARG_ENABLE([debug],
-	AS_HELP_STRING([--enable-debug],[turn on debugging]),
-	[case "${enableval}" in
-		yes) debug=yes ;;
-		no)  debug=no ;;
-		*) AC_MSG_ERROR([Bad value ${enableval} for --enable-debug.]) ;;
-	esac],[debug=no])
-AM_CONDITIONAL([DEBUG], [test "$debug" = "yes"])
-
-dnl ***************************************************************************
 dnl Windows support
 dnl ***************************************************************************
 
 case "${host}" in
-        i[[3456789]]86-*-mingw32*) win32="yes" ;;
-        *cygwin*) win32="yes" ;;
-        *) win32="no" ;;
+	i[[3456789]]86-*-mingw32*) win32="yes" ;;
+	*cygwin*) win32="yes" ;;
+	*) win32="no" ;;
 esac
 AM_CONDITIONAL([WIN32], [test "$win32" = "yes"])
 
-if test "$win32" = "yes"; then
-	dnl Look for windres to build a Windows icon resource
-	AC_CHECK_TOOL([WINDRES], [windres], [no])
-	AC_ARG_VAR([WINDRES], [path to windres utility])
-	AM_CONDITIONAL([WITH_WIN_ICON], [test "$WINDRES" != "no"])
+dnl Look for windres to build a Windows icon resource
+AC_CHECK_TOOL([WINDRES], [windres], [no])
+AC_ARG_VAR([WINDRES], [path to windres utility])
+AM_CONDITIONAL([WITH_WIN_ICON], [test "$win32" = "yes" -a "$WINDRES" != "no"])
+if test "$win32" = "yes" -a "$WINDRES" != "no"; then
 	AC_CONFIG_FILES([data/icons/mcus_win_icon.rc])
+fi
 
-	dnl Build the installer if possible
-	AC_ARG_ENABLE([installer],
-		AS_HELP_STRING([--enable-installer],[build a Windows NSIS installer]),
-		[case "${enableval}" in
-			yes) installer=yes ;;
-			no)  installer=no ;;
-			*) AC_MSG_ERROR([Bad value ${enableval} for --enable-installer.]) ;;
-		esac],[installer=yes])
+dnl Build the installer if possible
+AC_ARG_ENABLE([installer],
+	AS_HELP_STRING([--enable-installer],[build a Windows NSIS installer]),
+	[case "${enableval}" in
+		yes) installer=yes ;;
+		no)  installer=no ;;
+		*) AC_MSG_ERROR([Bad value ${enableval} for --enable-installer.]) ;;
+	esac],[installer=yes])
 
-	AC_PATH_PROG([MAKENSIS], makensis, no)
-	AC_ARG_VAR([MAKENSIS], [path to makensis NSIS package builder])
-	if test "$MAKENSIS" = "no" -a "$installer" = "yes"; then
-		AC_MSG_ERROR([Could not find makensis, which is required for building the installer.])
-	fi
+AC_PATH_PROG([MAKENSIS], makensis, no)
+AC_ARG_VAR([MAKENSIS], [path to makensis NSIS package builder])
+if test "$win32" = "yes" -a "$installer" = "yes" -a "$MAKENSIS" = "no"; then
+	AC_MSG_ERROR([Could not find makensis, which is required for building the installer.])
+fi
 
-	AC_PATH_PROG([ZIP], zip, no)
-	AC_ARG_VAR([ZIP], [path to zip archive utility])
-	if test "$ZIP" = "no" -a "$installer" = "yes"; then
-		AC_MSG_ERROR([Could not find zip, which is required for building the installer.])
-	fi
+AC_PATH_PROG([ZIP], zip, no)
+AC_ARG_VAR([ZIP], [path to zip archive utility])
+if test "$win32" = "yes" -a "$installer" = "yes" -a "$ZIP" = "no"; then
+	AC_MSG_ERROR([Could not find zip, which is required for building the installer.])
+fi
 
-	AM_CONDITIONAL([WITH_INSTALLER], [test "$win32" = "yes" -a "$installer" = "yes" -a "$ZIP" != "no" -a "$MAKENSIS" != "no"])
+AM_CONDITIONAL([WITH_INSTALLER], [test "$win32" = "yes" -a "$installer" = "yes" -a "$ZIP" != "no" -a "$MAKENSIS" != "no"])
+if test "$win32" = "yes" -a "$installer" = "yes" -a "$ZIP" != "no" -a "$MAKENSIS" != "no"; then
 	AC_CONFIG_FILES([win32/mcus.nsi])
 fi
 
@@ -99,20 +88,19 @@ dnl ***************************************************************************
 
 GNOME_DOC_INIT([0.17.1], [docs=yes], [docs=no])
 
-if test "$docs" = "yes"; then
-	AC_PATH_PROG([XMLLINT], xmllint, no)
-	AC_ARG_VAR([XMLLINT], [path to xmllint utility])
-	if test "$XMLLINT" = "no"; then
-		AC_MSG_ERROR([Could not find xmllint, which is required for building PDF documentation.])
-	fi
-
-	AC_PATH_PROG([DB2PDF], docbook2pdf, no)
-	AC_ARG_VAR([DB2PDF], [path to docbook2pdf utility])
-	if test "$DB2PDF" = "no"; then
-		AC_MSG_ERROR([Could not find docbook2pdf, which is required for building PDF documentation.])
-	fi
+AC_PATH_PROG([XMLLINT], xmllint, no)
+AC_ARG_VAR([XMLLINT], [path to xmllint utility])
+if test "$docs" = "yes" -a "$XMLLINT" = "no"; then
+	AC_MSG_ERROR([Could not find xmllint, which is required for building PDF documentation.])
 fi
 
+AC_PATH_PROG([DB2PDF], docbook2pdf, no)
+AC_ARG_VAR([DB2PDF], [path to docbook2pdf utility])
+if test "$docs" = "yes" -a "$DB2PDF" = "no"; then
+	AC_MSG_ERROR([Could not find docbook2pdf, which is required for building PDF documentation.])
+fi
+
+AM_CONDITIONAL([WITH_DOCS], [test "$docs" = "yes"])
 AC_CONFIG_FILES([help/Makefile])
 
 dnl ***************************************************************************
