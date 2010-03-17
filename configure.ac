@@ -79,7 +79,7 @@ if test "$win32" = "yes"; then
 	fi
 
 	AM_CONDITIONAL([WITH_INSTALLER], [test "$win32" = "yes" -a "$installer" = "yes" -a "$ZIP" != "no" -a "$MAKENSIS" != "no"])
-	AC_CONFIG_FILES([packaging/mcus.nsi])
+	AC_CONFIG_FILES([win32/mcus.nsi])
 fi
 
 dnl ***************************************************************************

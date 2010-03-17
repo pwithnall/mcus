@@ -187,24 +187,24 @@ MAINTAINERCLEANFILES += $(srcdir)/ChangeLog
 
 # NSIS installer
 if WITH_INSTALLER
-installer: packaging/mcus-$(PACKAGE_VERSION).zip packaging/mcus-$(PACKAGE_VERSION).exe installer-clean
+installer: win32/mcus-$(PACKAGE_VERSION).zip win32/mcus-$(PACKAGE_VERSION).exe installer-clean
 
 # Copy the generated files into our Windows build tree
 installer-copy-files:
-	@cp src/.libs/mcus.exe packaging/GTK2-Runtime/lib; \
-	cp data/mcus.ui packaging/GTK2-Runtime/share/mcus/; \
-	cp data/ocr-assembly.lang packaging/GTK2-Runtime/share/mcus/; \
-	cp help/pdf/mcus-pdf.pdf packaging/GTK2-Runtime/share/mcus/help.pdf; \
-	cp data/icons/16x16/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/16x16/apps; \
-	cp data/icons/22x22/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/22x22/apps; \
-	cp data/icons/32x32/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/32x32/apps; \
-	cp data/icons/48x48/mcus.png packaging/GTK2-Runtime/share/icons/hicolor/48x48/apps; \
-	cp examples/*.asm packaging/GTK2-Runtime/share/mcus/examples/
+	@cp src/.libs/mcus.exe win32/GTK2-Runtime/lib; \
+	cp data/mcus.ui win32/GTK2-Runtime/share/mcus/; \
+	cp data/ocr-assembly.lang win32/GTK2-Runtime/share/mcus/; \
+	cp help/pdf/mcus-pdf.pdf win32/GTK2-Runtime/share/mcus/help.pdf; \
+	cp data/icons/16x16/mcus.png win32/GTK2-Runtime/share/icons/hicolor/16x16/apps; \
+	cp data/icons/22x22/mcus.png win32/GTK2-Runtime/share/icons/hicolor/22x22/apps; \
+	cp data/icons/32x32/mcus.png win32/GTK2-Runtime/share/icons/hicolor/32x32/apps; \
+	cp data/icons/48x48/mcus.png win32/GTK2-Runtime/share/icons/hicolor/48x48/apps; \
+	cp examples/*.asm win32/GTK2-Runtime/share/mcus/examples/
 
 installer-clean:
-	@rm -f packaging/GTK2-Runtime/lib/mcus.exe packaging/GTK2-Runtime/share/mcus/mcus.ui packaging/GTK2-Runtime/share/mcus/help.pdf \
-	       packaging/GTK2-Runtime/share/icons/hicolor/*/apps/mcus.png && \
-	rm -rf packaging/GTK2-Runtime/share/mcus
+	@rm -f win32/GTK2-Runtime/lib/mcus.exe win32/GTK2-Runtime/share/mcus/mcus.ui win32/GTK2-Runtime/share/mcus/ocr-assembly.lang \
+	       win32/GTK2-Runtime/share/mcus/help.pdf win32/GTK2-Runtime/share/icons/hicolor/*/apps/mcus.png \
+	       win32/GTK2-Runtime/share/mcus/examples/*.asm
 
 # Zip up the Windows build tree
 ZIPP = $(ZIPP_$(V))
@@ -212,9 +212,9 @@ ZIPP_ = $(ZIPP_$(AM_DEFAULT_VERBOSITY))
 ZIPP_0 = echo "  ZIP   " $@; $(ZIP) -q
 ZIPP_1 = $(ZIP)
 
-packaging/mcus-$(PACKAGE_VERSION).zip: installer-copy-files
+win32/mcus-$(PACKAGE_VERSION).zip: installer-copy-files
 	@rm -f $@; \
-	cd packaging; \
+	cd win32; \
 	mv GTK2-Runtime mcus-$(PACKAGE_VERSION); \
 	$(ZIPP) -r mcus-$(PACKAGE_VERSION).zip mcus-$(PACKAGE_VERSION) windows.reg README.txt -x \*~; \
 	mv mcus-$(PACKAGE_VERSION) GTK2-Runtime
@@ -225,11 +225,11 @@ NSIS_ = $(NSIS_$(AM_DEFAULT_VERBOSITY))
 NSIS_0 = @echo "  NSIS  " $@; $(MAKENSIS) -V2
 NSIS_1 = $(MAKENSIS)
 
-packaging/mcus-$(PACKAGE_VERSION).exe: installer-copy-files
-	$(NSIS) packaging/mcus.nsi
+win32/mcus-$(PACKAGE_VERSION).exe: installer-copy-files
+	$(NSIS) win32/mcus.nsi
 
 clean-local: installer-clean
-MAINTAINERCLEANFILES += $(builddir)/packaging/mcus-$(PACKAGE_VERSION).zip $(builddir)/packaging/mcus-$(PACKAGE_VERSION).exe
+MAINTAINERCLEANFILES += $(builddir)/win32/mcus-$(PACKAGE_VERSION).zip $(builddir)/win32/mcus-$(PACKAGE_VERSION).exe
 else
 installer:
 	@echo "Need to reconfigure with --enable-installer to build the installer."
