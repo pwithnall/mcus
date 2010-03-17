@@ -80,6 +80,7 @@ MCUSSimulation *mcus_simulation_new (void) G_GNUC_WARN_UNUSED_RESULT;
 void mcus_simulation_start (MCUSSimulation *self);
 gboolean mcus_simulation_iterate (MCUSSimulation *self, GError **error);
 void mcus_simulation_pause (MCUSSimulation *self);
+void mcus_simulation_resume (MCUSSimulation *self);
 void mcus_simulation_finish (MCUSSimulation *self);
 
 guchar *mcus_simulation_get_memory (MCUSSimulation *self);

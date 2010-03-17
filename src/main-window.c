@@ -1321,6 +1321,7 @@ mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 G_MODULE_EXPORT void
 mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 {
+	MCUSMainWindowPrivate *priv = main_window->priv;
 	MCUSCompiler *compiler;
 	GtkTextBuffer *code_buffer;
 	GtkTextIter start_iter, end_iter;
@@ -1329,11 +1330,17 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 	GtkWidget *dialog;
 	GError *error = NULL;
 
+	/* If we're paused, continue the simulation */
+	if (mcus_simulation_get_state (priv->simulation) == MCUS_SIMULATION_PAUSED) {
+		mcus_simulation_resume (priv->simulation);
+		return;
+	}
+
 	/* Remove previous errors */
-	remove_tag (main_window, main_window->priv->error_tag);
+	remove_tag (main_window, priv->error_tag);
 
 	/* Get the assembly code */
-	code_buffer = main_window->priv->code_buffer;
+	code_buffer = priv->code_buffer;
 	gtk_text_buffer_get_bounds (code_buffer, &start_iter, &end_iter);
 	code = gtk_text_buffer_get_text (code_buffer, &start_iter, &end_iter, FALSE);
 
@@ -1346,18 +1353,18 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		goto compiler_error;
 
 	/* Compile it */
-	mcus_compiler_compile (compiler, main_window->priv->simulation, &(main_window->priv->offset_map),
-	                       &(main_window->priv->lookup_table_length), &error);
+	mcus_compiler_compile (compiler, priv->simulation, &(priv->offset_map),
+	                       &(priv->lookup_table_length), &error);
 
 	if (error != NULL)
 		goto compiler_error;
 	g_object_unref (compiler);
 
 	/* Empty the displayed stack */
-	gtk_list_store_clear (main_window->priv->stack_list_store);
+	gtk_list_store_clear (priv->stack_list_store);
 
 	/* Initialise the simulator */
-	mcus_simulation_start (main_window->priv->simulation);
+	mcus_simulation_start (priv->simulation);
 	update_simulation_ui (main_window);
 
 	return;
@@ -1365,7 +1372,7 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 compiler_error:
 	/* Highlight the offending line */
 	mcus_compiler_get_error_location (compiler, &error_start, &error_end);
-	tag_range (main_window, main_window->priv->error_tag, error_start, error_end, FALSE);
+	tag_range (main_window, priv->error_tag, error_start, error_end, FALSE);
 
 	/* Display an error message */
 	dialog = gtk_message_dialog_new (GTK_WINDOW (main_window),

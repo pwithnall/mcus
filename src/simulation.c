@@ -618,6 +618,19 @@ mcus_simulation_pause (MCUSSimulation *self)
 }
 
 void
+mcus_simulation_resume (MCUSSimulation *self)
+{
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
+	g_return_if_fail (self->priv->state == MCUS_SIMULATION_PAUSED);
+
+	self->priv->state = MCUS_SIMULATION_RUNNING;
+	g_object_notify (G_OBJECT (self), "state");
+
+	/* Resume the timeouts for simulation iterations */
+	self->priv->iteration_event = g_timeout_add (1000 / self->priv->clock_speed, (GSourceFunc) simulation_iterate_cb, self);
+}
+
+void
 mcus_simulation_finish (MCUSSimulation *self)
 {
 	MCUSStackFrame *stack_frame;
