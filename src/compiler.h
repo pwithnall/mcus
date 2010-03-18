@@ -73,7 +73,6 @@ MCUSCompiler *mcus_compiler_new (void) G_GNUC_WARN_UNUSED_RESULT;
 gboolean mcus_compiler_parse (MCUSCompiler *self, const gchar *code, GError **error);
 gboolean mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstructionOffset **offset_map,
                                 guchar *lookup_table_length, GError **error);
-guint mcus_compiler_get_offset (MCUSCompiler *self);
 void mcus_compiler_get_error_location (MCUSCompiler *self, guint *start, guint *end);
 
 G_END_DECLS

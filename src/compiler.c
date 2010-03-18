@@ -299,9 +299,9 @@ resolve_label (MCUSCompiler *self, guint instruction_number, const gchar *label_
 
 	self->priv->error_length = strlen (label_string);
 	g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_UNRESOLVABLE_LABEL,
-		     _("A label (\"%s\") could not be resolved to an address for instruction %u."),
-		     label_string,
-		     instruction_number + 1);
+	             _("A label (\"%s\") could not be resolved to an address for instruction %u."),
+	             label_string,
+	             instruction_number + 1);
 	return 0;
 }
 
@@ -396,8 +396,8 @@ lex_constant (MCUSCompiler *self, guchar *constant, GError **error)
 	/* Check we actually have a constant to lex */
 	if (length != 2) {
 		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
-		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
-		self->priv->error_length = 0;
+		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
+		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_CONSTANT,
 		             _("A required constant had an incorrect length around line %u before \"%s\"."),
@@ -419,9 +419,9 @@ lex_lookup_table (MCUSCompiler *self, MCUSLookupTable *lookup_table, GError **er
 	 * lookup_table_label ::= "table:"
 	 * lookup_table ::= lookup_table_label , whitespace, constant, { "," , whitespace , { whitespace } , constant } */
 
-	guint length = 0, i;
+	guint length = strlen ("table:"), i;
 
-	if (strncmp (self->priv->i, "table:", 6) != 0) {
+	if (strncmp (self->priv->i, "table:", length) != 0) {
 		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 		self->priv->error_length = length;
@@ -433,7 +433,7 @@ lex_lookup_table (MCUSCompiler *self, MCUSLookupTable *lookup_table, GError **er
 		return FALSE;
 	}
 
-	self->priv->i += strlen ("table:");
+	self->priv->i += length;
 	lookup_table->length = 0;
 	lookup_table->table = NULL;
 
@@ -480,27 +480,28 @@ lex_label (MCUSCompiler *self, MCUSLabel *label, GError **error)
 	       *(self->priv->i + length) != '\t' &&
 	       *(self->priv->i + length) != '\n' &&
 	       *(self->priv->i + length) != ';' &&
-	       *(self->priv->i + length) != '\0') {
+	       *(self->priv->i + length) != '\0' &&
+	       *(self->priv->i + length) != ':') {
 		length++;
 	}
 
 	/* Check we actually have a label to lex/parse */
-	if (length == 0 || *(self->priv->i + length - 1) != ':') {
+	if (length == 0 || *(self->priv->i + length) != ':') {
 		gchar following_section[COMPILER_ERROR_CONTEXT_LENGTH+1] = { '\0', };
 		g_memmove (following_section, self->priv->i, COMPILER_ERROR_CONTEXT_LENGTH);
 		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_LABEL_DELIMITATION,
-			     _("An expected label had no length, or was not delimited by a colon (\":\") around line %u before \"%s\"."),
-			     self->priv->line_number,
-			     following_section);
+		             _("An expected label had no length, or was not delimited by a colon (\":\") around line %u before \"%s\"."),
+		             self->priv->line_number,
+		             following_section);
 		return FALSE;
 	}
 
 	/* Make a copy of the label, excluding the colon and delimiter after it */
-	label_string = g_memdup (self->priv->i, sizeof (gchar) * length);
-	label_string[length - 1] = '\0';
-	self->priv->i += length;
+	label_string = g_memdup (self->priv->i, sizeof (gchar) * (length + 1));
+	label_string[length] = '\0';
+	self->priv->i += length + 1;
 
 	/* Store it */
 	label->label = label_string;
@@ -540,9 +541,9 @@ lex_operand (MCUSCompiler *self, MCUSOperand *operand, GError **error)
 		self->priv->error_length = 0;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND,
-			     _("A required operand had no length around line %u before \"%s\"."),
-			     self->priv->line_number,
-			     following_section);
+		             _("A required operand had no length around line %u before \"%s\"."),
+		             self->priv->line_number,
+		             following_section);
 		return FALSE;
 	}
 
@@ -643,17 +644,17 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 	 *  - be longer than the maximum mnemonic length. */
 	if (length == 0 ||
 	    (*(self->priv->i + length) != ' ' &&
-	    *(self->priv->i + length) != '\t' &&
-	    *(self->priv->i + length) != '\n' &&
-	    *(self->priv->i + length) != ';' &&
-	    *(self->priv->i + length) != '\0')) {
+	     *(self->priv->i + length) != '\t' &&
+	     *(self->priv->i + length) != '\n' &&
+	     *(self->priv->i + length) != ';' &&
+	     *(self->priv->i + length) != '\0')) {
 		g_memmove (following_section, self->priv->i + length, COMPILER_ERROR_CONTEXT_LENGTH);
 		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_MNEMONIC,
-			     _("An expected mnemonic had no length, or was not delimited by whitespace around line %u before \"%s\"."),
-			     self->priv->line_number,
-			     following_section);
+		             _("An expected mnemonic had no length, or was not delimited by whitespace around line %u before \"%s\"."),
+		             self->priv->line_number,
+		             following_section);
 		return FALSE;
 	}
 
@@ -676,10 +677,10 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 		self->priv->error_length = length;
 
 		g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_MNEMONIC,
-			     _("A mnemonic (\"%s\") did not exist around line %u before \"%s\"."),
-			     mnemonic_string,
-			     self->priv->line_number,
-			     following_section);
+		             _("A mnemonic (\"%s\") did not exist around line %u before \"%s\"."),
+		             mnemonic_string,
+		             self->priv->line_number,
+		             following_section);
 
 		return FALSE;
 	}
@@ -689,10 +690,12 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 	/* Lex the operands */
 	for (i = 0; i < instruction_data->arity; i++) {
 		MCUSOperand operand;
-		const gchar *old_i = self->priv->i;
+		const gchar *old_i;
 		GError *child_error = NULL;
 
 		skip_whitespace (self, FALSE, (i == 0) ? FALSE : TRUE);
+
+		old_i = self->priv->i;
 
 		if (lex_operand (self, &operand, &child_error) == TRUE) {
 			/* Check the operand's type is valid */
@@ -717,12 +720,12 @@ lex_instruction (MCUSCompiler *self, MCUSInstruction *instruction, GError **erro
 				}
 
 				g_set_error (error, MCUS_COMPILER_ERROR, MCUS_COMPILER_ERROR_INVALID_OPERAND_TYPE,
-					     _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\".\n\n%s"),
-					     operand_type_to_string (operand.type),
-					     operand_type_to_string (instruction_data->operand_types[i]),
-					     self->priv->line_number,
-					     following_section,
-					     instruction_data->help);
+				             _("An operand was of type \"%s\" when it should've been \"%s\" around line %u before \"%s\".\n\n%s"),
+				             operand_type_to_string (operand.type),
+				             operand_type_to_string (instruction_data->operand_types[i]),
+				             self->priv->line_number,
+				             following_section,
+				             instruction_data->help);
 
 				/* Restore i to before the operand so that error highlighting works correctly */
 				self->priv->i = old_i;
@@ -937,17 +940,11 @@ mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstr
 	return TRUE;
 }
 
-guint
-mcus_compiler_get_offset (MCUSCompiler *self)
-{
-	return self->priv->i - self->priv->code;
-}
-
 void
 mcus_compiler_get_error_location (MCUSCompiler *self, guint *start, guint *end)
 {
 	if (start != NULL)
-		*start = mcus_compiler_get_offset (self);
+		*start = self->priv->i - self->priv->code;
 	if (end != NULL)
-		*end = mcus_compiler_get_offset (self) + self->priv->error_length;
+		*end = self->priv->i - self->priv->code + self->priv->error_length;
 }
