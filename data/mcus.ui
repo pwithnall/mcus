@@ -5,12 +5,6 @@
 		<child>
 			<object class="GtkActionGroup" id="mw_file_action_group">
 				<child>
-					<object class="GtkAction" id="mcus_file_action">
-						<property name="name">file</property>
-						<property name="label">_File</property>
-					</object>
-				</child>
-				<child>
 					<object class="GtkAction" id="mcus_new_action">
 						<property name="stock-id">gtk-new</property>
 						<property name="name">file-new</property>
@@ -51,6 +45,12 @@
 		</child>
 		<child>
 			<object class="GtkActionGroup" id="mw_main_action_group">
+				<child>
+					<object class="GtkAction" id="mcus_file_action">
+						<property name="name">file</property>
+						<property name="label">_File</property>
+					</object>
+				</child>
 				<child>
 					<object class="GtkAction" id="mcus_quit_action">
 						<property name="stock-id">gtk-quit</property>
