@@ -12,7 +12,6 @@
 		the <link xref="reference#subroutines"><code>readtable</code></link> subroutine.</p>
 
 	<example>
-		<title>Defining and Using a Lookup Table</title>
 		<code>; Define the lookup table.
 table: 01, 02, 03, 04, 05
 

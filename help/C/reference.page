@@ -41,7 +41,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr id="HALT">
+				<tr>
 					<td><p><code>HALT</code></p></td>
 					<td><p><sys>00</sys></p></td>
 					<td><p>Terminate the simulation.</p></td>
@@ -49,13 +49,13 @@
 				</tr>
 			</tbody>
 			<tbody>
-				<tr id="MOVI">
+				<tr>
 					<td><p><code>MOVI S<var>d</var>, <var>n</var></code></p></td>
 					<td><p><sys>01</sys></p></td>
 					<td><p>Copy the byte <var>n</var> into register <code>S<var>d</var></code>.</p></td>
 					<td><p><code>MOVI S0 5F</code></p></td>
 				</tr>
-				<tr id="MOV">
+				<tr>
 					<td><p><code>MOV S<var>d</var>, S<var>s</var></code></p></td>
 					<td><p><sys>02</sys></p></td>
 					<td><p>Copy the byte from <code>S<var>s</var></code> to <code>S<var>d</var></code>.</p></td>
@@ -63,27 +63,27 @@
 				</tr>
 			</tbody>
 			<tbody>
-				<tr id="ADD">
+				<tr>
 					<td><p><code>ADD S<var>d</var>, S<var>s</var></code></p></td>
 					<td><p><sys>03</sys></p></td>
 					<td><p>Add the byte in <code>S<var>s</var></code> to the byte in <code>S<var>d</var></code> and store the result
 						in <code>S<var>d</var></code>.</p></td>
 					<td><p><code>ADD S2 S4</code></p></td>
 				</tr>
-				<tr id="SUB">
+				<tr>
 					<td><p><code>SUB S<var>d</var>, S<var>s</var></code></p></td>
 					<td><p><sys>04</sys></p></td>
 					<td><p>Subtract the byte in <code>S<var>s</var></code> from the byte in <code>S<var>d</var></code> and store the
 						result in <code>S<var>d</var></code>.</p></td>
 					<td><p><code>SUB S4 S2</code></p></td>
 				</tr>
-				<tr id="INC">
+				<tr>
 					<td><p><code>INC S<var>d</var></code></p></td>
 					<td><p><sys>07</sys></p></td>
 					<td><p>Add 1 to <code>S<var>d</var></code> and store the result in <code>S<var>d</var></code>.</p></td>
 					<td><p><code>INC S0</code></p></td>
 				</tr>
-				<tr id="DEC">
+				<tr>
 					<td><p><code>DEC S<var>d</var></code></p></td>
 					<td><p><sys>08</sys></p></td>
 					<td><p>Subtract 1 from <code>S<var>d</var></code> and store the result in <code>S<var>d</var></code>.</p></td>
@@ -91,28 +91,28 @@
 				</tr>
 			</tbody>
 			<tbody>
-				<tr id="AND">
+				<tr>
 					<td><p><code>AND S<var>d</var>, S<var>s</var></code></p></td>
 					<td><p><sys>05</sys></p></td>
 					<td><p>Logical AND the byte in <code>S<var>s</var></code> with the byte in <code>S<var>d</var></code> and store
 						the result in <code>S<var>d</var></code>.</p></td>
 					<td><p><code>AND S0 S3</code></p></td>
 				</tr>
-				<tr id="EOR">
+				<tr>
 					<td><p><code>EOR S<var>d</var>, S<var>s</var></code></p></td>
 					<td><p><sys>06</sys></p></td>
 					<td><p>Logical EOR the byte in <code>S<var>s</var></code> with the byte in <code>S<var>d</var></code> and store
 						the result in <code>S<var>d</var></code>.</p></td>
 					<td><p><code>EOR S1 S6</code></p></td>
 				</tr>
-				<tr id="SHL">
+				<tr>
 					<td><p><code>SHL S<var>d</var></code></p></td>
 					<td><p><sys>10</sys></p></td>
 					<td><p>Shift the byte in <code>S<var>d</var></code> one bit left, putting a <sys>0</sys> into the
 						least-significant bit and storing the result in <code>S<var>d</var></code>.</p></td>
 					<td><p><code>SHL S2</code></p></td>
 				</tr>
-				<tr id="SHR">
+				<tr>
 					<td><p><code>SHR S<var>d</var></code></p></td>
 					<td><p><sys>10</sys></p></td>
 					<td><p>Shift the byte in <code>S<var>d</var></code> one bit right, putting a <sys>0</sys> into the
@@ -121,13 +121,13 @@
 				</tr>
 			</tbody>
 			<tbody>
-				<tr id="IN">
+				<tr>
 					<td><p><code>IN S<var>d</var>, I</code></p></td>
 					<td><p><sys>09</sys></p></td>
 					<td><p>Copy the byte at the input port into <code>S<var>d</var></code>.</p></td>
 					<td><p><code>IN S0, I</code></p></td>
 				</tr>
-				<tr id="OUT">
+				<tr>
 					<td><p><code>OUT Q, S<var>s</var></code></p></td>
 					<td><p><sys>0A</sys></p></td>
 					<td><p>Copy the byte in <code>S<var>s</var></code> to the output port.</p></td>
@@ -135,13 +135,13 @@
 				</tr>
 			</tbody>
 			<tbody>
-				<tr id="JP">
+				<tr>
 					<td><p><code>JP <var>e</var></code></p></td>
 					<td><p><sys>0B</sys></p></td>
 					<td><p>Jump to label <var>e</var>.</p></td>
 					<td><p><code>JP main_loop</code></p></td>
 				</tr>
-				<tr id="JZ">
+				<tr>
 					<td><p><code>JZ <var>e</var></code></p></td>
 					<td><p><sys>0C</sys></p></td>
 					<td><p>Jump to label <var>e</var> if the result of the last <code>ADD</code>, <code>SUB</code>,
@@ -149,7 +149,7 @@
 						or <code>SHR</code> was zero.</p></td>
 					<td><p><code>JZ if_zero_branch</code></p></td>
 				</tr>
-				<tr id="JNZ">
+				<tr>
 					<td><p><code>JNZ <var>e</var></code></p></td>
 					<td><p><sys>0D</sys></p></td>
 					<td><p>Jump to label <var>e</var> if the result of the last <code>ADD</code>, <code>SUB</code>,
@@ -157,7 +157,7 @@
 						or <code>SHR</code> was <em>not</em> zero.</p></td>
 					<td><p><code>JZ if_non_zero_branch</code></p></td>
 				</tr>
-				<tr id="RCALL">
+				<tr>
 					<td><p><code>RCALL <var>s</var></code></p></td>
 					<td><p><sys>0E</sys></p></td>
 					<td><p>Push the current program counter value onto the stack to store the return address (which will be returned
@@ -165,7 +165,7 @@
 						<var>s</var>.</p></td>
 					<td><p><code>RCALL summing_routine</code></p></td>
 				</tr>
-				<tr id="RET">
+				<tr>
 					<td><p><code>RET</code></p></td>
 					<td><p><sys>0F</sys></p></td>
 					<td><p>Pop the program counter from the stack to return to the place from which the last subroutine call (to
@@ -220,7 +220,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr id="readtable">
+				<tr>
 					<td><p><code>readtable</code></p></td>
 					<td>
 						<p>Copies the byte in the <link xref="lookup-tables">lookup table</link> pointed at by <code>S7</code>
@@ -232,14 +232,14 @@
 					</td>
 					<td><p><code>RCALL readtable</code></p></td>
 				</tr>
-				<tr id="wait1ms">
+				<tr>
 					<td><p><code>wait1ms</code></p></td>
 					<td><p>Waits 1ms before returning. During this period, the microcontroller is essentially idle, and will
 						execute no other instructions. Note that the input port and ADC values can change during
 						this period.</p></td>
 					<td><p><code>RCALL wait1ms</code></p></td>
 				</tr>
-				<tr id="readadc">
+				<tr>
 					<td><p><code>readadc</code></p></td>
 					<td><p>Returns a byte in <code>S0</code> proportional to the voltage at the ADC. The ADC input can vary from
 						0V to 5V, which return values of <sys>00</sys> and <sys>FF</sys> respectively.</p></td>

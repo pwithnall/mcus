@@ -21,7 +21,7 @@
 	<p>There are several different ways to visualise data put on the output port by an assembly program:</p>
 	<terms>
 		<item>
-			<title>The <gui type="input">Output port</gui> entry in the simulation panel</title>
+			<title>The <gui style="input">Output port</gui> entry in the simulation panel</title>
 			<p>This displays a hexadecimal value from <sys>00</sys> to <sys>FF</sys> from the output port. The value
 				<sys>00</sys> corresponds to all the lines in the output port being at at the logical low voltage, while <sys>FF</sys>
 				corresponds to them all being at the logical high voltage.</p>
@@ -34,10 +34,10 @@
 		<item>
 			<title>The SSD on the <gui style="tab">Single SSD</gui> page of the <gui style="tab">Outputs</gui> of the hardware panel</title>
 			<p>This displays a value decoded according to the option selected to its left.</p>
-			<p>If <gui type="radiobutton">Segments</gui> is selected, segment A is controlled by the least-significant output bit, with
+			<p>If <gui style="radiobutton">Segments</gui> is selected, segment A is controlled by the least-significant output bit, with
 				segments B to G being controlled by progressively more significant bits. The decimal point is controlled by the
 				most-significant bit.</p>
-			<p>If <gui type="radiobutton">BCD</gui> is selected, the SSD will display the least-significant binary coded decimal digit in
+			<p>If <gui style="radiobutton">BCD</gui> is selected, the SSD will display the least-significant binary coded decimal digit in
 				the output (i.e. the lower four bits of the output). If the BCD is invalid, <sys>0</sys> will be displayed.</p>
 		</item>
 		<item>

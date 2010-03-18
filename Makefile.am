@@ -17,7 +17,7 @@ src/simulation-enums.h: src/simulation.h Makefile
 			--ftail "G_END_DECLS\n\n#endif /* __MCUS_SIMULATION_ENUMS_H__ */" \
 		$(srcdir)/src/simulation.h > $@.tmp \
 		&& $(SED) "s/m_cus/mcus/" $@.tmp > $@.tmp2 \
-		&& $(SED) "s/MCUS_TYPE_CUS/MCUS_TYPE/" $@.tmp2 > $(srcdir)/src/simulation-enums.h \
+		&& $(SED) "s/MCUS_TYPE_CUS/MCUS_TYPE/" $@.tmp2 > $@ \
 		&& rm -f $@.tmp $@.tmp2)
 
 src/simulation-enums.c: src/simulation.h Makefile src/simulation-enums.h
@@ -28,7 +28,7 @@ src/simulation-enums.c: src/simulation.h Makefile src/simulation-enums.h
 			--vprod "      { @VALUENAME@, \"@VALUENAME@\", \"@valuenick@\" }," \
 			--vtail "      { 0, NULL, NULL }\n    };\n    etype = g_@type@_register_static (\"@EnumName@\", values);\n  }\n  return etype;\n}\n" \
 		$(srcdir)/src/simulation.h > $@.tmp \
-		&& $(SED) "s/m_cus/mcus/" $@.tmp > $(srcdir)/src/simulation-enums.c \
+		&& $(SED) "s/m_cus/mcus/" $@.tmp > $@ \
 		&& rm -f $@.tmp)
 
 CLEANFILES = $(MCUS_ENUM_FILES)
@@ -55,6 +55,8 @@ src_mcus_SOURCES = \
 	src/widgets/byte-array.h
 
 src_mcus_CPPFLAGS = \
+	-I$(top_srcdir)/src						\
+	-I$(top_builddir)/src						\
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
 	-DPACKAGE_SRC_DIR=\""$(srcdir)"\"				\
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\"				\
@@ -120,9 +122,9 @@ dist_icon48_DATA = data/icons/48x48/mcus.png
 
 EXTRA_DIST = \
 	data/icons/16x16/mcus.svg data/icons/16x16/mcus.ico	\
-	data/icons/22x22/mcus.svg data/icons/22x22/mcus.ico	\
-	data/icons/32x32/mcus.svg data/icons/32x32/mcus.ico	\
-	data/icons/48x48/mcus.svg data/icons/48x48/mcus.ico
+	data/icons/22x22/mcus.svg data/icons/32x32/mcus.ico	\
+	data/icons/32x32/mcus.svg data/icons/48x48/mcus.ico	\
+	data/icons/48x48/mcus.svg data/icons/64x64/mcus.ico
 
 # UI file
 uidir = $(datadir)/mcus
@@ -237,6 +239,11 @@ else
 installer:
 	@echo "Need to reconfigure with --enable-installer to build the installer."
 endif
+
+EXTRA_DIST += \
+	win32/README.txt		\
+	win32/registerExtension.nsh	\
+	win32/windows.reg
 
 dist-hook: installer
 distcheck-hook: installer

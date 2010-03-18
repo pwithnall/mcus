@@ -1,5 +1,15 @@
 Major new features in version...
 
+0.3.0:
+* Many UI improvements
+* Modernise build system and convert to git
+* Convert documentation to Mallard and switch to XHTML on Windows (from PDF)
+* Make UI accessible
+* GObjectify internals
+* Remove directive support and add support for the official lookup table definition syntax
+* Add fullscreen mode
+* Overhaul Windows packaging infrastructure
+
 0.2.2:
 * Fix highlighting the HALT instruction
 * Allow commas in comments
