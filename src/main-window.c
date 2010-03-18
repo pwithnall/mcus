@@ -53,7 +53,8 @@ static void mcus_main_window_dispose (GObject *object);
 static void mcus_main_window_finalize (GObject *object);
 
 static void remove_tag (MCUSMainWindow *self, GtkTextTag *tag);
-static void tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
+static void tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset,
+                       gboolean remove_previous_occurrences, gboolean scroll_to_tag);
 
 /* Normal callbacks */
 static void stack_program_counter_data_cb (GtkTreeViewColumn *column, GtkCellRenderer *cell,
@@ -768,7 +769,7 @@ remove_tag (MCUSMainWindow *self, GtkTextTag *tag)
 }
 
 static void
-tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences)
+tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences, gboolean scroll_to_tag)
 {
 	GtkTextIter start_iter, end_iter;
 	GtkTextBuffer *text_buffer = self->priv->code_buffer;
@@ -784,6 +785,11 @@ tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_
 	gtk_text_buffer_get_iter_at_offset (text_buffer, &end_iter, end_offset);
 
 	gtk_text_buffer_apply_tag (text_buffer, tag, &start_iter, &end_iter);
+
+	/* Scroll to the tag */
+	if (scroll_to_tag == TRUE) {
+		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (self->priv->code_view), &start_iter, 0.25, TRUE, 0.5, 0.5);
+	}
 }
 
 static void
@@ -921,7 +927,7 @@ simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainW
 		tag_range (main_window, main_window->priv->error_tag,
 		           main_window->priv->offset_map[program_counter].offset,
 		           main_window->priv->offset_map[program_counter].offset + main_window->priv->offset_map[program_counter].length,
-		           FALSE);
+		           FALSE, TRUE);
 
 		/* Display an error message */
 		dialog = gtk_message_dialog_new (GTK_WINDOW (main_window),
@@ -1103,7 +1109,7 @@ notify_program_counter_cb (GObject *object, GParamSpec *param_spec, MCUSMainWind
 		tag_range (main_window, priv->current_instruction_tag,
 		           priv->offset_map[program_counter].offset,
 		           priv->offset_map[program_counter].offset + priv->offset_map[program_counter].length,
-		           TRUE);
+		           TRUE, TRUE);
 	} else {
 		remove_tag (main_window, priv->current_instruction_tag);
 	}
@@ -1419,7 +1425,7 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 compiler_error:
 	/* Highlight the offending line */
 	mcus_compiler_get_error_location (compiler, &error_start, &error_end);
-	tag_range (main_window, priv->error_tag, error_start, error_end, FALSE);
+	tag_range (main_window, priv->error_tag, error_start, error_end, FALSE, TRUE);
 
 	/* Display an error message */
 	dialog = gtk_message_dialog_new (GTK_WINDOW (main_window),
