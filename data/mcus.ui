@@ -1329,8 +1329,9 @@
 																		</child>
 																		<child>
 																			<object class="GtkLabel" id="label29">
-																				<property name="label" translatable="yes">Phase:</property>
+																				<property name="label" translatable="yes">Ph_ase:</property>
 																				<property name="xalign">0</property>
+																				<property name="use-underline">True</property>
 																				<property name="mnemonic-widget">mw_adc_phase_spin_button</property>
 																			</object>
 																			<packing>
