@@ -9,8 +9,8 @@
 	<p>Once a program is ready to be simulated, press the <gui style="button">Run</gui> button on the toolbar, choose
 		<guiseq><gui style="menu">Program</gui><gui style="menuitem">Run</gui></guiseq> or press <key>F5</key>.</p>
 	<p>The program will step through at the <gui style="input">Clock speed</gui> set in the simulation panel, with the currently executing
-		instruction being emboldened in the editing area. Hardware outputs in the hardware panel and simulation displays in the simulation
-		panel will be updated as the program executes.</p>
+		instruction being emboldened in the editing area and its opcode in memory also being emboldened. Hardware outputs in the hardware panel
+		and simulation displays in the simulation panel will be updated as the program executes.</p>
 	<p>While the program is running, most of the <app>MCUS</app> interface will be disabled. To pause the program and allow controls to be
 		used, press the <gui style="button">Pause</gui> button on the toolbar, choose
 		<guiseq><gui style="menu">Program</gui><gui style="menuitem">Pause</gui></guiseq> or press <key>F6</key>.</p>

@@ -21,7 +21,8 @@
 		<title>Main window</title>
 		<desc><app>MCUS</app> main window</desc>
 		<media type="image" src="figures/mcus_main_window.png" mime="image/png" style="right">
-			<p><app>MCUS</app> main window, containing the editing area, simulation panel and hardware panel.</p>
+			<p><app>MCUS</app> main window, containing the editing area in the centre, simulation panel on the right and hardware panel
+				at the bottom.</p>
 		</media>
 	</figure>
 </page>
