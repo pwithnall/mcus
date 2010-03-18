@@ -4,8 +4,9 @@ data/mcus.desktop.in
 [type: gettext/glade]data/mcus.ui
 data/ocr-assembly.lang
 src/compiler.c
-src/input-port.c
-src/interface.c
 src/main.c
 src/main-window.c
 src/simulation.c
+src/widgets/byte-array.c
+src/widgets/led.c
+src/widgets/seven-segment-display.c
