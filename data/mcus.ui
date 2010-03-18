@@ -1433,6 +1433,7 @@
 															<object class="GtkLabel" id="mw_program_counter_label">
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<property name="selectable">True</property>
 																<attributes>
 																	<attribute name="family" value="monospace"/>
 																</attributes>
@@ -1469,6 +1470,7 @@
 															<object class="GtkLabel" id="mw_stack_pointer_label">
 																<property name="label">00</property>
 																<property name="xalign">0</property>
+																<property name="selectable">True</property>
 																<attributes>
 																	<attribute name="family" value="monospace"/>
 																</attributes>
