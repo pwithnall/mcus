@@ -12,6 +12,8 @@
 	<example>
 		<code>RCALL readadc</code>
 	</example>
+	<p>The current value at the analogue input of the simulated microcontroller is displayed as the <gui style="label">Analogue input</gui> in the
+		side panel of the main window. It is updated once each iteration of the simulation.</p>
 
 	<p>There are five different waveforms the ADC can be set up to generate, and all can be found on the <gui style="tab">ADC</gui> page of
 		the hardware panel:</p>

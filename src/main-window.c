@@ -71,6 +71,7 @@ static void notify_program_counter_cb (GObject *object, GParamSpec *param_spec, 
 static void notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_input_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
+static void notify_analogue_input_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 
 /* GtkBuilder callbacks */
 G_MODULE_EXPORT void mw_stack_list_store_row_activated (GtkTreeView *tree_view, GtkTreePath *path,
@@ -132,6 +133,7 @@ struct _MCUSMainWindowPrivate {
 	GtkLabel *program_counter_label;
 	GtkLabel *zero_flag_label;
 	GtkLabel *output_port_label;
+	GtkLabel *analogue_input_label;
 	GtkListStore *stack_list_store;
 	GtkTreeView *stack_tree_view;
 
@@ -182,7 +184,6 @@ struct _MCUSMainWindowPrivate {
 	GtkFileFilter *filter;
 
 	/* Widgets which only need their sensitivity/visibility changing */
-	GtkWidget *adc_spin_button;
 	GtkWidget *clock_speed_spin_button;
 	GtkWidget *adc_hbox;
 	GtkWidget *input_alignment;
@@ -328,6 +329,7 @@ mcus_main_window_new (void)
 	priv->program_counter_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_program_counter_label"));
 	priv->zero_flag_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_zero_flag_label"));
 	priv->output_port_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_output_port_label"));
+	priv->analogue_input_label = GTK_LABEL (gtk_builder_get_object (builder, "mw_analogue_input_label"));
 	priv->stack_list_store = GTK_LIST_STORE (gtk_builder_get_object (builder, "mw_stack_list_store"));
 	priv->stack_tree_view = GTK_TREE_VIEW (gtk_builder_get_object (builder, "mw_stack_tree_view"));
 
@@ -338,7 +340,6 @@ mcus_main_window_new (void)
 
 	/* Grab widgets which only need their sensitivity changing */
 	priv->code_view = GTK_WIDGET (gtk_builder_get_object (builder, "mw_code_view"));
-	priv->adc_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_analogue_input_spin_button"));
 	priv->clock_speed_spin_button = GTK_WIDGET (gtk_builder_get_object (builder, "mw_clock_speed_spin_button"));
 	priv->adc_hbox = GTK_WIDGET (gtk_builder_get_object (builder, "mw_adc_hbox"));
 	priv->input_alignment = GTK_WIDGET (gtk_builder_get_object (builder, "mw_input_alignment"));
@@ -443,6 +444,7 @@ mcus_main_window_new (void)
 	g_signal_connect (priv->simulation, "notify::zero-flag", (GCallback) notify_zero_flag_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::input-port", (GCallback) notify_input_port_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::output-port", (GCallback) notify_output_port_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::analogue-input", (GCallback) notify_analogue_input_cb, main_window);
 
 	/* Make some widgets monospaced */
 	style = gtk_widget_get_style (priv->code_view);
@@ -1021,7 +1023,6 @@ notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWin
 	/* Update the UI */
 	SET_SENSITIVITY_W (code_view, stopped);
 	SET_SENSITIVITY_W (input_port_entry, not_running);
-	SET_SENSITIVITY_W (adc_spin_button, not_running);
 	SET_SENSITIVITY_W (clock_speed_spin_button, not_running);
 	SET_SENSITIVITY_W (adc_hbox, not_running);
 	SET_SENSITIVITY_W (input_alignment, not_running);
@@ -1162,6 +1163,20 @@ notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *
 	update_outputs (main_window);
 }
 
+static void
+notify_analogue_input_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
+{
+	/* 3 characters for two hexadecimal characters and one \0 */
+	gchar *text;
+	gdouble analogue_input = mcus_simulation_get_analogue_input (MCUS_SIMULATION (object));
+
+	/* Update the output port label */
+	/* Translators: This is the analogue input label, a value in Volts. */
+	text = g_strdup_printf (_("%.2fV"), analogue_input);
+	gtk_label_set_text (main_window->priv->analogue_input_label, text);
+	g_free (text);
+}
+
 G_MODULE_EXPORT gboolean
 mw_delete_event_cb (GtkWidget *widget, GdkEvent *event, MCUSMainWindow *main_window)
 {
@@ -1290,6 +1305,7 @@ mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		modify_widget_font_size (GTK_WIDGET (priv->memory_array), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->lookup_table_array), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->output_port_label), 1.0 / FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->analogue_input_label), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->program_counter_label), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->zero_flag_label), 1.0 / FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->stack_pointer_label), 1.0 / FULLSCREEN_FONT_SCALE);
@@ -1308,6 +1324,7 @@ mw_fullscreen_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		modify_widget_font_size (GTK_WIDGET (priv->memory_array), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->lookup_table_array), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->output_port_label), FULLSCREEN_FONT_SCALE);
+		modify_widget_font_size (GTK_WIDGET (priv->analogue_input_label), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->program_counter_label), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->zero_flag_label), FULLSCREEN_FONT_SCALE);
 		modify_widget_font_size (GTK_WIDGET (priv->stack_pointer_label), FULLSCREEN_FONT_SCALE);

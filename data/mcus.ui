@@ -1665,11 +1665,12 @@
 															</packing>
 														</child>
 														<child>
-															<object class="GtkLabel" id="mw_analogue_input_label">
-																<property name="label" translatable="yes">_Analogue input:</property>
+															<object class="GtkLabel" id="mw_analogue_input_label2">
+																<property name="label" translatable="yes">Analogue input:</property>
 																<property name="xalign">0</property>
-																<property name="use-underline">True</property>
-																<property name="mnemonic-widget">mw_analogue_input_spin_button</property>
+																<accessibility>
+																	<relation target="mw_analogue_input_label" type="label-for"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">2</property>
@@ -1681,23 +1682,13 @@
 															</packing>
 														</child>
 														<child>
-															<object class="GtkHBox" id="mw_analogue_input_hbox">
-																<property name="spacing">6</property>
-																<child>
-																	<object class="GtkSpinButton" id="mw_analogue_input_spin_button">
-																		<property name="adjustment">mw_adc_offset_adjustment</property>
-																		<property name="digits">2</property>
-																	</object>
-																</child>
-																<child>
-																	<object class="GtkLabel" id="label5">
-																		<property name="label" translatable="yes" comments="Volts">V</property>
-																		<property name="xalign">0</property>
-																	</object>
-																	<packing>
-																		<property name="expand">False</property>
-																	</packing>
-																</child>
+															<object class="GtkLabel" id="mw_analogue_input_label">
+																<property name="selectable">True</property>
+																<property name="label" translatable="yes" comments="Translators: This is the analogue input label, a value in Volts.">0.00V</property>
+																<property name="xalign">0</property>
+																<accessibility>
+																	<relation target="mw_analogue_input_label2" type="labelled-by"/>
+																</accessibility>
 															</object>
 															<packing>
 																<property name="top-attach">2</property>
