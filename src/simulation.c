@@ -368,14 +368,8 @@ mcus_simulation_start (MCUSSimulation *self)
 
 	memset (priv->registers, 0, sizeof (guchar) * REGISTER_COUNT);
 
-	priv->input_port = 0;
-	g_object_notify (G_OBJECT (self), "input-port");
-
 	priv->output_port = 0;
 	g_object_notify (G_OBJECT (self), "output-port");
-
-	priv->analogue_input = 0.0;
-	g_object_notify (G_OBJECT (self), "analogue-input");
 
 	priv->stack = NULL;
 
