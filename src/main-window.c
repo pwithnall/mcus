@@ -425,6 +425,7 @@ mcus_main_window_new (void)
 	/* Set up the byte arrays */
 	mcus_byte_array_set_array (priv->memory_array, mcus_simulation_get_memory (priv->simulation), MEMORY_SIZE);
 	mcus_byte_array_set_display_length (priv->memory_array, MEMORY_SIZE);
+	mcus_byte_array_set_highlight_byte (priv->memory_array, 0);
 	mcus_byte_array_set_array (priv->lookup_table_array, mcus_simulation_get_lookup_table (priv->simulation), LOOKUP_TABLE_SIZE);
 	mcus_byte_array_set_display_length (priv->lookup_table_array, DEFAULT_LOOKUP_TABLE_LENGTH);
 	mcus_byte_array_set_array (priv->registers_array, mcus_simulation_get_registers (priv->simulation), REGISTER_COUNT);
