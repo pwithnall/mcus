@@ -48,6 +48,8 @@ static void mcus_simulation_finalize (GObject *object);
 static void mcus_simulation_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void mcus_simulation_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 
+static void free_stack (MCUSSimulation *self);
+
 struct _MCUSSimulationPrivate {
 	/* Simulated hardware */
 	guchar program_counter;
@@ -75,7 +77,10 @@ enum {
 	PROP_ANALOGUE_INPUT,
 	PROP_ITERATION,
 	PROP_STATE,
-	PROP_CLOCK_SPEED
+	PROP_CLOCK_SPEED,
+	PROP_MEMORY,
+	PROP_LOOKUP_TABLE,
+	PROP_REGISTERS
 };
 
 enum {
@@ -83,6 +88,7 @@ enum {
 	SIGNAL_ITERATION_FINISHED,
 	SIGNAL_STACK_PUSHED,
 	SIGNAL_STACK_POPPED,
+	SIGNAL_STACK_EMPTIED,
 	LAST_SIGNAL
 };
 
@@ -190,6 +196,36 @@ mcus_simulation_class_init (MCUSSimulationClass *klass)
 					G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
 	/**
+	 * MCUSSimulation:memory:
+	 *
+	 * The statically allocated block of memory for the microcontroller.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_MEMORY,
+				g_param_spec_pointer ("memory",
+					"Memory", "The statically allocated block of memory for the microcontroller.",
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:lookup-table:
+	 *
+	 * The statically allocated block of memory for the microcontroller's lookup table.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_LOOKUP_TABLE,
+				g_param_spec_pointer ("lookup-table",
+					"Lookup Table", "The statically allocated block of memory for the microcontroller's lookup table.",
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * MCUSSimulation:registers:
+	 *
+	 * The statically allocated block of memory for the microcontroller's registers.
+	 **/
+	g_object_class_install_property (gobject_class, PROP_REGISTERS,
+				g_param_spec_pointer ("registers",
+					"Registers", "The statically allocated block of memory for the microcontroller's registers.",
+					G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	/**
 	 * MCUSSimulation::iteration-started:
 	 * @simulation: the #MCUSSimulation which has started an iteration
 	 *
@@ -250,6 +286,20 @@ mcus_simulation_class_init (MCUSSimulationClass *klass)
 				NULL, NULL,
 				g_cclosure_marshal_VOID__POINTER,
 				G_TYPE_NONE, 1, G_TYPE_POINTER /* MCUSStackFrame */);
+
+	/**
+	 * MCUSSimulation::stack-emptied:
+	 * @simulation: the #MCUSSimulation which had its stack emptied
+	 *
+	 * Emitted when the stack of the simulation is emptied completely.
+	 **/
+	signals[SIGNAL_STACK_EMPTIED] = g_signal_new ("stack-emptied",
+				G_TYPE_FROM_CLASS (klass),
+				G_SIGNAL_RUN_LAST,
+				0,
+				NULL, NULL,
+				g_cclosure_marshal_VOID__VOID,
+				G_TYPE_NONE, 0);
 }
 
 static void
@@ -268,6 +318,7 @@ mcus_simulation_finalize (GObject *object)
 
 	if (self->priv->state != MCUS_SIMULATION_STOPPED)
 		mcus_simulation_finish (self);
+	free_stack (self);
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (mcus_simulation_parent_class)->finalize (object);
@@ -303,6 +354,15 @@ mcus_simulation_get_property (GObject *object, guint property_id, GValue *value,
 		case PROP_CLOCK_SPEED:
 			g_value_set_ulong (value, priv->clock_speed);
 			break;
+		case PROP_MEMORY:
+			g_value_set_pointer (value, priv->memory);
+			break;
+		case PROP_LOOKUP_TABLE:
+			g_value_set_pointer (value, priv->lookup_table);
+			break;
+		case PROP_REGISTERS:
+			g_value_set_pointer (value, priv->registers);
+			break;
 		default:
 			/* We don't have any other property... */
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -336,6 +396,71 @@ mcus_simulation_new (void)
 	return g_object_new (MCUS_TYPE_SIMULATION, NULL);
 }
 
+static void
+free_stack (MCUSSimulation *self)
+{
+	MCUSStackFrame *stack_frame = self->priv->stack;
+	while (stack_frame != NULL) {
+		MCUSStackFrame *prev_frame;
+		prev_frame = stack_frame->prev;
+		g_slice_free (MCUSStackFrame, stack_frame);
+		stack_frame = prev_frame;
+	}
+	self->priv->stack = NULL;
+
+	g_signal_emit (self, signals[SIGNAL_STACK_EMPTIED], 0);
+}
+
+static void
+reset (MCUSSimulation *self, gboolean reset_memory)
+{
+	GObject *obj = G_OBJECT (self);
+	MCUSSimulationPrivate *priv = self->priv;
+
+	g_object_freeze_notify (obj);
+
+	/* Reset the memory */
+	if (reset_memory == TRUE) {
+		memset (priv->memory, 0, sizeof (guchar) * MEMORY_SIZE);
+		g_object_notify (obj, "memory");
+
+		memset (priv->lookup_table, 0, sizeof (guchar) * LOOKUP_TABLE_SIZE);
+		g_object_notify (obj, "lookup-table");
+	}
+
+	/* Set up various properties */
+	priv->program_counter = PROGRAM_START_ADDRESS;
+	g_object_notify (obj, "program-counter");
+
+	priv->zero_flag = 0;
+	g_object_notify (obj, "zero-flag");
+
+	memset (priv->registers, 0, sizeof (guchar) * REGISTER_COUNT);
+	g_object_notify (obj, "registers");
+
+	priv->output_port = 0;
+	g_object_notify (obj, "output-port");
+
+	priv->iteration = 0;
+	g_object_notify (obj, "iteration");
+
+	g_object_thaw_notify (obj);
+
+	/* Empty the stack after all the notifications, so that the signal handler for the resulting signal can read a consistent
+	 * state from the rest of the microcontroller */
+	free_stack (self);
+}
+
+/* Reset the simulated microcontroller as if it was rebooted */
+void
+mcus_simulation_reset (MCUSSimulation *self)
+{
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
+	g_return_if_fail (self->priv->state == MCUS_SIMULATION_STOPPED);
+
+	reset (self, TRUE);
+}
+
 static gboolean
 simulation_iterate_cb (MCUSSimulation *self)
 {
@@ -357,29 +482,11 @@ mcus_simulation_start (MCUSSimulation *self)
 	g_return_if_fail (MCUS_IS_SIMULATION (self));
 	g_return_if_fail (priv->state == MCUS_SIMULATION_STOPPED);
 
-	/* Set up various properties */
-	g_object_freeze_notify (G_OBJECT (self));
-
-	priv->program_counter = PROGRAM_START_ADDRESS;
-	g_object_notify (G_OBJECT (self), "program-counter");
-
-	priv->zero_flag = 0;
-	g_object_notify (G_OBJECT (self), "zero-flag");
-
-	memset (priv->registers, 0, sizeof (guchar) * REGISTER_COUNT);
-
-	priv->output_port = 0;
-	g_object_notify (G_OBJECT (self), "output-port");
-
-	priv->stack = NULL;
-
-	priv->iteration = 0;
-	g_object_notify (G_OBJECT (self), "iteration");
+	/* Reset the microcontroller state */
+	reset (self, FALSE);
 
 	priv->state = MCUS_SIMULATION_RUNNING;
 	g_object_notify (G_OBJECT (self), "state");
-
-	g_object_thaw_notify (G_OBJECT (self));
 
 	/* Add the timeout for the simulation iterations */
 	priv->iteration_event = g_timeout_add (1000 / priv->clock_speed, (GSourceFunc) simulation_iterate_cb, self);
@@ -436,42 +543,51 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		return FALSE;
 	case OPCODE_MOVI:
 		priv->registers[operand1] = operand2;
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_MOV:
 		priv->registers[operand1] = priv->registers[operand2];
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_ADD:
 		priv->registers[operand1] += priv->registers[operand2];
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_SUB:
 		priv->registers[operand1] -= priv->registers[operand2];
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_AND:
 		priv->registers[operand1] &= priv->registers[operand2];
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_EOR:
 		priv->registers[operand1] ^= priv->registers[operand2];
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_INC:
 		priv->registers[operand1] += 1;
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_DEC:
 		priv->registers[operand1] -= 1;
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_IN:
 		priv->registers[operand1] = priv->input_port; /* only one operand is stored */
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_OUT:
 		priv->output_port = priv->registers[operand1]; /* only one operand is stored */
@@ -500,6 +616,7 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		if (operand1 == priv->program_counter) {
 			/* readtable */
 			priv->registers[0] = priv->lookup_table[priv->registers[7]];
+			g_object_notify (G_OBJECT (self), "registers");
 			break;
 		} else if (operand1 == priv->program_counter + 1) {
 			/* wait1ms */
@@ -508,6 +625,7 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		} else if (operand1 == priv->program_counter + 2) {
 			/* readadc */
 			priv->registers[0] = 255.0 * priv->analogue_input / ANALOGUE_INPUT_MAX_VOLTAGE;
+			g_object_notify (G_OBJECT (self), "registers");
 			break;
 		}
 
@@ -547,6 +665,7 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		priv->program_counter = stack_frame->program_counter;
 		g_object_notify (G_OBJECT (self), "program-counter");
 		memcpy (priv->registers, stack_frame->registers, sizeof (guchar) * REGISTER_COUNT);
+		g_object_notify (G_OBJECT (self), "registers");
 		g_slice_free (MCUSStackFrame, stack_frame);
 
 		/* Signal that the stack's changed */
@@ -557,11 +676,13 @@ mcus_simulation_iterate (MCUSSimulation *self, GError **error)
 		priv->registers[operand1] <<= 1;
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	case OPCODE_SHR:
 		priv->registers[operand1] >>= 1;
 		priv->zero_flag = (priv->registers[operand1] == 0) ? TRUE : FALSE;
 		g_object_notify (G_OBJECT (self), "zero-flag");
+		g_object_notify (G_OBJECT (self), "registers");
 		break;
 	default: {
 		/* We've encountered some data? */
@@ -631,7 +752,6 @@ mcus_simulation_resume (MCUSSimulation *self)
 void
 mcus_simulation_finish (MCUSSimulation *self)
 {
-	MCUSStackFrame *stack_frame;
 	MCUSSimulationPrivate *priv = self->priv;
 
 	g_return_if_fail (MCUS_IS_SIMULATION (self));
@@ -645,18 +765,17 @@ mcus_simulation_finish (MCUSSimulation *self)
 	/* Stop the simulation */
 	priv->state = MCUS_SIMULATION_STOPPED;
 	g_object_notify (G_OBJECT (self), "state");
-
-	/* Free up any remaining frames on the stack */
-	stack_frame = priv->stack;
-	while (stack_frame != NULL) {
-		MCUSStackFrame *prev_frame;
-		prev_frame = stack_frame->prev;
-		g_slice_free (MCUSStackFrame, stack_frame);
-		stack_frame = prev_frame;
-	}
-	priv->stack = NULL;
 }
 
+/**
+ * mcus_simulation_get_memory:
+ * @self: an #MCUSSimulation
+ *
+ * Returns the block of memory which is used by the simulated microcontroller to store compiled programs. This memory is statically allocated,
+ * and should not be freed. It may, however, be modified by the caller, but mcus_simulation_notify_memory() must be called afterwards.
+ *
+ * Return value: the microcontroller's memory
+ **/
 guchar *
 mcus_simulation_get_memory (MCUSSimulation *self)
 {
@@ -664,11 +783,48 @@ mcus_simulation_get_memory (MCUSSimulation *self)
 	return self->priv->memory;
 }
 
+/**
+ * mcus_simulation_notify_memory:
+ * @self: an #MCUSSimulation
+ *
+ * This notifies the simulation that its program memory has been modified. This should be called and only be called after modifying the memory
+ * returned by mcus_simulation_get_memory().
+ **/
+void
+mcus_simulation_notify_memory (MCUSSimulation *self)
+{
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
+	g_object_notify (G_OBJECT (self), "memory");
+}
+
+/**
+ * mcus_simulation_get_lookup_table:
+ * @self: an #MCUSSimulation
+ *
+ * Returns the block of memory which is used by the simulated microcontroller to store lookup tables. This memory is statically allocated,
+ * and should not be freed. It may, however, be modified by the caller, but mcus_simulation_notify_lookup_table() must be called afterwards.
+ *
+ * Return value: the microcontroller's lookup table memory
+ **/
 guchar *
 mcus_simulation_get_lookup_table (MCUSSimulation *self)
 {
 	g_return_val_if_fail (MCUS_IS_SIMULATION (self), NULL);
 	return self->priv->lookup_table;
+}
+
+/**
+ * mcus_simulation_notify_lookup_table:
+ * @self: an #MCUSSimulation
+ *
+ * This notifies the simulation that its lookup table memory has been modified. This should be called and only be called after modifying the memory
+ * returned by mcus_simulation_get_lookup_table().
+ **/
+void
+mcus_simulation_notify_lookup_table (MCUSSimulation *self)
+{
+	g_return_if_fail (MCUS_IS_SIMULATION (self));
+	g_object_notify (G_OBJECT (self), "lookup-table");
 }
 
 guchar *

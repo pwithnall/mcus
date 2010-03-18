@@ -52,7 +52,6 @@ mcus_io_error_quark (void)
 static void mcus_main_window_dispose (GObject *object);
 static void mcus_main_window_finalize (GObject *object);
 
-static void update_simulation_ui (MCUSMainWindow *self);
 static void remove_tag (MCUSMainWindow *self, GtkTextTag *tag);
 static void tag_range (MCUSMainWindow *self, GtkTextTag *tag, guint start_offset, guint end_offset, gboolean remove_previous_occurrences);
 
@@ -63,6 +62,7 @@ static void simulation_iteration_started_cb (MCUSSimulation *self, MCUSMainWindo
 static void simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainWindow *main_window);
 static void simulation_stack_pushed_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, MCUSMainWindow *main_window);
 static void simulation_stack_popped_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, MCUSMainWindow *main_window);
+static void simulation_stack_emptied_cb (MCUSSimulation *self, MCUSMainWindow *main_window);
 static void notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_can_undo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_can_redo_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
@@ -72,6 +72,9 @@ static void notify_zero_flag_cb (GObject *object, GParamSpec *param_spec, MCUSMa
 static void notify_input_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_output_port_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 static void notify_analogue_input_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
+static void notify_memory_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
+static void notify_lookup_table_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
+static void notify_registers_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window);
 
 /* GtkBuilder callbacks */
 G_MODULE_EXPORT void mw_stack_list_store_row_activated (GtkTreeView *tree_view, GtkTreePath *path,
@@ -415,6 +418,7 @@ mcus_main_window_new (void)
 	g_signal_connect (priv->simulation, "iteration-finished", (GCallback) simulation_iteration_finished_cb, main_window);
 	g_signal_connect (priv->simulation, "stack-pushed", (GCallback) simulation_stack_pushed_cb, main_window);
 	g_signal_connect (priv->simulation, "stack-popped", (GCallback) simulation_stack_popped_cb, main_window);
+	g_signal_connect (priv->simulation, "stack-emptied", (GCallback) simulation_stack_emptied_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::state", (GCallback) notify_simulation_state_cb, main_window);
 
 	/* Set up the byte arrays */
@@ -445,6 +449,9 @@ mcus_main_window_new (void)
 	g_signal_connect (priv->simulation, "notify::input-port", (GCallback) notify_input_port_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::output-port", (GCallback) notify_output_port_cb, main_window);
 	g_signal_connect (priv->simulation, "notify::analogue-input", (GCallback) notify_analogue_input_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::memory", (GCallback) notify_memory_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::lookup-table", (GCallback) notify_lookup_table_cb, main_window);
+	g_signal_connect (priv->simulation, "notify::registers", (GCallback) notify_registers_cb, main_window);
 
 	/* Make some widgets monospaced */
 	style = gtk_widget_get_style (priv->code_view);
@@ -550,13 +557,19 @@ mcus_main_window_new_program (MCUSMainWindow *self)
 	GtkTextBuffer *text_buffer = self->priv->code_buffer;
 
 	/* Ask to save old files */
-	if (gtk_text_buffer_get_modified (text_buffer) == FALSE ||
-	    save_changes (self, TRUE) == TRUE) {
-		gtk_text_buffer_set_text (text_buffer, "", -1);
-		gtk_text_buffer_set_modified (text_buffer, FALSE);
-		g_free (self->priv->current_filename);
-		self->priv->current_filename = NULL;
-	}
+	if (gtk_text_buffer_get_modified (text_buffer) == TRUE && save_changes (self, TRUE) == FALSE)
+		return;
+
+	/* Wipe the code buffer */
+	gtk_text_buffer_set_text (text_buffer, "", -1);
+	gtk_text_buffer_set_modified (text_buffer, FALSE);
+
+	/* Reset the filename */
+	g_free (self->priv->current_filename);
+	self->priv->current_filename = NULL;
+
+	/* Reset the simulator */
+	mcus_simulation_reset (self->priv->simulation);
 }
 
 void
@@ -692,6 +705,7 @@ mcus_main_window_open_file (MCUSMainWindow *self, const gchar *filename)
 	if (error != NULL)
 		goto file_error;
 
+	/* Load the program text */
 	gtk_text_buffer_set_text (text_buffer, file_contents, -1);
 	gtk_text_buffer_set_modified (text_buffer, FALSE);
 	g_free (file_contents);
@@ -699,8 +713,12 @@ mcus_main_window_open_file (MCUSMainWindow *self, const gchar *filename)
 	g_io_channel_shutdown (channel, FALSE, NULL);
 	g_io_channel_unref (channel);
 
+	/* Set the filename */
 	g_free (self->priv->current_filename);
 	self->priv->current_filename = g_strdup (filename);
+
+	/* Reset the simulator */
+	mcus_simulation_reset (self->priv->simulation);
 
 	return;
 
@@ -833,24 +851,6 @@ update_outputs (MCUSMainWindow *self)
 	}
 }
 
-static void
-update_simulation_ui (MCUSMainWindow *self)
-{
-	guchar program_counter = mcus_simulation_get_program_counter (self->priv->simulation);
-
-	/* Update the memory and register labels */
-	mcus_byte_array_set_highlight_byte (self->priv->memory_array, program_counter);
-	mcus_byte_array_update (self->priv->registers_array);
-
-	/* Move the current line mark */
-	if (self->priv->offset_map != NULL) {
-		tag_range (self, self->priv->current_instruction_tag,
-		           self->priv->offset_map[program_counter].offset,
-		           self->priv->offset_map[program_counter].offset + self->priv->offset_map[program_counter].length,
-		           TRUE);
-	}
-}
-
 /* Data function to format the program counter column of the stack tree view properly */
 static void
 stack_program_counter_data_cb (GtkTreeViewColumn *column, GtkCellRenderer *cell, GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
@@ -932,8 +932,6 @@ simulation_iteration_finished_cb (MCUSSimulation *self, GError *error, MCUSMainW
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", error->message);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
-	} else {
-		update_simulation_ui (main_window);
 	}
 }
 
@@ -1003,6 +1001,13 @@ simulation_stack_popped_cb (MCUSSimulation *self, MCUSStackFrame *stack_frame, M
 }
 
 static void
+simulation_stack_emptied_cb (MCUSSimulation *self, MCUSMainWindow *main_window)
+{
+	/* Empty the displayed stack */
+	gtk_list_store_clear (main_window->priv->stack_list_store);
+}
+
+static void
 notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
 	GtkSourceBuffer *source_buffer;
@@ -1047,14 +1052,6 @@ notify_simulation_state_cb (GObject *object, GParamSpec *param_spec, MCUSMainWin
 	if (stopped) {
 		/* If we're finished, remove the current instruction tag */
 		remove_tag (main_window, priv->current_instruction_tag);
-	} else if (state == MCUS_SIMULATION_RUNNING) {
-		/* Update the registers, memory and lookup table */
-		mcus_byte_array_update (priv->memory_array);
-		mcus_byte_array_update (priv->registers_array);
-		mcus_byte_array_update (priv->lookup_table_array);
-
-		/* Display all the defined values of the lookup table, plus two more for context */
-		mcus_byte_array_set_display_length (priv->lookup_table_array, MIN (priv->lookup_table_length + 2, LOOKUP_TABLE_SIZE));
 	}
 }
 
@@ -1088,13 +1085,28 @@ notify_has_selection_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow
 static void
 notify_program_counter_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
 {
+	MCUSMainWindowPrivate *priv = main_window->priv;
+
 	/* 3 characters for two hexadecimal characters and one \0 */
 	gchar byte_text[3];
 	guchar program_counter = mcus_simulation_get_program_counter (MCUS_SIMULATION (object));
 
 	/* Update the program counter label */
 	g_sprintf (byte_text, "%02X", program_counter);
-	gtk_label_set_text (main_window->priv->program_counter_label, byte_text);
+	gtk_label_set_text (priv->program_counter_label, byte_text);
+
+	/* Update the memory highlight */
+	mcus_byte_array_set_highlight_byte (priv->memory_array, program_counter);
+
+	/* Move the current line mark */
+	if (priv->offset_map != NULL && mcus_simulation_get_state (priv->simulation) != MCUS_SIMULATION_STOPPED) {
+		tag_range (main_window, priv->current_instruction_tag,
+		           priv->offset_map[program_counter].offset,
+		           priv->offset_map[program_counter].offset + priv->offset_map[program_counter].length,
+		           TRUE);
+	} else {
+		remove_tag (main_window, priv->current_instruction_tag);
+	}
 }
 
 static void
@@ -1175,6 +1187,28 @@ notify_analogue_input_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindo
 	text = g_strdup_printf (_("%.2fV"), analogue_input);
 	gtk_label_set_text (main_window->priv->analogue_input_label, text);
 	g_free (text);
+}
+
+static void
+notify_memory_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
+{
+	mcus_byte_array_update (main_window->priv->memory_array);
+}
+
+static void
+notify_lookup_table_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
+{
+	mcus_byte_array_update (main_window->priv->lookup_table_array);
+
+	/* Display all the defined values of the lookup table, plus two more for context */
+	mcus_byte_array_set_display_length (main_window->priv->lookup_table_array,
+	                                    MIN (main_window->priv->lookup_table_length + 2, LOOKUP_TABLE_SIZE));
+}
+
+static void
+notify_registers_cb (GObject *object, GParamSpec *param_spec, MCUSMainWindow *main_window)
+{
+	mcus_byte_array_update (main_window->priv->registers_array);
 }
 
 G_MODULE_EXPORT gboolean
@@ -1377,12 +1411,8 @@ mw_run_activate_cb (GtkAction *self, MCUSMainWindow *main_window)
 		goto compiler_error;
 	g_object_unref (compiler);
 
-	/* Empty the displayed stack */
-	gtk_list_store_clear (priv->stack_list_store);
-
-	/* Initialise the simulator */
+	/* Start the simulator! */
 	mcus_simulation_start (priv->simulation);
-	update_simulation_ui (main_window);
 
 	return;
 

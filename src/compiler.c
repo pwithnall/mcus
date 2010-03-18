@@ -928,6 +928,10 @@ mcus_compiler_compile (MCUSCompiler *self, MCUSSimulation *simulation, MCUSInstr
 	if (lookup_table_length != NULL)
 		*lookup_table_length = self->priv->lookup_table.length;
 
+	/* Notify the simulation of the changes to memory and the lookup table */
+	mcus_simulation_notify_memory (simulation);
+	mcus_simulation_notify_lookup_table (simulation);
+
 	reset_state (self);
 
 	return TRUE;

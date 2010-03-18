@@ -76,6 +76,7 @@ typedef struct {
 GType mcus_simulation_get_type (void) G_GNUC_CONST;
 
 MCUSSimulation *mcus_simulation_new (void) G_GNUC_WARN_UNUSED_RESULT;
+void mcus_simulation_reset (MCUSSimulation *self);
 
 void mcus_simulation_start (MCUSSimulation *self);
 gboolean mcus_simulation_iterate (MCUSSimulation *self, GError **error);
@@ -84,9 +85,12 @@ void mcus_simulation_resume (MCUSSimulation *self);
 void mcus_simulation_finish (MCUSSimulation *self);
 
 guchar *mcus_simulation_get_memory (MCUSSimulation *self);
-guchar *mcus_simulation_get_lookup_table (MCUSSimulation *self);
-guchar *mcus_simulation_get_registers (MCUSSimulation *self);
+void mcus_simulation_notify_memory (MCUSSimulation *self);
 
+guchar *mcus_simulation_get_lookup_table (MCUSSimulation *self);
+void mcus_simulation_notify_lookup_table (MCUSSimulation *self);
+
+guchar *mcus_simulation_get_registers (MCUSSimulation *self);
 MCUSStackFrame *mcus_simulation_get_stack_head (MCUSSimulation *self);
 
 guint mcus_simulation_get_iteration (MCUSSimulation *self);
