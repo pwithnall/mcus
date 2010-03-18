@@ -16,6 +16,8 @@ DOC_PAGES = \
 	lookup-tables.page
 
 # TODO: This isn't localised yet
+# Only build XHTML documentation if we're building the installer, as that's where it's used
+if WITH_INSTALLER
 xhtml:
 	$(AM_V_GEN)($(mkinstalldirs) $(top_builddir)/help/C; \
 	cd $(top_srcdir)/help/C/; \
@@ -26,5 +28,6 @@ CLEANFILES = \
 	$(top_builddir)/help/C/index.cache
 
 all-local: xhtml
+endif
 
 -include $(top_srcdir)/git.mk

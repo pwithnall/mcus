@@ -87,19 +87,6 @@ dnl Documentation
 dnl ***************************************************************************
 
 GNOME_DOC_INIT([0.17.1], [docs=yes], [docs=no])
-
-AC_PATH_PROG([XMLLINT], xmllint, no)
-AC_ARG_VAR([XMLLINT], [path to xmllint utility])
-if test "$docs" = "yes" -a "$XMLLINT" = "no"; then
-	AC_MSG_ERROR([Could not find xmllint, which is required for building PDF documentation.])
-fi
-
-AC_PATH_PROG([DB2PDF], docbook2pdf, no)
-AC_ARG_VAR([DB2PDF], [path to docbook2pdf utility])
-if test "$docs" = "yes" -a "$DB2PDF" = "no"; then
-	AC_MSG_ERROR([Could not find docbook2pdf, which is required for building PDF documentation.])
-fi
-
 AM_CONDITIONAL([WITH_DOCS], [test "$docs" = "yes"])
 AC_CONFIG_FILES([help/Makefile])
 
