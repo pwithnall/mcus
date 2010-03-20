@@ -534,6 +534,7 @@ save_changes (MCUSMainWindow *self, gboolean open_or_close)
 	                        "gtk-cancel", GTK_RESPONSE_CANCEL,
 	                        (self->priv->current_filename == NULL) ? "gtk-save-as" : "gtk-save", GTK_RESPONSE_OK,
 	                        NULL);
+	gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), _("If you don't save, your changes will be permanently lost."));
 
 	switch (gtk_dialog_run (GTK_DIALOG (dialog))) {
