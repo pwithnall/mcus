@@ -279,6 +279,19 @@
 		</columns>
 	</object>
 
+	<object class="GtkSizeGroup" id="mw_simulation_size_group">
+		<property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+		<widgets>
+			<widget name="mw_program_counter_label2"/>
+			<widget name="mw_stack_pointer_label2"/>
+			<widget name="mw_zero_flag_label2"/>
+			<widget name="mw_clock_speed_label"/>
+			<widget name="mw_input_port_label"/>
+			<widget name="mw_output_port_label2"/>
+			<widget name="mw_analogue_input_label2"/>
+		</widgets>
+	</object>
+
 	<object class="MCUSMainWindow" type-func="mcus_main_window_get_type" id="mcus_main_window">
 		<property name="title" translatable="yes">Microcontroller Simulator</property>
 		<signal name="delete-event" handler="mw_delete_event_cb"/>
@@ -1524,7 +1537,7 @@
 															</packing>
 														</child>
 														<child>
-															<object class="GtkLabel" id="label8">
+															<object class="GtkLabel" id="mw_clock_speed_label">
 																<property name="label" translatable="yes">Clock _speed:</property>
 																<property name="xalign">0</property>
 																<property name="use-underline">True</property>
