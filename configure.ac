@@ -78,7 +78,8 @@ dnl ***************************************************************************
 GETTEXT_PACKAGE=mcus
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", [gettext package name])
-AM_GLIB_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.17])
 IT_PROG_INTLTOOL([0.35.0])
 AC_CONFIG_FILES([po/Makefile.in])
 
