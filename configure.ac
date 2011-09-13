@@ -8,7 +8,7 @@ AC_INIT([MCUS],[version_major.version_minor.version_micro],[http://tecnocode.co.
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-dist-gzip check-news subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 AC_USE_SYSTEM_EXTENSIONS
-AM_MAINTAINER_MODE
+AM_MAINTAINER_MODE([enable])
 AM_PROG_CC_C_O
 LT_INIT
 PKG_PROG_PKG_CONFIG
